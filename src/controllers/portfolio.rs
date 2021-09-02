@@ -1,0 +1,899 @@
+use super::metrics;
+use crate::services;
+use actix_extract_multipart::*;
+use actix_identity::Identity;
+use actix_web::{delete, get, patch, post, put, web, Error, HttpRequest, HttpResponse};
+use askama_actix::{Template, TemplateIntoResponse};
+use chrono::{DateTime, Datelike, Utc};
+use serde::Deserialize;
+use sqlx::PgPool;
+use std::{collections::HashSet, path::Path};
+
+#[get("")]
+async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
+    if let Ok(page) = services::pages::get(&pool, "portfolio").await {
+        use slugmin::slugify;
+
+        #[derive(Debug)]
+        struct Project {
+            id: i16,
+            name: String,
+            content: String,
+            date: DateTime<Utc>,
+            uri: String,
+        }
+
+        #[derive(Template)]
+        #[template(path = "portfolio.html")]
+        struct Portfolio {
+            categories: Vec<services::projects::Category>,
+            projects: Vec<Project>,
+            title: String,
+            description: Option<String>,
+            year: i32,
+        }
+
+        let (_, projects, categories) = futures::join!(
+            metrics::add(&pool, &req, services::metrics::BelongsTo::Page(page.id)),
+            services::projects::get_all(&pool, None),
+            services::projects::categories::get_all(&pool)
+        );
+
+        let projects = projects
+            .iter()
+            .map(|row| Project {
+                id: row.id,
+                name: row.name.clone(),
+                content: row.content.clone(),
+                date: row.date,
+                uri: slugify(&format!("{}-{}", row.name, row.id)),
+            })
+            .collect::<Vec<Project>>();
+
+        println!("{:?}", projects);
+
+        return Portfolio {
+            categories,
+            projects,
+            title: page.title,
+            description: page.description,
+            year: chrono::Utc::now().year(),
+        }
+        .into_response();
+    }
+
+    Ok(HttpResponse::InternalServerError().finish())
+}
+
+#[get("/{name}-{id}")]
+async fn get_project(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    web::Path((_, id)): web::Path<(String, i16)>,
+) -> Result<HttpResponse, Error> {
+    if services::projects::exists(&pool, id).await {
+        if let Ok(project) = services::projects::get(&pool, id).await {
+            metrics::add(&pool, &req, services::metrics::BelongsTo::Project(id)).await;
+
+            #[derive(Template)]
+            #[template(path = "portfolio_project.html")]
+            struct PortfolioProject {
+                title: String,
+                description: Option<String>,
+                content: String,
+                date: DateTime<Utc>,
+                assets: Vec<services::projects::Asset>,
+                year: i32,
+            }
+
+            return PortfolioProject {
+                title: project.name,
+                description: project.description,
+                content: project.content,
+                date: project.date,
+                assets: project.assets,
+                year: chrono::Utc::now().year(),
+            }
+            .into_response();
+        }
+    }
+
+    Ok(HttpResponse::NotFound().finish())
+}
+
+#[derive(Deserialize)]
+pub struct CategoryForm {
+    name: String,
+    order: i16,
+}
+
+impl CategoryForm {
+    fn is_valid(&mut self) -> bool {
+        self.name = self.name.trim().to_string();
+
+        self.name.len() >= 2 && self.name.len() <= 120
+    }
+}
+
+#[post("/categories")]
+async fn create_category(
+    pool: web::Data<PgPool>,
+    session: Identity,
+    mut form: web::Form<CategoryForm>,
+) -> HttpResponse {
+    if let Some(_) = session.identity() {
+        if !form.is_valid() {
+            return HttpResponse::BadRequest().finish();
+        }
+
+        return match services::projects::categories::insert(&pool, &form.name, form.order).await {
+            Ok(id) => HttpResponse::Ok().json(id),
+            _ => HttpResponse::InternalServerError().finish(),
+        };
+    }
+
+    HttpResponse::Unauthorized().finish()
+}
+
+#[put("/categories/{id}")]
+async fn update_category(
+    pool: web::Data<PgPool>,
+    session: Identity,
+    mut form: web::Form<CategoryForm>,
+    web::Path(id): web::Path<i16>,
+) -> HttpResponse {
+    if let Some(_) = session.identity() {
+        if !form.is_valid() {
+            return HttpResponse::BadRequest().finish();
+        }
+
+        return match services::projects::categories::update(&pool, id, &form.name, form.order).await
+        {
+            Ok(_) => HttpResponse::Ok().finish(),
+            _ => HttpResponse::InternalServerError().finish(),
+        };
+    }
+
+    HttpResponse::Unauthorized().finish()
+}
+
+#[delete("/categories/{id}")]
+async fn delete_category(
+    pool: web::Data<PgPool>,
+    session: Identity,
+    web::Path(id): web::Path<i16>,
+) -> HttpResponse {
+    if let Some(_) = session.identity() {
+        if services::projects::categories::exists(&pool, id).await {
+            services::projects::categories::delete(&pool, id).await;
+
+            return HttpResponse::Ok().finish();
+        }
+
+        return HttpResponse::NotFound().finish();
+    }
+
+    HttpResponse::Unauthorized().finish()
+}
+
+impl services::projects::ProjectInformations {
+    async fn is_valid(&mut self, pool: &PgPool) -> bool {
+        use ammonia::Builder;
+
+        self.name = self.name.trim().to_string();
+        if let Some(description) = &mut self.description {
+            *description = description.trim().to_string();
+        }
+        // Sanitize content for only print allowed html tags
+        let mut allowed_tags: HashSet<&str> = HashSet::new();
+        allowed_tags.insert("b");
+        allowed_tags.insert("h2");
+        allowed_tags.insert("h3");
+        allowed_tags.insert("ul");
+        allowed_tags.insert("li");
+        allowed_tags.insert("a");
+        self.content = Builder::default()
+            .tags(allowed_tags)
+            .clean(self.content.trim())
+            .to_string();
+
+        self.name.len() >= 2
+            && self.name.len() <= 120
+            && self.content.len() >= 30
+            && self.category_id > 0
+            && services::projects::categories::exists(pool, self.category_id).await
+    }
+}
+
+#[post("/projects")]
+pub async fn insert_project(
+    pool: web::Data<PgPool>,
+    mut form: web::Form<services::projects::ProjectInformations>,
+    session: Identity,
+) -> HttpResponse {
+    if let Some(_) = session.identity() {
+        if !form.is_valid(&pool).await {
+            return HttpResponse::BadRequest().finish();
+        }
+
+        return match services::projects::insert(&pool, &*form).await {
+            Ok(id) => HttpResponse::Ok().json(id),
+            _ => HttpResponse::InternalServerError().finish(),
+        };
+    }
+
+    HttpResponse::Unauthorized().finish()
+}
+
+#[patch("/projects/{id}")]
+pub async fn update_project(
+    pool: web::Data<PgPool>,
+    mut form: web::Form<services::projects::ProjectInformations>,
+    session: Identity,
+    web::Path(id): web::Path<i16>,
+) -> HttpResponse {
+    if let Some(_) = session.identity() {
+        if !form.is_valid(&pool).await {
+            return HttpResponse::BadRequest().finish();
+        }
+
+        return match services::projects::update(&pool, id, &*form).await {
+            Ok(id) => HttpResponse::Ok().json(id),
+            _ => HttpResponse::InternalServerError().finish(),
+        };
+    }
+
+    HttpResponse::Unauthorized().finish()
+}
+
+#[delete("/projects/{id}")]
+async fn delete_project(
+    pool: web::Data<PgPool>,
+    web::Path(id): web::Path<i16>,
+    session: Identity,
+) -> HttpResponse {
+    if let Some(_) = session.identity() {
+        if services::projects::exists(&pool, id).await {
+            let assets = services::projects::assets::get_all(&pool, id).await;
+
+            assets.iter().for_each(|asset| {
+                // TODO : remove all differents file formats
+
+                let path = format!("./uploads/{}", asset.path);
+                let path = Path::new(&path);
+
+                if path.exists() {
+                    std::fs::remove_file(path).unwrap();
+                }
+            });
+
+            services::projects::delete(&pool, id).await;
+
+            return HttpResponse::Ok().finish();
+        }
+
+        return HttpResponse::NotFound().finish();
+    }
+
+    HttpResponse::Unauthorized().finish()
+}
+
+#[derive(Deserialize)]
+pub struct AssetForm {
+    // TODO : remplace with video
+    file: File,
+    name: Option<String>,
+    order: i16,
+    is_visible: bool,
+}
+
+impl AssetForm {
+    fn sanitize(&mut self) {
+        if let Some(name) = &mut self.name {
+            *name = name.trim().to_string();
+        }
+    }
+
+    fn is_valid(&mut self) -> bool {
+        self.sanitize();
+
+        self.order > 0
+    }
+}
+
+#[post("/projects/{id}/assets")]
+pub async fn insert_asset(
+    pool: web::Data<PgPool>,
+    session: Identity,
+    web::Path(id): web::Path<i16>,
+    payload: actix_multipart::Multipart,
+) -> HttpResponse {
+    if let Some(_) = session.identity() {
+        let mut form = match extract_multipart::<AssetForm>(payload).await {
+            Ok(data) => data,
+            Err(_) => return HttpResponse::BadRequest().finish(),
+        };
+        if !form.is_valid() {
+            return HttpResponse::BadRequest().finish();
+        }
+
+        if services::projects::exists(&pool, id).await {
+            use std::fs::File;
+            use std::io::prelude::*;
+            use webp::Encoder;
+
+            let image = image::load_from_memory(&form.file.data()).unwrap();
+
+            let name = if let Some(name) = form.name {
+                use slugmin::slugify;
+
+                slugify(&format!("{}_{}", name, id))
+            } else {
+                format!("{}_{}", id, chrono::Utc::now().timestamp())
+            };
+
+            match form.file.file_type() {
+                FileType::ImageJPEG
+                | FileType::ImagePNG
+                | FileType::ImageWEBP
+                | FileType::ImageGIF => {
+                    let format = if image.color().has_alpha() { image::ImageFormat::Png } else { image::ImageFormat::Jpeg };
+
+                    match format {
+                        image::ImageFormat::Png => {
+
+                        },
+                        _ => {
+                            
+                        }
+                    }
+
+                    if image.color().has_alpha() {
+                        image
+                            .thumbnail(500, 500)
+                            .save_with_format(
+                                format!("./uploads/mobile/{}.png", name),
+                                image::ImageFormat::Jpeg,
+                            )
+                            .unwrap();
+
+                        image
+                            .resize(800, 800, image::imageops::CatmullRom)
+                            .save_with_format(format!("./uploads/{}.png"), image::ImageFormat::Jpeg)
+                            .unwrap();
+                    } else {
+                        image
+                            .thumbnail(500, 500)
+                            .save_with_format(
+                                format!("./uploads/mobile/{}.jpg", name),
+                                image::ImageFormat::Jpeg,
+                            )
+                            .unwrap();
+                    }
+
+                    let image_webp =
+                        Encoder::from_image(&image.resize(500, 500, image::imageops::CatmullRom))
+                            .encode(100.0);
+                    let v = image_webp.iter().map(|a| *a).collect::<Vec<u8>>();
+                    let mut file = File::create(format!("./uploads/mobile/{}.webp", name)).unwrap();
+                    file.write_all(&v).unwrap();
+
+                    // Desktop image size
+                    let image_webp =
+                        Encoder::from_image(&image.resize(800, 800, image::imageops::CatmullRom))
+                            .encode(100.0);
+                    let v = image_webp.iter().map(|a| *a).collect::<Vec<u8>>();
+                    let mut file = File::create(format!("./uploads/{}.webp", name)).unwrap();
+                    file.write_all(&v).unwrap();
+                }
+                // MP4
+                _ => {}
+            }
+
+            // services::projects::assets::insert(&pool, id, path, form.order, form.is_visible).await;
+
+            return HttpResponse::Created().finish();
+        }
+
+        return HttpResponse::NotFound().finish();
+    }
+
+    HttpResponse::Unauthorized().finish()
+}
+
+// TODO : implement routes for project assets handling
+// post /projects/{id}/assets
+// patch /projects/{project_id}/assets/{asset_id}
+
+#[delete("/projects/{project_id}/assets/{asset_id}")]
+async fn delete_asset(
+    pool: web::Data<PgPool>,
+    web::Path((_, asset_id)): web::Path<(i16, i16)>,
+    session: Identity,
+) -> HttpResponse {
+    if let Some(_) = session.identity() {
+        if services::projects::assets::exists(&pool, asset_id).await {
+            if let Ok(asset) = services::projects::assets::get(&pool, asset_id).await {
+                // TODO : remove all differents file formats
+
+                let path = format!("./uploads/{}", asset.path);
+                let path = Path::new(&path);
+
+                if path.exists() {
+                    std::fs::remove_file(path).unwrap();
+                }
+
+                return HttpResponse::Ok().finish();
+            }
+        }
+
+        return HttpResponse::NotFound().finish();
+    }
+
+    HttpResponse::Unauthorized().finish()
+}
+
+#[cfg(test)]
+mod tests {
+    use std::str::FromStr;
+
+    use crate::create_pool;
+    use actix_identity::{CookieIdentityPolicy, IdentityService};
+    use actix_web::{cookie::Cookie, test, web, App};
+    use dotenv::dotenv;
+
+    #[actix_rt::test]
+    async fn test_index() {
+        dotenv().ok();
+
+        let pool = create_pool().await.unwrap();
+        let mut app = test::init_service(App::new().data(pool.clone()).service(super::index)).await;
+        let resp = test::TestRequest::get()
+            .uri("/portfolio")
+            .send_request(&mut app)
+            .await;
+
+        assert!(resp.status().is_success());
+    }
+
+    #[actix_rt::test]
+    async fn test_project() {
+        dotenv().ok();
+
+        let pool = create_pool().await.unwrap();
+        let mut app =
+            test::init_service(App::new().data(pool.clone()).service(super::get_project)).await;
+        let resp = test::TestRequest::get()
+            .uri("/portfolio/lorem-1")
+            .send_request(&mut app)
+            .await;
+
+        assert!(resp.status().is_success());
+    }
+
+    #[actix_rt::test]
+    async fn test_create_category() {
+        dotenv().ok();
+
+        let pool = create_pool().await.unwrap();
+        let mut app = test::init_service(
+            App::new()
+                .wrap(IdentityService::new(
+                    CookieIdentityPolicy::new(&[0; 32])
+                        .name("auth-cookie")
+                        .secure(true),
+                ))
+                .data(pool.clone())
+                .service(web::scope("/user").service(crate::controllers::user::login))
+                .service(web::scope("/portfolio").service(super::create_category)),
+        )
+        .await;
+        let res = test::TestRequest::post()
+            .uri("/user/login")
+            .set_form(&serde_json::json!({
+                "email": "contact@ludivinefarat.fr",
+                "password": "root"
+            }))
+            .send_request(&mut app)
+            .await;
+        assert!(res.status().is_success());
+
+        let cookie = res.headers().get(actix_web::http::header::SET_COOKIE);
+
+        assert!(cookie.is_some());
+
+        assert!(res.status().is_success());
+
+        let res = test::TestRequest::post()
+            .uri("/portfolio/categories")
+            .cookie(Cookie::from_str(&cookie.unwrap().to_str().unwrap()).unwrap())
+            .set_form(&serde_json::json!({
+                "name": "Lorem ipsum",
+                "order": 1
+            }))
+            .send_request(&mut app)
+            .await;
+
+        assert!(res.status().is_success());
+    }
+
+    #[actix_rt::test]
+    async fn test_create_category_not_logged() {
+        dotenv().ok();
+
+        let pool = create_pool().await.unwrap();
+        let mut app = test::init_service(
+            App::new()
+                .wrap(IdentityService::new(
+                    CookieIdentityPolicy::new(&[0; 32])
+                        .name("auth-cookie")
+                        .secure(true),
+                ))
+                .data(pool.clone())
+                .service(web::scope("/user").service(crate::controllers::user::login))
+                .service(web::scope("/portfolio").service(super::create_category)),
+        )
+        .await;
+
+        let res = test::TestRequest::post()
+            .uri("/portfolio/categories")
+            .set_form(&serde_json::json!({
+                "name": "Lorem ipsum",
+                "order": 1
+            }))
+            .send_request(&mut app)
+            .await;
+
+        assert_eq!(res.status(), 401);
+    }
+
+    #[actix_rt::test]
+    async fn test_update_category() {
+        dotenv().ok();
+
+        let pool = create_pool().await.unwrap();
+        let mut app = test::init_service(
+            App::new()
+                .wrap(IdentityService::new(
+                    CookieIdentityPolicy::new(&[0; 32])
+                        .name("auth-cookie")
+                        .secure(true),
+                ))
+                .data(pool.clone())
+                .service(web::scope("/user").service(crate::controllers::user::login))
+                .service(
+                    web::scope("/portfolio")
+                        .service(super::create_category)
+                        .service(super::update_category),
+                ),
+        )
+        .await;
+        let res = test::TestRequest::post()
+            .uri("/user/login")
+            .set_form(&serde_json::json!({
+                "email": "contact@ludivinefarat.fr",
+                "password": "root"
+            }))
+            .send_request(&mut app)
+            .await;
+        assert!(res.status().is_success());
+
+        let cookie = res.headers().get(actix_web::http::header::SET_COOKIE);
+
+        assert!(cookie.is_some());
+
+        assert!(res.status().is_success());
+
+        let res = test::TestRequest::post()
+            .uri("/portfolio/categories")
+            .cookie(Cookie::from_str(&cookie.unwrap().to_str().unwrap()).unwrap())
+            .set_form(&serde_json::json!({
+                "name": "Lorem ipsum",
+                "order": 2
+            }))
+            .send_request(&mut app)
+            .await;
+
+        let id: i16 = test::read_body_json(res).await;
+
+        let res = test::TestRequest::put()
+            .uri(&format!("/portfolio/categories/{}", id))
+            .cookie(Cookie::from_str(&cookie.unwrap().to_str().unwrap()).unwrap())
+            .set_form(&serde_json::json!({
+                "name": "Dolor sit amet",
+                "order": 2
+            }))
+            .send_request(&mut app)
+            .await;
+
+        assert!(res.status().is_success());
+    }
+
+    #[actix_rt::test]
+    async fn test_update_category_not_logged() {
+        dotenv().ok();
+
+        let pool = create_pool().await.unwrap();
+        let mut app = test::init_service(
+            App::new()
+                .wrap(IdentityService::new(
+                    CookieIdentityPolicy::new(&[0; 32])
+                        .name("auth-cookie")
+                        .secure(true),
+                ))
+                .data(pool.clone())
+                .service(web::scope("/user").service(crate::controllers::user::login))
+                .service(
+                    web::scope("/portfolio")
+                        .service(super::create_category)
+                        .service(super::update_category),
+                ),
+        )
+        .await;
+        let res = test::TestRequest::post()
+            .uri("/user/login")
+            .set_form(&serde_json::json!({
+                "email": "contact@ludivinefarat.fr",
+                "password": "root"
+            }))
+            .send_request(&mut app)
+            .await;
+        assert!(res.status().is_success());
+
+        let cookie = res.headers().get(actix_web::http::header::SET_COOKIE);
+
+        assert!(cookie.is_some());
+
+        assert!(res.status().is_success());
+
+        let res = test::TestRequest::post()
+            .uri("/portfolio/categories")
+            .cookie(Cookie::from_str(&cookie.unwrap().to_str().unwrap()).unwrap())
+            .set_form(&serde_json::json!({
+                "name": "Lorem ipsum",
+                "order": 40
+            }))
+            .send_request(&mut app)
+            .await;
+
+        let id: i16 = test::read_body_json(res).await;
+
+        let res = test::TestRequest::put()
+            .uri(&format!("/portfolio/categories/{}", id))
+            .set_form(&serde_json::json!({
+                "name": "Dolor sit amet",
+                "order": 50
+            }))
+            .send_request(&mut app)
+            .await;
+
+        assert_eq!(res.status(), 401);
+    }
+
+    #[actix_rt::test]
+    async fn test_update_category_doesnt_exist() {
+        dotenv().ok();
+
+        let pool = create_pool().await.unwrap();
+        let mut app = test::init_service(
+            App::new()
+                .wrap(IdentityService::new(
+                    CookieIdentityPolicy::new(&[0; 32])
+                        .name("auth-cookie")
+                        .secure(true),
+                ))
+                .data(pool.clone())
+                .service(web::scope("/user").service(crate::controllers::user::login))
+                .service(
+                    web::scope("/portfolio")
+                        .service(super::create_category)
+                        .service(super::update_category),
+                ),
+        )
+        .await;
+        let res = test::TestRequest::post()
+            .uri("/user/login")
+            .set_form(&serde_json::json!({
+                "email": "contact@ludivinefarat.fr",
+                "password": "root"
+            }))
+            .send_request(&mut app)
+            .await;
+        assert!(res.status().is_success());
+
+        let cookie = res.headers().get(actix_web::http::header::SET_COOKIE);
+
+        assert!(cookie.is_some());
+        assert!(res.status().is_success());
+
+        let res = test::TestRequest::put()
+            .uri("/portfolio/categories/999")
+            .cookie(Cookie::from_str(&cookie.unwrap().to_str().unwrap()).unwrap())
+            .set_form(&serde_json::json!({
+                "name": "Dolor sit amet",
+                "order": 2
+            }))
+            .send_request(&mut app)
+            .await;
+
+        assert!(res.status().is_success());
+    }
+
+    #[actix_rt::test]
+    async fn test_delete_category() {
+        dotenv().ok();
+
+        let pool = create_pool().await.unwrap();
+        let mut app = test::init_service(
+            App::new()
+                .wrap(IdentityService::new(
+                    CookieIdentityPolicy::new(&[0; 32])
+                        .name("auth-cookie")
+                        .secure(true),
+                ))
+                .data(pool.clone())
+                .service(web::scope("/user").service(crate::controllers::user::login))
+                .service(
+                    web::scope("/portfolio")
+                        .service(super::create_category)
+                        .service(super::delete_category),
+                ),
+        )
+        .await;
+        let res = test::TestRequest::post()
+            .uri("/user/login")
+            .set_form(&serde_json::json!({
+                "email": "contact@ludivinefarat.fr",
+                "password": "root"
+            }))
+            .send_request(&mut app)
+            .await;
+        assert!(res.status().is_success());
+
+        let cookie = res.headers().get(actix_web::http::header::SET_COOKIE);
+
+        assert!(cookie.is_some());
+        assert!(res.status().is_success());
+
+        let res = test::TestRequest::post()
+            .uri("/portfolio/categories")
+            .cookie(Cookie::from_str(&cookie.unwrap().to_str().unwrap()).unwrap())
+            .set_form(&serde_json::json!({
+                "name": "Lorem ipsum",
+                "order": 3
+            }))
+            .send_request(&mut app)
+            .await;
+
+        let id: i16 = test::read_body_json(res).await;
+
+        let res = test::TestRequest::delete()
+            .uri(&format!("/portfolio/categories/{}", id))
+            .cookie(Cookie::from_str(&cookie.unwrap().to_str().unwrap()).unwrap())
+            .send_request(&mut app)
+            .await;
+
+        assert!(res.status().is_success());
+    }
+
+    #[actix_rt::test]
+    async fn test_delete_category_not_logged() {
+        dotenv().ok();
+
+        let pool = create_pool().await.unwrap();
+        let mut app = test::init_service(
+            App::new()
+                .wrap(IdentityService::new(
+                    CookieIdentityPolicy::new(&[0; 32])
+                        .name("auth-cookie")
+                        .secure(true),
+                ))
+                .data(pool.clone())
+                .service(web::scope("/user").service(crate::controllers::user::login))
+                .service(
+                    web::scope("/portfolio")
+                        .service(super::create_category)
+                        .service(super::delete_category),
+                ),
+        )
+        .await;
+        let res = test::TestRequest::post()
+            .uri("/user/login")
+            .set_form(&serde_json::json!({
+                "email": "contact@ludivinefarat.fr",
+                "password": "root"
+            }))
+            .send_request(&mut app)
+            .await;
+        assert!(res.status().is_success());
+
+        let cookie = res.headers().get(actix_web::http::header::SET_COOKIE);
+
+        assert!(cookie.is_some());
+
+        assert!(res.status().is_success());
+
+        let res = test::TestRequest::post()
+            .uri("/portfolio/categories")
+            .cookie(Cookie::from_str(&cookie.unwrap().to_str().unwrap()).unwrap())
+            .set_form(&serde_json::json!({
+                "name": "Lorem ipsum",
+                "order": 10
+            }))
+            .send_request(&mut app)
+            .await;
+
+        let id: i16 = test::read_body_json(res).await;
+
+        let res = test::TestRequest::delete()
+            .uri(&format!("/portfolio/categories/{}", id))
+            .send_request(&mut app)
+            .await;
+
+        assert_eq!(res.status(), 401);
+    }
+
+    #[actix_rt::test]
+    async fn test_delete_category_doesnt_exist() {
+        dotenv().ok();
+
+        let pool = create_pool().await.unwrap();
+        let mut app = test::init_service(
+            App::new()
+                .wrap(IdentityService::new(
+                    CookieIdentityPolicy::new(&[0; 32])
+                        .name("auth-cookie")
+                        .secure(true),
+                ))
+                .data(pool.clone())
+                .service(web::scope("/user").service(crate::controllers::user::login))
+                .service(
+                    web::scope("/portfolio")
+                        .service(super::create_category)
+                        .service(super::delete_category),
+                ),
+        )
+        .await;
+        let res = test::TestRequest::post()
+            .uri("/user/login")
+            .set_form(&serde_json::json!({
+                "email": "contact@ludivinefarat.fr",
+                "password": "root"
+            }))
+            .send_request(&mut app)
+            .await;
+        assert!(res.status().is_success());
+
+        let cookie = res.headers().get(actix_web::http::header::SET_COOKIE);
+
+        let res = test::TestRequest::delete()
+            .uri("/portfolio/categories/9999")
+            .cookie(Cookie::from_str(&cookie.unwrap().to_str().unwrap()).unwrap())
+            .send_request(&mut app)
+            .await;
+
+        assert_eq!(res.status(), 404);
+    }
+
+    // TODO : implement delete projects tests
+    #[actix_rt::test]
+    async fn test_delete_project() {
+        //     dotenv().ok();
+
+        //     let pool = create_pool().await.unwrap();
+        //     let mut app =
+        //         test::init_service(App::new().data(pool.clone()).service(super::get_project)).await;
+        //     let resp = test::TestRequest::get()
+        //         .uri("/portfolio/lorem-1")
+        //         .send_request(&mut app)
+        //         .await;
+
+        //     assert!(resp.status().is_success());
+    }
+
+    #[actix_rt::test]
+    async fn test_delete_project_doesnt_exists() {}
+
+    #[actix_rt::test]
+    async fn test_delete_project_not_logged() {}
+}

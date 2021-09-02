@@ -1,0 +1,36 @@
+[package]
+name = "LudivineFarat"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+dotenv = "0.15.0"
+env_logger = "0.9.0"
+lettre = "0.9.6"
+lettre_email = "0.9.4"
+regex = "1.5.4"
+sqlx = { version = "0.5.7", features = ["macros", "postgres", "chrono", "runtime-async-std-native-tls"] }
+openssl = { version = "0.10.36", features = ["v110"] }
+askama = { version = "0.10.5", features = ["serde-json", "with-actix-web"] }
+actix-web = { version = "3.3.2", features = ["openssl"] }
+actix-rt = "2.2.0"
+actix-service = "1"
+serde = { version = "1.0.126", features = ["derive"] }
+futures = "0.3.15"
+futures-util = { version = "0.3.15", default-features = false }
+actix-files = "0.5.0"
+askama_actix = "0.11.1"
+woothee = "0.11.0"
+chrono = "0.4.19"
+slugmin = "1.0.2"
+serde_json = "1.0.66"
+actix-identity = "0.3.1"
+argon2 = "0.2.4"
+rand_core = { version = "0.6.3", features = ["std"] }
+actix_extract_multipart = "0.2.1"
+actix-multipart = "0.3.0"
+ammonia = "3.1.2"
+image = "0.23.14"
+webp = "0.1.3"

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="fr" style="overflow: hidden">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0" />
+
+        <title>{% block title %}{{ title }}{% endblock %} | Ludivine Farat - Designer Graphique Freelance</title>
+
+        <link rel="icon" type="image/png" href="/favicon.png" />
+        <link rel="stylesheet" href="/css/pages/global.css" o-no-load />
+
+        <script src="/js/global.js" o-no-load async></script>
+
+        {% block head %}{% endblock %}
+    </head>
+    <body>
+        
+        <footer>
+            {{ year }}
+        </footer>
+    </body>
+</html>
