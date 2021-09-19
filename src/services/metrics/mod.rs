@@ -1,4 +1,4 @@
-use sqlx::{Error, PgPool, types::Uuid};
+use sqlx::{Error, PgPool};
 
 pub mod tokens;
 

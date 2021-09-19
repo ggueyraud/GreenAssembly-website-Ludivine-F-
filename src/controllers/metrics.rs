@@ -1,13 +1,17 @@
 use std::str::FromStr;
 
 use crate::{services::metrics, utils::ua::UserAgent};
-use actix_web::{FromRequest, HttpRequest, HttpResponse, http::HeaderValue, post, web};
+use actix_web::{http::HeaderValue, post, web, FromRequest, HttpRequest, HttpResponse};
 use sqlx::PgPool;
 
-pub async fn add(pool: &PgPool, req: &HttpRequest, belongs_to: metrics::BelongsTo) -> Result<Option<i32>, actix_web::Error> {
+pub async fn add(
+    pool: &PgPool,
+    req: &HttpRequest,
+    belongs_to: metrics::BelongsTo,
+) -> Result<Option<i32>, actix_web::Error> {
     if let Some(gar_log) = req.headers().get("GAR-Log") {
         if gar_log == HeaderValue::from_static("false") {
-            return Ok(None)
+            return Ok(None);
         }
     }
 
@@ -28,9 +32,10 @@ pub async fn add(pool: &PgPool, req: &HttpRequest, belongs_to: metrics::BelongsT
                 _ => None,
             },
         )
-        .await {
+        .await
+        {
             Ok(id) => Ok(Some(id)),
-            Err(err) => Err(actix_web::error::ErrorBadRequest(err))
+            Err(err) => Err(actix_web::error::ErrorBadRequest(err)),
         },
         Err(e) => Err(e),
     }
@@ -38,11 +43,15 @@ pub async fn add(pool: &PgPool, req: &HttpRequest, belongs_to: metrics::BelongsT
 
 #[derive(serde::Deserialize)]
 pub struct Token {
-   token: String
+    token: String,
 }
 
 #[post("/metrics/log")]
-pub async fn log(pool: web::Data<PgPool>, req: HttpRequest, form: web::Form<Token>) -> HttpResponse {
+pub async fn log(
+    pool: web::Data<PgPool>,
+    req: HttpRequest,
+    form: web::Form<Token>,
+) -> HttpResponse {
     match sqlx::types::Uuid::from_str(&form.token) {
         Ok(token) => {
             if metrics::tokens::exists(&pool, token).await {
@@ -54,15 +63,15 @@ pub async fn log(pool: web::Data<PgPool>, req: HttpRequest, form: web::Form<Toke
                     match metrics::close(&pool, id).await {
                         Ok(_) => {
                             metrics::tokens::delete(&pool, token).await;
-                            return HttpResponse::Ok().finish()
-                        },
-                        _ => return HttpResponse::InternalServerError().finish()
+                            return HttpResponse::Ok().finish();
+                        }
+                        _ => return HttpResponse::InternalServerError().finish(),
                     }
                 }
             }
 
             HttpResponse::NotFound().finish()
-        },
-        _ => HttpResponse::NotFound().finish()
+        }
+        _ => HttpResponse::NotFound().finish(),
     }
 }
