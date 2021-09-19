@@ -72,27 +72,49 @@ async fn get_project(
     web::Path((_, id)): web::Path<(String, i16)>,
 ) -> Result<HttpResponse, Error> {
     if services::projects::exists(&pool, id).await {
+        let (project, assets) = futures::join!(
+            services::projects::get(&pool, id),
+            services::projects::assets::get_all(&pool, id)
+        );
+
         if let Ok(project) = services::projects::get(&pool, id).await {
-            metrics::add(&pool, &req, services::metrics::BelongsTo::Project(id)).await;
+            let mut token: Option<String> = None;
+            let assets = services::projects::assets::get_all(&pool, id).await;
+
+            if let Ok(Some(id)) = metrics::add(&pool, &req, services::metrics::BelongsTo::Project(id)).await {
+                if let Ok(metric_token) = services::metrics::tokens::add(&pool, id).await {
+                    token = Some(metric_token.to_string());
+                }
+            }
 
             #[derive(Template)]
             #[template(path = "portfolio_project.html")]
-            struct PortfolioProject {
+            struct PortfolioProject<'a> {
                 title: String,
                 description: Option<String>,
                 content: String,
-                date: DateTime<Utc>,
-                assets: Vec<services::projects::Asset>,
+                date: String,
+                international_date: String,
+                asset_0: Option<&'a services::projects::Asset>,
+                asset_1: Option<&'a services::projects::Asset>,
+                assets: Option<Vec<services::projects::Asset>>,
                 year: i32,
+                metric_token: Option<String>
             }
 
             return PortfolioProject {
                 title: project.name,
                 description: project.description,
                 content: project.content,
-                date: project.date,
-                assets: project.assets,
+                date: project.date.format("%d/%m/%Y").to_string(),
+                international_date: project.date.format("%Y-%m-%d").to_string(),
+                asset_0: assets.get(0),
+                asset_1: assets.get(1),
+                assets: if assets.len() - 2 > 0 {
+                    Some(assets.get(2..).unwrap().to_vec())
+                } else { None },
                 year: chrono::Utc::now().year(),
+                metric_token: token
             }
             .into_response();
         }
@@ -337,15 +359,15 @@ pub async fn insert_asset(
                 | FileType::ImagePNG
                 | FileType::ImageWEBP
                 | FileType::ImageGIF => {
-                    let format = if image.color().has_alpha() { image::ImageFormat::Png } else { image::ImageFormat::Jpeg };
+                    let format = if image.color().has_alpha() {
+                        image::ImageFormat::Png
+                    } else {
+                        image::ImageFormat::Jpeg
+                    };
 
                     match format {
-                        image::ImageFormat::Png => {
-
-                        },
-                        _ => {
-                            
-                        }
+                        image::ImageFormat::Png => {}
+                        _ => {}
                     }
 
                     if image.color().has_alpha() {
@@ -359,7 +381,10 @@ pub async fn insert_asset(
 
                         image
                             .resize(800, 800, image::imageops::CatmullRom)
-                            .save_with_format(format!("./uploads/{}.png"), image::ImageFormat::Jpeg)
+                            .save_with_format(
+                                format!("./uploads/{}.png", name),
+                                image::ImageFormat::Jpeg,
+                            )
                             .unwrap();
                     } else {
                         image
@@ -401,18 +426,49 @@ pub async fn insert_asset(
     HttpResponse::Unauthorized().finish()
 }
 
-// TODO : implement routes for project assets handling
-// post /projects/{id}/assets
-// patch /projects/{project_id}/assets/{asset_id}
+#[derive(Deserialize)]
+pub struct UpdateAssetForm {
+    name: Option<String>,
+    order: i16,
+}
+
+#[patch("/projects/{project_id}/assets/{asset_id}")]
+async fn update_asset(
+    pool: web::Data<PgPool>,
+    session: Identity,
+    web::Path((project_id, asset_id)): web::Path<(i16, i16)>,
+    form: web::Form<UpdateAssetForm>,
+) -> HttpResponse {
+    if let Some(_) = session.identity() {
+        if services::projects::assets::exists(&pool, project_id, asset_id).await {
+            match sqlx::query!(
+                "CALL update_asset($1, $2, $3)",
+                asset_id,
+                form.order,
+                form.name
+            )
+            .execute(pool.as_ref())
+            .await
+            {
+                Ok(_) => return HttpResponse::Ok().finish(),
+                _ => return HttpResponse::InternalServerError().finish(),
+            }
+        }
+
+        return HttpResponse::NotFound().finish();
+    }
+
+    HttpResponse::Unauthorized().finish()
+}
 
 #[delete("/projects/{project_id}/assets/{asset_id}")]
 async fn delete_asset(
     pool: web::Data<PgPool>,
-    web::Path((_, asset_id)): web::Path<(i16, i16)>,
+    web::Path((project_id, asset_id)): web::Path<(i16, i16)>,
     session: Identity,
 ) -> HttpResponse {
     if let Some(_) = session.identity() {
-        if services::projects::assets::exists(&pool, asset_id).await {
+        if services::projects::assets::exists(&pool, project_id, asset_id).await {
             if let Ok(asset) = services::projects::assets::get(&pool, asset_id).await {
                 // TODO : remove all differents file formats
 

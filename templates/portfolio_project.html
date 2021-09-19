@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block head %}
+    {% match metric_token %}
+        {% when Some with (token) %}
+            <script>
+                localStorage.setItem("METRIC_TOKEN", "{{ token }}");
+            </script>
+        {% when None %}
+    {% endmatch %}
+
+    <link rel="stylesheet" href="/css/pages/project.css" />
+    <script src="/js/project.js" async></script>
+{% endblock %}
+
+{% block content %}
+<section>
+    {% match asset_0 %}
+        {% when Some with (asset) %}
+            <img class="order_2 md_order_1 md_row_span_3" src="/uploads/{{ asset.path }}" />
+        {% when None %}
+    {% endmatch %}
+
+    <div class="order_1 md_order_2 md_row_span_1 text_center md_text_left">
+        <h1>{{ title }}</h1>
+        <time datetime="{{ international_date }}">{{ date }}</time>
+    </div>
+
+    <p class="order_3 md_row_span_1">{{ content }}</p>
+
+    {% match asset_1 %}
+        {% when Some with (asset) %}
+            <img class="order_4 md_row_span_1" src="/uploads/{{ asset.path }}" />
+        {% when None %}
+    {% endmatch %}
+
+    {% match assets %}
+        {% when Some with (assets) %}
+            <div class="order_5 md_col_span_2">
+                <div class="carousel">
+                    <div class="carousel__wrapper">
+                        {% for asset in assets %}
+                            <div class="carousel__wrapper__item">
+                                <img src="/uploads/{{ asset.path }}" />
+                            </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <nav aria-label="Progress" class="carousel__pagination"></nav>
+                </div>
+            </div>
+        {% when None %}
+    {% endmatch %}
+</section>
+{% endblock %}
+
+{% block year %}{{ year }}{% endblock %}
