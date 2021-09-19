@@ -14,21 +14,29 @@ CREATE TABLE projects (
         NOT NULL,
     name VARCHAR(120) NOT NULL,
     description VARCHAR(320),
+    -- TODO : limit content to 1000 caracters
     content TEXT NOT NULL, -- autoriser gras, lien, taille titre, liste à puce
     date TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     last_update_date TIMESTAMP WITH TIME ZONE
 );
 
+DROP TABLE IF EXISTS files CASCADE;
+CREATE TABLE files (
+    id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    name VARCHAR(120),
+    path VARCHAR(255) NOT NULL
+);
+
+-- TODO : implement a trigger when delete to recalculate order
 DROP TABLE IF EXISTS project_assets CASCADE;
 CREATE TABLE project_assets (
     id SMALLINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     project_id SMALLINT NOT NULL
         REFERENCES projects (id)
         ON DELETE CASCADE,
-    name VARCHAR(255),
-    path VARCHAR(255) NOT NULL,
+    file_id INT NOT NULL
+        REFERENCES files (id),
     "order" SMALLINT NOT NULL,
-    is_visible BOOLEAN NOT NULL DEFAULT FALSE,
     UNIQUE (project_id, "order")
 );
 
@@ -64,7 +72,18 @@ CREATE TABLE metrics (
     os VARCHAR(20),
     device_type VARCHAR(20),
     referer VARCHAR(255),
-    "date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+    "date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    end_date TIMESTAMP WITH TIME ZONE
+);
+
+DROP TABLE IF EXISTS metric_tokens CASCADE;
+CREATE TABLE metric_tokens (
+    token uuid NOT NULL DEFAULT gen_random_uuid(),
+    metric_id INT NOT NULL
+        REFERENCES metrics (id)
+        ON DELETE CASCADE,
+    "date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    UNIQUE (token)
 );
 
 DROP TABLE IF EXISTS page_chunks CASCADE;
@@ -91,6 +110,7 @@ CREATE TABLE website (
 DROP TABLE IF EXISTS "user" CASCADE;
 CREATE TABLE "user" (
     email VARCHAR(255) NOT NULL,
+    username VARCHAR(60) NOT NULL,
     password VARCHAR(255) NOT NULL
 );
 
@@ -103,4 +123,30 @@ CREATE TABLE login_attempts (
     os VARCHAR(20),
     device_type VARCHAR(20),
     "date" tIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+DROP TABLE IF EXISTS blog_categories CASCADE;
+CREATE TABLE blog_categories (
+    id SMALLINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    name VARCHAR(60) NOT NULL,
+    description VARCHAR(255),
+    is_visible BOOLEAN,
+    is_seo BOOLEAN,
+    "order" SMALLINT NOT NULL,
+    UNIQUE ("order")
+);
+
+DROP TABLE IF EXISTS blog_articles CASCADE;
+CREATE TABLE blog_articles (
+    id SMALLINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    category_id SMALLINT
+        REFERENCES blog_categories (id),
+    cover_id INT
+        REFERENCES files (id)
+        ON DELETE SET NULL,
+    name VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    "date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    is_published BOOLEAN NOT NULL DEFAULT TRUE,
+    is_seo BOOLEAN NOT NULL DEFAULT TRUE
 );
