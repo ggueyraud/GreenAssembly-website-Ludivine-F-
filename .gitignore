@@ -1,5 +1,10 @@
 /target
-Cargo.lock
+/.build
 .env
+Cargo.lock
+pnpm-lock.yaml
+package-lock.json
 cert.pem
 key.pem
+/assets/wasm/target
+/node_modules
