@@ -1,0 +1,49 @@
+@import url('https://fonts.googleapis.com/css2?family=Urbanist:wght@100&display=swap');
+@import 'custom.scss';
+@import 'style-box/abstracts/functions/utilities';
+@import 'style-box/base/margin';
+@import 'style-box/base/typography';
+@import 'style-box/base/text';
+@import 'style-box/base/grid';
+@import 'style-box/base/container';
+@import 'style-box/base/space';
+@import 'style-box/base/order';
+@import 'style-box/components/icon';
+
+@import 'layout/_footer.scss';
+@import 'layout/_menu.scss';
+
+@font-face {
+    font-family: "Quakiez";
+    src: url("/fonts/Quakiez.ttf");
+}
+
+html {
+    body {
+        color: color('black');
+        font-family: 'Urbanist', sans-serif;
+        background-color: color('white');
+        font-size: 16px;
+        margin: 0
+    }
+}
+
+h1 {
+    font-family: "Quakiez";
+    color: color(blue);
+    font-size: 6rem
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+* {
+    box-sizing: border-box
+}
+
+img {
+    width: 100%;
+    height: auto;
+}

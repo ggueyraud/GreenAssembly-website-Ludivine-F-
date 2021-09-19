@@ -1,0 +1,19 @@
+@use 'style-box/abstracts/mixins/breakpoints';
+@use 'style-box/abstracts/functions/utilities';
+@use 'style-box/abstracts/mixins/grid';
+@import 'style-box/base/container';
+
+footer {
+    @extend .container;
+    @include grid.cols(1);
+    display: grid;
+    align-items: center;
+    gap: utilities.space(5);
+    text-align: center;
+    margin: utilities.space(10) 0;
+
+    @include breakpoints.md {
+        @include grid.cols(3);
+        @include grid.rows(2);
+    }
+}

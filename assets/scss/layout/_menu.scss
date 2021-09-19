@@ -1,0 +1,95 @@
+@use 'style-box/abstracts/functions/utilities';
+@use 'style-box/abstracts/mixins/breakpoints';
+@use 'style-box/abstracts/mixins/margin';
+@use 'style-box/base/space';
+
+header#topbar {
+    @include margin.in(6, y);
+    display: flex;
+    align-items: center;
+
+    #logo img {
+        color: utilities.color('black');
+        width: 200px;
+        height: auto
+    }
+    
+    #open_mobile_menu {
+        display: block;
+        z-index: 10;
+        background-color: utilities.color(blue);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: utilities.space(2);
+        margin-right: utilities.space(6);
+        
+        svg {
+            color: utilities.color('white');
+        }
+    }
+
+    nav {
+        display: none;
+
+        &:not(.show) {
+            a + a {
+                margin-left: utilities.space(10)
+            }
+        }
+
+        .socials {
+            display: none
+        }
+
+        &.show {
+            position: absolute;
+            justify-content: center;
+            display: flex;
+            flex-direction: column;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background-color: rgba(247, 247, 247, 0.8);
+            gap: utilities.space(12);
+            
+            a {
+                text-align: center;
+                text-transform: uppercase;
+                font-weight: 500;
+                font-size: 25px;
+            }
+
+            .socials {
+                margin-top: 2rem;
+                display: block;
+                text-align: center;
+
+                a + a {
+                    margin-left: utilities.space(8)
+                }
+            }
+        }
+    }
+
+    @include breakpoints.sm {
+        #open_mobile_menu {
+            margin-right: utilities.space(8);
+        }
+    }
+
+    @include breakpoints.lg {
+        @include margin.in(10, y);
+        justify-content: space-between;
+
+        #open_mobile_menu {
+            display: none;
+        }
+
+        nav {
+            display: block
+        }
+    }
+}
