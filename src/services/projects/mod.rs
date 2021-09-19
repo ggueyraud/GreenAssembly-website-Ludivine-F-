@@ -19,12 +19,12 @@ pub struct Project {
     pub date: DateTime<Utc>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Asset {
     pub id: i16,
     pub path: String,
-    pub order: i16,
-    pub is_visible: bool,
+    // pub order: i16,
+    // pub is_visible: bool,
 }
 
 pub async fn get_all(pool: &PgPool, category_id: Option<i16>) -> Vec<Project> {
@@ -63,7 +63,6 @@ pub struct ProjectDetails {
     pub description: Option<String>,
     pub content: String,
     pub date: DateTime<Utc>,
-    pub assets: Vec<Asset>,
 }
 
 pub async fn get(pool: &PgPool, id: i16) -> Result<ProjectDetails, Error> {
@@ -74,18 +73,12 @@ pub async fn get(pool: &PgPool, id: i16) -> Result<ProjectDetails, Error> {
         WHERE id = $1",
         id
     )
-    .fetch_one(pool);
+    .fetch_one(pool)
+    .await?;
 
-    let assets = sqlx::query_as!(
-        Asset,
-        r#"SELECT id, path, "order", is_visible FROM project_assets WHERE project_id = $1"#,
-        id
-    )
-    .fetch_all(pool);
-
-    let (project, assets) = futures::join!(project, assets);
-    let project = project?;
-    let assets = assets?;
+    // let (project, assets) = futures::join!(project, assets);
+    // let project = project?;
+    // let assets = assets?;
 
     Ok(ProjectDetails {
         id,
@@ -93,8 +86,25 @@ pub async fn get(pool: &PgPool, id: i16) -> Result<ProjectDetails, Error> {
         description: project.description,
         content: project.content,
         date: project.date,
-        assets,
+        // assets,
     })
+}
+
+pub async fn get_spe<
+    T: std::marker::Unpin + std::marker::Send + for<'c> sqlx::FromRow<'c, sqlx::postgres::PgRow>,
+>(
+    pool: &PgPool,
+    fields: &str,
+    id: i16,
+) -> Result<T, Error> {
+    let query = format!("SELECT {} FROM projects WHERE id = $1 LIMIT 1", fields);
+
+    let res = sqlx::query_as::<_, T>(&query)
+        .bind(id)
+        .fetch_one(pool)
+        .await?;
+
+    Ok(res)
 }
 
 #[derive(Deserialize, Debug)]

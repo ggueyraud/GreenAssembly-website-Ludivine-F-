@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block head %}
+    {% match description %}
+        {% when Some with (description) %}
+            <meta name="description" content="{{ description }}" />
+        {% when None %}
+    {% endmatch %}
+
+    <link rel="stylesheet" href="/css/pages/contact.css" />
+    <script src="/js/contact.js" async></script>
+
+    {% match metric_token %}
+        {% when Some with (token) %}
+            <script>
+                localStorage.setItem("METRIC_TOKEN", "{{ token }}");
+            </script>
+        {% when None %}
+    {% endmatch %}
+{% endblock %}
+
+{% block content %}
+    <section>
+        <div class="px_30">
+            <h1>Contact</h1>
+            <h2>Hello</h2>
+            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+        </div>
+        <form method="post" action="">
+            <label for="lastname">Nom</label>
+            <div class="input">
+                <input type="text" id="lastname" name="lastname" />
+                <div class="bg"></div>
+            </div>
+
+            <label for="firstname" class="mt_2">Prénom</label>
+            <div class="input">
+                <input type="text" id="firstname" name="firstname" />
+                <div class="bg"></div>
+            </div>
+
+            <label for="phone" class="mt_2">Numéro</label>
+            <div class="input">
+                <input type="text" id="phone" name="phone" />
+                <div class="bg"></div>
+            </div>
+
+            <label for="email" class="mt_2">Mail</label>
+            <div class="input">
+                <input type="text" id="email" name="email" />
+                <div class="bg"></div>
+            </div>
+
+            <label for="content" class="mt_2">Message</label>
+            <div class="input">
+                <textarea name="content" id="content" rows="3"></textarea>
+                <div class="bg"></div>
+            </div>
+
+            <div class="flex justify_end mt_2">
+                <button type="submit">
+                    Envoyer
+                    <svg class="icon icon--sm ml_2" height="24px">
+                        <use xlink:href="/icons.svg#paper_plane"></use>
+                    </svg>
+                </button>
+            </div>
+        </form>
+    </section>
+{% endblock %}

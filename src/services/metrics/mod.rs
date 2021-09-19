@@ -1,4 +1,6 @@
-use sqlx::{Error, PgPool};
+use sqlx::{Error, PgPool, types::Uuid};
+
+pub mod tokens;
 
 pub enum BelongsTo {
     Page(i16),
@@ -45,4 +47,12 @@ pub async fn add(
     let id = res.try_get("id")?;
 
     Ok(id)
+}
+
+pub async fn close(pool: &PgPool, id: i32) -> Result<bool, Error> {
+    let res = sqlx::query!("UPDATE metrics SET end_date = NOW() WHERE id = $1", id)
+        .execute(pool)
+        .await?;
+
+    Ok(res.rows_affected() == 1)
 }

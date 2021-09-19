@@ -1,10 +1,18 @@
+use std::str::FromStr;
+
 use crate::{services::metrics, utils::ua::UserAgent};
-use actix_web::{FromRequest, HttpRequest};
+use actix_web::{FromRequest, HttpRequest, HttpResponse, http::HeaderValue, post, web};
 use sqlx::PgPool;
 
-pub async fn add(pool: &PgPool, req: &HttpRequest, belongs_to: metrics::BelongsTo) -> bool {
+pub async fn add(pool: &PgPool, req: &HttpRequest, belongs_to: metrics::BelongsTo) -> Result<Option<i32>, actix_web::Error> {
+    if let Some(gar_log) = req.headers().get("GAR-Log") {
+        if gar_log == HeaderValue::from_static("false") {
+            return Ok(None)
+        }
+    }
+
     match UserAgent::from_request(req, &mut actix_web::dev::Payload::None).await {
-        Ok(ua) => metrics::add(
+        Ok(ua) => match metrics::add(
             &pool,
             belongs_to,
             // page_id,
@@ -20,8 +28,41 @@ pub async fn add(pool: &PgPool, req: &HttpRequest, belongs_to: metrics::BelongsT
                 _ => None,
             },
         )
-        .await
-        .is_ok(),
-        _ => false,
+        .await {
+            Ok(id) => Ok(Some(id)),
+            Err(err) => Err(actix_web::error::ErrorBadRequest(err))
+        },
+        Err(e) => Err(e),
+    }
+}
+
+#[derive(serde::Deserialize)]
+pub struct Token {
+   token: String
+}
+
+#[post("/metrics/log")]
+pub async fn log(pool: web::Data<PgPool>, req: HttpRequest, form: web::Form<Token>) -> HttpResponse {
+    match sqlx::types::Uuid::from_str(&form.token) {
+        Ok(token) => {
+            if metrics::tokens::exists(&pool, token).await {
+                println!("Exist");
+
+                if let Ok(id) = metrics::tokens::get_metric(&pool, token).await {
+                    println!("ID {}", id);
+
+                    match metrics::close(&pool, id).await {
+                        Ok(_) => {
+                            metrics::tokens::delete(&pool, token).await;
+                            return HttpResponse::Ok().finish()
+                        },
+                        _ => return HttpResponse::InternalServerError().finish()
+                    }
+                }
+            }
+
+            HttpResponse::NotFound().finish()
+        },
+        _ => HttpResponse::NotFound().finish()
     }
 }

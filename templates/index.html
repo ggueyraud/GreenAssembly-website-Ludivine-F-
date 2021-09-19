@@ -2,4 +2,14 @@
 
 {% block title %}{{ title }}{% endblock %}
 
+{% block head %}
+    {% match metric_token %}
+        {% when Some with (token) %}
+            <script>
+                localStorage.setItem("METRIC_TOKEN", "{{ token }}");
+            </script>
+        {% when None %}
+    {% endmatch %}
+{% endblock %}
+
 {% block year %}{{ year }}{% endblock %}

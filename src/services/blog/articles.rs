@@ -1,4 +1,3 @@
-use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use sqlx::{Error, PgPool};
 
@@ -24,27 +23,27 @@ pub async fn get_all(pool: &PgPool) -> Vec<super::Article> {
         LEFT JOIN blog_categories bc ON ba.category_id = bc.id
         ORDER BY ba.id DESC"#
     )
-        .fetch_all(pool)
-        .await
-        .expect("blog::articles::get_all")
-        .iter()
-        .map(|row| {
-            super::Article {
-                id: row.article_id,
-                category: if let Some(category_id) = row.category_id {
-                    Some(serde_json::json!({
-                        "id": category_id,
-                        "name": row.category_name.as_ref().unwrap()
-                    }))
-                } else { None },
-                name: row.article_name.clone(),
-                content: row.article_content.clone(),
-                date: row.article_date,
-                is_published: row.article_is_published,
-                is_seo: row.article_is_seo
-            }
-        })
-        .collect::<Vec<super::Article>>()
+    .fetch_all(pool)
+    .await
+    .expect("blog::articles::get_all")
+    .iter()
+    .map(|row| super::Article {
+        id: row.article_id,
+        category: if let Some(category_id) = row.category_id {
+            Some(serde_json::json!({
+                "id": category_id,
+                "name": row.category_name.as_ref().unwrap()
+            }))
+        } else {
+            None
+        },
+        name: row.article_name.clone(),
+        content: row.article_content.clone(),
+        date: row.article_date,
+        is_published: row.article_is_published,
+        is_seo: row.article_is_seo,
+    })
+    .collect::<Vec<super::Article>>()
 }
 
 #[derive(Deserialize)]
@@ -54,7 +53,7 @@ pub struct ArticleInformations {
     name: String,
     content: String,
     is_published: bool,
-    is_seo: bool
+    is_seo: bool,
 }
 
 pub async fn insert(pool: &PgPool, article: &ArticleInformations) -> Result<i16, Error> {
@@ -70,8 +69,8 @@ pub async fn insert(pool: &PgPool, article: &ArticleInformations) -> Result<i16,
         article.is_published,
         article.is_seo
     )
-        .fetch_one(pool)
-        .await?;
+    .fetch_one(pool)
+    .await?;
 
     Ok(res.id)
 }
@@ -105,5 +104,6 @@ pub async fn delete(pool: &PgPool, id: i16) -> bool {
         .execute(pool)
         .await
         .unwrap()
-        .rows_affected() == 1
+        .rows_affected()
+        == 1
 }
