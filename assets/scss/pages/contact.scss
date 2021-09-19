@@ -1,0 +1,15 @@
+@use 'style-box/abstracts/mixins/grid';
+@import '../custom.scss';
+@import 'style-box/abstracts/mixins/breakpoints';
+@import 'style-box/base/display';
+@import 'style-box/base/margin';
+@import '../components/input';
+
+section {
+    display: grid;
+    @include grid.cols(1);
+
+    @include md {
+        @include grid.cols(2)
+    }
+}
