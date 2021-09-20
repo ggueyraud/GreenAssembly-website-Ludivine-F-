@@ -546,7 +546,7 @@ mod tests {
         dotenv().ok();
 
         let pool = create_pool().await.unwrap();
-        let mut app = test::init_service(App::new().data(pool.clone()).service(super::index)).await;
+        let mut app = test::init_service(App::new().data(pool.clone()).service(web::scope("/portfolio").service(super::index))).await;
         let resp = test::TestRequest::get()
             .uri("/portfolio")
             .send_request(&mut app)
