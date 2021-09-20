@@ -88,7 +88,7 @@
                 {% endfor %}
             </nav>
 
-            <div class="grid grid_rows_1 md_grid_rows_2 grid_cols_1 md_grid_cols_4 gap_4 mt_10">
+            <div id="aaa" class="grid grid_rows_1 md_grid_rows_2 grid_cols_1 md_grid_cols_4 gap_4 mt_10">
                 {% for project in projects %}
                     {% if loop.index0 == 0 %}
                         <div class="col_span_2 row_span_2">
@@ -98,7 +98,7 @@
                         <div style="background: #C4C4C4;">{{ project|safe }}</div>
                     {% else if loop.index0 == 2 %}
                         <div style="background: #C4C4C4;">{{ project|safe }}</div>
-                    {% else if loop.index0 == 2 %}
+                    {% else if loop.index0 == 3 %}
                         <div class="col_span_2" style="background: #C4C4C4;">{{ project|safe }}</div>
                     {% else %}
                         <div>{{ project|safe }}</div>

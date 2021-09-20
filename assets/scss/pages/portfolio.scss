@@ -27,10 +27,6 @@ a.special svg {
     vertical-align: middle;
 }
 
-%project_button {
-
-}
-
 #projects {
     nav button, .project .details span {
         cursor: pointer;
@@ -42,12 +38,16 @@ a.special svg {
     }
     
     nav {
+        font-size: 0;
+
         button {
-            margin-left: space(3);
+            font-size: initial;
+            padding: space(2) space(3);
+            // margin-left: space(3);
 
             &::after {
                 position: absolute;
-                left: -0.5rem;
+                left: 0;
                 top: 0;
                 bottom: 0;
                 content: '';

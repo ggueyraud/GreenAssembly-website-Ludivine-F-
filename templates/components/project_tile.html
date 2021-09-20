@@ -1,4 +1,8 @@
-<a href="/portfolio/{{ uri }}" class="project col_span_2 row_span_2">
+<a
+    data-categories="{% for category in categories %}{{ category.id }}{% if !loop.last %};{% endif %}{% endfor %}"
+    href="/portfolio/{{ uri }}"
+    class="project col_span_2 row_span_2"
+>
     <img
         src="/uploads/{{ illustration.path }}"
         {% match illustration.name %}
