@@ -1,0 +1,14 @@
+@use 'style-box/abstracts/functions/utilities';
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: inherit;
+    padding: utilities.space(2) utilities.space(3);
+
+    &__blue {
+        background-color: utilities.color(blue);
+        color: utilities.color('white')
+    }
+}

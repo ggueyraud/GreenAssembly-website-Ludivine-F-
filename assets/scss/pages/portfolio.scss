@@ -1,0 +1,104 @@
+@import '../custom';
+@import '../components/card';
+@import '../components/button';
+@import 'style-box/abstracts/functions/utilities';
+@import 'style-box/abstracts/mixins/breakpoints';
+@import 'style-box/abstracts/mixins/text';
+@import 'style-box/base/grid';
+@import 'style-box/base/display';
+@import 'style-box/base/text';
+
+.card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+h2 {
+    color: color(blue);
+    margin-bottom: space(4);
+    
+    @include md {
+        margin-bottom: space(8) !important;
+    }
+}
+
+a.special svg {
+    vertical-align: middle;
+}
+
+%project_button {
+
+}
+
+#projects {
+    nav button, .project .details span {
+        cursor: pointer;
+        position: relative;
+        padding: space(1) space(2);
+        border: none;
+        background-color: transparent;
+        font-size: inherit;
+    }
+    
+    nav {
+        button {
+            margin-left: space(3);
+
+            &::after {
+                position: absolute;
+                left: -0.5rem;
+                top: 0;
+                bottom: 0;
+                content: '';
+                height: 100%;
+                width: 1px;
+                background-color: color(blue);
+                z-index: -1;
+                transition: width 250ms linear;
+            }
+
+            &.active {
+                color: color('white');
+                &::after {
+                    width: 100%
+                }
+            }
+        }
+    }
+    
+    .project {
+        position: relative;
+        position: relative;
+        height: 100%;
+        width: 100%;
+        display: inline-block;
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .details {
+            position: absolute;
+            width: 100%;
+            bottom: 0;
+            background-color: color('white');
+            padding: .5rem 1rem;
+
+            h3 {
+                color: color(blue);
+                @include text(lg)
+            }
+
+            span {
+                color: color('black');
+                background-color: #E5E5E5;
+                border-radius: 10px;
+                font-size: .9rem;
+            }
+        }
+    }
+}
