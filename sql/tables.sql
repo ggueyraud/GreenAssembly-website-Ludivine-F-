@@ -9,15 +9,22 @@ CREATE TABLE project_categories (
 DROP TABLE IF EXISTS projects CASCADE;
 CREATE TABLE projects (
     id SMALLINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    category_id SMALLINT NOT NULL
-        REFERENCES project_categories (id)
-        NOT NULL,
     name VARCHAR(120) NOT NULL,
     description VARCHAR(320),
-    -- TODO : limit content to 1000 caracters
-    content TEXT NOT NULL, -- autoriser gras, lien, taille titre, liste à puce
+    content VARCHAR(1000) NOT NULL, -- autoriser gras, lien, taille titre, liste à puce
     date TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     last_update_date TIMESTAMP WITH TIME ZONE
+);
+
+-- Table d'association d'un projet à une ou plusieurs catégories
+DROP TABLE IF EXISTS projects_categories CASCADE;
+CREATE TABLE projects_categories (
+    project_id SMALLINT
+        REFERENCES projects (id)
+        ON DELETE CASCADE,
+    category_id SMALLINT
+        REFERENCES project_categories (id),
+    PRIMARY KEY (project_id, category_id)
 );
 
 DROP TABLE IF EXISTS files CASCADE;
