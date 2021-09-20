@@ -14,23 +14,39 @@ async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse
     if let Ok(page) = services::pages::get(&pool, "portfolio").await {
         use slugmin::slugify;
 
-        #[derive(Debug)]
-        struct Project {
-            id: i16,
-            name: String,
-            content: String,
-            date: DateTime<Utc>,
-            uri: String,
+        let mut token: Option<String> = None;
+        if let Ok(Some(id)) =
+            metrics::add(&pool, &req, services::metrics::BelongsTo::Page(page.id)).await
+        {
+            if let Ok(metric_token) = services::metrics::tokens::add(&pool, id).await {
+                token = Some(metric_token.to_string());
+            }
         }
 
+        #[derive(Debug)]
+        struct Illustration {
+            path: String,
+            name: Option<String>
+        }
+        
+        #[derive(Template)]
+        #[template(path = "components/project_tile.html")]
+        struct ProjectTile {
+            name: String,
+            uri: String,
+            illustration: Illustration,
+            categories: Vec<services::projects::Category>
+        }
+        
         #[derive(Template)]
         #[template(path = "portfolio.html")]
         struct Portfolio {
             categories: Vec<services::projects::Category>,
-            projects: Vec<Project>,
+            projects: Vec<ProjectTile>,
             title: String,
             description: Option<String>,
             year: i32,
+            metric_token: Option<String>,
         }
 
         let (_, projects, categories) = futures::join!(
@@ -38,26 +54,49 @@ async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse
             services::projects::get_all(&pool, None),
             services::projects::categories::get_all(&pool)
         );
+        let mut formatted_projects = vec![];
 
-        let projects = projects
-            .iter()
-            .map(|row| Project {
-                id: row.id,
-                name: row.name.clone(),
-                content: row.content.clone(),
-                date: row.date,
-                uri: slugify(&format!("{}-{}", row.name, row.id)),
-            })
-            .collect::<Vec<Project>>();
+        for project in &projects {
+            let project_categories = sqlx::query!("SELECT category_id FROM projects_categories WHERE project_id = $1", project.id)
+                .fetch_all(pool.as_ref())
+                .await
+                .unwrap();
+            let mut c = vec![];
 
-        println!("{:?}", projects);
+            for project_category in project_categories {
+                if let Some(category) = categories
+                    .iter()
+                    .find(|category| category.id == project_category.category_id) {
+                        c.push(category.clone());
+                    }
+            }
+
+            formatted_projects.push(ProjectTile {
+                name: project.name.clone(),
+                uri: slugify(&format!("{}-{}", project.name, project.id)),
+                illustration: sqlx::query_as!(
+                    Illustration,
+                    r#"SELECT
+                        f.path AS "path", f.name AS "name"
+                    FROM project_assets pa
+                    JOIN files f ON f.id = pa.file_id
+                    WHERE pa.project_id = $1 AND pa.order = 1"#,
+                    project.id
+                )
+                .fetch_one(pool.as_ref())
+                .await
+                .unwrap(),
+                categories: c
+            });
+        }
 
         return Portfolio {
             categories,
-            projects,
+            projects: formatted_projects,
             title: page.title,
             description: page.description,
             year: chrono::Utc::now().year(),
+            metric_token: token,
         }
         .into_response();
     }
@@ -81,7 +120,9 @@ async fn get_project(
             let mut token: Option<String> = None;
             let assets = services::projects::assets::get_all(&pool, id).await;
 
-            if let Ok(Some(id)) = metrics::add(&pool, &req, services::metrics::BelongsTo::Project(id)).await {
+            if let Ok(Some(id)) =
+                metrics::add(&pool, &req, services::metrics::BelongsTo::Project(id)).await
+            {
                 if let Ok(metric_token) = services::metrics::tokens::add(&pool, id).await {
                     token = Some(metric_token.to_string());
                 }
@@ -99,7 +140,7 @@ async fn get_project(
                 asset_1: Option<&'a services::projects::Asset>,
                 assets: Option<Vec<services::projects::Asset>>,
                 year: i32,
-                metric_token: Option<String>
+                metric_token: Option<String>,
             }
 
             return PortfolioProject {
@@ -112,9 +153,11 @@ async fn get_project(
                 asset_1: assets.get(1),
                 assets: if assets.len() - 2 > 0 {
                     Some(assets.get(2..).unwrap().to_vec())
-                } else { None },
+                } else {
+                    None
+                },
                 year: chrono::Utc::now().year(),
-                metric_token: token
+                metric_token: token,
             }
             .into_response();
         }
@@ -222,8 +265,8 @@ impl services::projects::ProjectInformations {
         self.name.len() >= 2
             && self.name.len() <= 120
             && self.content.len() >= 30
-            && self.category_id > 0
-            && services::projects::categories::exists(pool, self.category_id).await
+            // && self.category_id > 0
+            // && services::projects::categories::exists(pool, self.category_id).await
     }
 }
 
@@ -517,8 +560,12 @@ mod tests {
         dotenv().ok();
 
         let pool = create_pool().await.unwrap();
-        let mut app =
-            test::init_service(App::new().data(pool.clone()).service(super::get_project)).await;
+        let mut app = test::init_service(
+            App::new()
+                .data(pool.clone())
+                .service(web::scope("/portfolio").service(super::get_project)),
+        )
+        .await;
         let resp = test::TestRequest::get()
             .uri("/portfolio/lorem-1")
             .send_request(&mut app)

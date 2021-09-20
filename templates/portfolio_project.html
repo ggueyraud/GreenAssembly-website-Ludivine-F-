@@ -3,6 +3,12 @@
 {% block title %}{{ title }}{% endblock %}
 
 {% block head %}
+    {% match description %}
+        {% when Some with (description) %}
+            <meta name="description" content="{{ description }}" />
+        {% when None %}
+    {% endmatch %}
+
     {% match metric_token %}
         {% when Some with (token) %}
             <script>

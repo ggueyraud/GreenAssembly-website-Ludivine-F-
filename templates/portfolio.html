@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block head %}
+    {% match description %}
+        {% when Some with (description) %}
+            <meta name="description" content="{{ description }}" />
+        {% when None %}
+    {% endmatch %}
+
+    {% match metric_token %}
+        {% when Some with (token) %}
+            <script>
+                localStorage.setItem("METRIC_TOKEN", "{{ token }}");
+            </script>
+        {% when None %}
+    {% endmatch %}
+
+    <link rel="stylesheet" href="/css/pages/portfolio.css" />
+    <script src="/js/portfolio.js" async></script>
+{% endblock %}
+
+{% block content %}
+<section>
+    <div class="grid grid_cols_1 md_grid_cols_2 items_center col_gap_4">
+        <h1 class="mb_6 md_mb_0">Portfolio</h1>
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+    </div>
+    
+    <div class="grid grid_cols_1 md_grid_cols_2 items_center col_gap_4 mt_8 md_mt_20">
+        <div>
+            <h2 class="text_center md_text_left">Mon travail</h2>
+            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+        </div>
+        <div>
+            <h2 class="text_center md_text_left mt_8 md_mt_0">Titre 2</h2>
+            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+        </div>
+    </div>
+
+    <div class="md_mt_20">
+        <h2 class="text_center md_text_left mt_8 md_mt_0 mb_6">Mes services</h2>
+
+        <div class="grid grid_cols_1 md_grid_cols_3 gap_6">
+            <div class="card text_center">
+                <h3 class="uppercase">Identité visuelle</h3>
+                <p class="my_5">Création charte graphique, conception de logos, palette de couleurs...</p>
+                <a href="#" class="special">
+                    J'ai un projet
+                    <svg class="icon icon--sm ml_2" height="18px">
+                        <use xlink:href="/icons.svg#paper_plane"></use>
+                    </svg>
+                </a>
+            </div>
+            <div class="card text_center">
+                <h3 class="uppercase">Motion design</h3>
+                <p class="my_5">Animation vidéo, animation de logo, montage vidéo </p>
+                <a href="#" class="special">En savoir plus</a>
+            </div>
+            <div class="card text_center">
+                <h3 class="uppercase">Web design</h3>
+                <p class="my_5">Design site web (maquette), concevoir l'UX/UI de votre application ou/et de votre site web</p>
+                <a href="#" class="special">
+                    J'ai un projet
+                    <svg class="icon icon--sm ml_2" height="18px">
+                        <use xlink:href="/icons.svg#paper_plane"></use>
+                    </svg>
+                </a>
+            </div>
+        </div>
+
+        <div class="grid grid_cols_1 md_grid_cols_3 gap_4 mt_10 items_start">
+            <p class="md_col_span_2">Je suis également disposé à la réalisation de vos supports imprimés pour accompagner votre communication (affiches, flyers, brochures, cartes de visite). Mais également à la réalisation de contenu pour vos réseaux sociaux (post/ vidéo / story).</p>
+            <a href="#" class="uppercase btn btn__blue mt_2 md_mt_0">
+                Télécharger ma grille tarifaire
+                <svg class="icon ml_2" height="24px">
+                    <use xlink:href="/icons.svg#download"></use>
+                </svg>
+            </a>
+        </div>
+
+        <div id="projects" class=" mt_8 md_mt_20">
+            <nav>
+                <button type="button" class="active">Tout</button>
+                {% for category in categories %}
+                    <button type="button" data-id="{{ category.id }}">{{ category.name }}</button>
+                {% endfor %}
+            </nav>
+
+            <div class="grid grid_rows_1 md_grid_rows_2 grid_cols_1 md_grid_cols_4 gap_4 mt_10">
+                {% for project in projects %}
+                    {% if loop.index0 == 0 %}
+                        <div class="col_span_2 row_span_2">
+                            {{ project|safe }}
+                        </div>
+                    {% else if loop.index0 == 1 %}
+                        <div style="background: #C4C4C4;">{{ project|safe }}</div>
+                    {% else if loop.index0 == 2 %}
+                        <div style="background: #C4C4C4;">{{ project|safe }}</div>
+                    {% else if loop.index0 == 2 %}
+                        <div class="col_span_2" style="background: #C4C4C4;">{{ project|safe }}</div>
+                    {% else %}
+                        <div>{{ project|safe }}</div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

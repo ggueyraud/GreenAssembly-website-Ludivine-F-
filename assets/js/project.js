@@ -1,6 +1,8 @@
 import Carousel, { CarouselPagination, CarouselTouch } from 'carousel';
+import lightbox, { init } from './components/lightbox';
 
 const on_mount = () => {
+    lightbox('img')
     const carousel = new Carousel(document.querySelector('.carousel'), {
         breakpoints: {
             768: {

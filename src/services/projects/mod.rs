@@ -5,10 +5,10 @@ use sqlx::{Error, FromRow, PgPool};
 pub mod assets;
 pub mod categories;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Category {
-    id: i16,
-    name: String,
+    pub id: i16,
+    pub name: String,
 }
 
 #[derive(Debug, FromRow)]
@@ -22,23 +22,20 @@ pub struct Project {
 #[derive(Debug, Clone)]
 pub struct Asset {
     pub id: i16,
-    pub path: String,
-    // pub order: i16,
-    // pub is_visible: bool,
+    pub path: String
 }
 
 pub async fn get_all(pool: &PgPool, category_id: Option<i16>) -> Vec<Project> {
     let mut query = String::from(
         "SELECT
             id, name, content, date
-        FROM projects",
+        FROM projects
+        ORDER BY date, last_update_date",
     );
 
-    if category_id.is_some() {
-        query += " WHERE category_id = $1"
-    }
-
-    query += " ORDER BY \"order\" ASC";
+    // if category_id.is_some() {
+    //     query += " WHERE category_id = $1"
+    // }
 
     let mut projects = sqlx::query_as::<_, Project>(&query);
 
@@ -109,7 +106,6 @@ pub async fn get_spe<
 
 #[derive(Deserialize, Debug)]
 pub struct ProjectInformations {
-    pub category_id: i16,
     pub name: String,
     pub description: Option<String>,
     pub content: String,
@@ -118,10 +114,9 @@ pub struct ProjectInformations {
 pub async fn insert(pool: &PgPool, project: &ProjectInformations) -> Result<i16, Error> {
     let res = sqlx::query!(
         "INSERT INTO projects
-            (category_id, name, description, content)
-        VALUES ($1, $2, $3, $4)
+            (name, description, content)
+        VALUES ($1, $2, $3)
         RETURNING id",
-        project.category_id,
         project.name,
         project.description,
         project.content
@@ -135,12 +130,10 @@ pub async fn insert(pool: &PgPool, project: &ProjectInformations) -> Result<i16,
 pub async fn update(pool: &PgPool, id: i16, project: &ProjectInformations) -> Result<bool, Error> {
     let res = sqlx::query!(
         r#"UPDATE projects SET
-            category_id = $1,
-            name = $2,
-            description = $3,
-            content = $4
-        WHERE id = $5"#,
-        project.category_id,
+            name = $1,
+            description = $2,
+            content = $3
+        WHERE id = $4"#,
         project.name,
         project.description,
         project.content,

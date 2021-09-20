@@ -1,0 +1,19 @@
+<a href="/portfolio/{{ uri }}" class="project col_span_2 row_span_2">
+    <img
+        src="/uploads/{{ illustration.path }}"
+        {% match illustration.name %}
+            {% when Some with (name) %}
+                alt="{{ name }}"
+            {% when None %}
+        {% endmatch %}
+    />
+
+    <div class="details">
+        <h3>{{ name }}</h3>
+        <div>
+            {% for category in categories %}
+                <span>{{ category.name }}</span>
+            {% endfor %}
+        </div>
+    </div>
+</a>

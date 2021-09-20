@@ -5,7 +5,8 @@ module.exports = {
     entry: {
         global: './assets/js/global.js',
         contact: './assets/js/contact.js',
-        project: './assets/js/project.js'
+        project: './assets/js/project.js',
+        portfolio: './assets/js/portfolio.js'
     },
     watch: process.env.NODE_ENV === 'development',
     watchOptions: {
