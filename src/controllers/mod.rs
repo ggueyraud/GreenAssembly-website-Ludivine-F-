@@ -45,10 +45,17 @@ pub async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResp
 #[get("/motion-design")]
 async fn motion_design(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
     if let Ok(page) = services::pages::get(&pool, "motion-design").await {
-        let (_, videos) = futures::join!(
+        let (metric_id, videos) = futures::join!(
             metrics::add(&pool, &req, services::metrics::BelongsTo::Page(page.id)),
             services::videos::get_all(&pool)
         );
+
+        let mut token: Option<String> = None;
+        if let Ok(Some(id)) = metric_id {
+            if let Ok(metric_token) = services::metrics::tokens::add(&pool, id).await {
+                token = Some(metric_token.to_string());
+            }
+        }
 
         #[derive(Template)]
         #[template(path = "motion_design.html")]
@@ -57,6 +64,7 @@ async fn motion_design(req: HttpRequest, pool: web::Data<PgPool>) -> Result<Http
             title: String,
             description: Option<String>,
             year: i32,
+            metric_token: Option<String>,
         }
 
         return MotionDesign {
@@ -64,6 +72,7 @@ async fn motion_design(req: HttpRequest, pool: web::Data<PgPool>) -> Result<Http
             title: page.title,
             description: page.description,
             year: chrono::Utc::now().year(),
+            metric_token: token
         }
         .into_response();
     }

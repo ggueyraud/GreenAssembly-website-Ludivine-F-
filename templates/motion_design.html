@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block head %}
+    {% match description %}
+        {% when Some with (description) %}
+            <meta name="description" content="{{ description }}" />
+        {% when None %}
+    {% endmatch %}
+
+    <link rel="stylesheet" href="/css/pages/motion_design.css" />
+    <script src="/js/contact.js" async></script>
+
+    {% match metric_token %}
+        {% when Some with (token) %}
+            <script>
+                localStorage.setItem("METRIC_TOKEN", "{{ token }}");
+            </script>
+        {% when None %}
+    {% endmatch %}
+{% endblock %}
+
+{% block content %}
+    <section>
+        <h1>Motion design</h1>
+
+        <div class="grid grid_cols_2 gap_4">
+            <div>
+                <h2>Une vidéo détonante et raffinée pour un message qui claque.</h2>
+                <p>
+                    Captez l’attention et partez à la conquête de votre public avec une vidéo motion design surprenante qui a du <b>style</b>.<br />
+                    Vidéo animée, clip vidéo, animation typographique, vidéo explicative, <b>liez l’image à votre message de façon unique et originale</b> pour mieux marquer les esprits. Et faire de votre marque celle à ne pas manquer.
+                </p>
+            </div>
+
+            <img src="/img/slap.gif" alt="" />
+        </div>
+
+        <div class="grid grid_cols_2 gap_4">
+            <div>
+                <h2>Le motion design en clair et sans complexe.</h2>
+                <p>
+                    Le motion design, c’est un peu comme une carte de visite numérique animée. Votre signature.<br /><br />
+                    Le graphisme se met en mouvement et met en scène votre message qui s’écrit de manière lisible et percutante au travers d’une conception graphique animée.<br /><br />
+                    Courte et dynamique, la vidéo motion design attire l’attention et permet d’expliquer simplement un CONCEPT, vos idées, votre histoire. Votre vision.<br /><br />
+                    Personnalisée et facile à mémoriser, cette vidéo un peu à part engage votre public et vous aide à mieux convertir.<br /><br />
+                    Typographie animée, vidéo interactive, flat motion, stop motion, animation 2D ou 3D, motion photo… Faites-vous remarquer.<br /><br />
+                    Vos clients vous le rendront bien.
+                </p>
+            </div>
+
+            <div>
+                <h2>Une vidéo cousue main, sinon rien.</h2>
+                <p>
+                    Parce qu’une campagne marketing fonctionne grâce à son côté décalé, optez pour le sur-mesure dans ce qu’il a d’anticonformiste. L’art du graphisme animé dans toute sa splendeur pour mettre en valeur votre image de marque et percuter les consciences.<br /><br />
+                    Du premier script à la livraison finale, je mets ma créativité et mon âme d’artiste au service de votre message. Le tout animé avec la technique de motion design la mieux appropriée, et vous voilà parti pour 2 minutes d’animation vidéo attractives et mémorables.<br /><br />
+                    A l’image de votre identité visuelle et de ce qui vous différencie des autres. Votre singularité.
+                </p>
+            </div>
+        </div>
+
+        <div class="grid grid_cols_2 gap_4">
+            <img src="/img/slap.gif" alt="" />
+
+            <div>
+                <h2>Seconde après seconde, votre motion design s’anime.</h2>
+                <p>
+                    Pour une réalisation vidéo motion design percutante et de qualité, il est essentiel pour moi d’apprendre à découvrir votre univers, vos valeurs. Ce qui caractérise votre marque, vos produits, vos services.<br /><br />
+                    Concrètement, et si nous travaillons ensemble, nous serons amenés à nous côtoyer plusieurs fois tout au long de la création de votre motion graphic design.<br /><br />
+                    Du brief client à la vidéo finale, en passant par le script, le storyboard, l’animation et la post-production (montage, sound design, étalonnage, sous-titrage), chaque étape voit votre animation graphique prendre forme.<br /><br />
+                    Pour mieux créer la surprise et passer à l’étape supérieure. Celle d’une communication visuelle débordante d’originalité.
+                </p>
+            </div>
+        </div>
+
+        <div class="card flex flex_col justify_center items_center row_gap_4">
+            <span class="text_2xl font_bold uppercase">Curieux d'en savoir + ?</span>
+            <a href="#" class="uppercase btn btn__blue mt_2 md_mt_0">
+                Me contacter
+                <svg class="icon ml_2" height="24px">
+                    <use xlink:href="/icons.svg#paper_plane"></use>
+                </svg>
+            </a>
+        </div>
+    </section>
+{% endblock %}

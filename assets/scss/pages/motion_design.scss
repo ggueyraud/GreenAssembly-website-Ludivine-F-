@@ -1,0 +1,14 @@
+@import '../custom';
+@import 'style-box/abstracts/functions/utilities';
+@import 'style-box/abstracts/mixins/text';
+@import 'style-box/base/grid';
+@import 'style-box/base/display';
+@import '../components/card';
+@import '../components/button';
+
+h2 {
+    text-transform: uppercase;
+    color: color(blue);
+    margin-bottom: space(3);
+    @include text(3xl)
+}
