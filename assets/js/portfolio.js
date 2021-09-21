@@ -1,4 +1,8 @@
+let all_projects;
+
 const on_mount = () => {
+    all_projects = [...document.querySelectorAll('.project')];
+
     document
         .querySelectorAll('#projects nav button')
         .forEach(btn => {
@@ -16,14 +20,14 @@ const on_mount = () => {
         })
 }
 
-let all_projects = [...document.querySelectorAll('.project')];
-
 const sort = id => {
     const container = document.querySelector('#aaa');
     container.animate([
         { opacity: 100 },
         { opacity: 0 }
     ], { duration: 250 });
+
+    console.log(all_projects)
 
     setTimeout(() => {
         let projects = all_projects; //.map(project => project.outerHTML);
