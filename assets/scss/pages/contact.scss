@@ -4,12 +4,28 @@
 @import 'style-box/base/display';
 @import 'style-box/base/margin';
 @import '../components/input';
+@import '../components/button';
 
 section {
     display: grid;
+    align-items: center;
     @include grid.cols(1);
 
+    h1, h2 {
+        text-align: center
+    }
+
     @include md {
+        h1, h2 {
+            text-align: initial;
+        }
+
         @include grid.cols(2)
     }
+}
+
+textarea {
+    resize: none;
+    overflow: hidden;
+    min-height: 50px
 }

@@ -23,11 +23,21 @@
 
 {% block content %}
     <section>
-        <div class="px_30">
-            <h1>Contact</h1>
-            <h2>Hello</h2>
+        <div class="md_px_5 lg_px_10 xl_px_30 space_y_8 md_space_y_10 mb_10 md_mb_0">
+            <h1 class="pb_2 md_pb_20">Contact</h1>
+            <h2 class="text_blue">Hello</h2>
             <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+
+            <div class="text_center md_text_left">
+                <a href="#" class="uppercase btn btn__blue mt_2 md_mt_0">
+                    Télécharger ma grille tarifaire
+                    <svg class="icon ml_2" height="24px">
+                        <use xlink:href="/icons.svg#download"></use>
+                    </svg>
+                </a>
+            </div>
         </div>
+
         <form method="post" action="">
             <label for="lastname">Nom</label>
             <div class="input">
@@ -55,11 +65,11 @@
 
             <label for="content" class="mt_2">Message</label>
             <div class="input">
-                <textarea name="content" id="content" rows="3"></textarea>
+                <textarea name="content" id="content"></textarea>
                 <div class="bg"></div>
             </div>
 
-            <div class="flex justify_end mt_2">
+            <div class="flex justify_end mt_8 md_mt_15">
                 <button type="submit">
                     Envoyer
                     <svg class="icon icon--sm ml_2" height="24px">
