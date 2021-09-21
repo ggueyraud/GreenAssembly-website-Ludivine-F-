@@ -43,7 +43,11 @@ a.special svg {
         button {
             font-size: initial;
             padding: space(2) space(3);
-            // margin-left: space(3);
+            width: 50%;
+
+            @include md {
+                width: auto;
+            }
 
             &::after {
                 position: absolute;
@@ -90,7 +94,10 @@ a.special svg {
 
             h3 {
                 color: color(blue);
-                @include text(lg)
+                @include text(lg);
+                text-overflow: ellipsis;
+                overflow: hidden;
+                white-space: nowrap;
             }
 
             span {
