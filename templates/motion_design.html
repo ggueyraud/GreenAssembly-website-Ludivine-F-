@@ -22,10 +22,10 @@
 {% endblock %}
 
 {% block content %}
-    <section>
+    <section class="space_y_10">
         <h1>Motion design</h1>
 
-        <div class="grid grid_cols_2 gap_4">
+        <div class="grid grid_cols_1 md_grid_cols_2 col_gap_4 row_gap_8">
             <div>
                 <h2>Une vidéo détonante et raffinée pour un message qui claque.</h2>
                 <p>
@@ -34,10 +34,24 @@
                 </p>
             </div>
 
-            <img src="/img/slap.gif" alt="" />
+            <img src="/img/slap.gif" alt="" style="max-height: 600px; max-width: 340px" />
         </div>
 
-        <div class="grid grid_cols_2 gap_4">
+        <div class="text_center flex flex_col items_center row_gap_4">
+            <div style="padding:56.25% 0 0 0;position:relative; width: 100%">
+                <iframe src="https://player.vimeo.com/video/422216336?h=88fda9d15b&title=0&byline=0&portrait=0" style="position:absolute;top:0;left:0;width:100%;height:100%;" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>
+            </div>
+            <script src="https://player.vimeo.com/api/player.js"></script>
+
+            <a href="https://vimeo.com/ludivinefarat" target="_blank" rel="noopener" class="uppercase btn btn__blue mt_2 md_mt_0">
+                Découvrir mon travail
+                <svg class="icon ml_2" height="24px">
+                    <use xlink:href="/icons.svg#paper_plane"></use>
+                </svg>
+            </a>
+        </div>
+
+        <div class="grid grid_cols_1 md_grid_cols_2 col_gap_4 row_gap_8">
             <div>
                 <h2>Le motion design en clair et sans complexe.</h2>
                 <p>
@@ -60,8 +74,8 @@
             </div>
         </div>
 
-        <div class="grid grid_cols_2 gap_4">
-            <img src="/img/slap.gif" alt="" />
+        <div class="grid grid_cols_1 md_grid_cols_2 col_gap_4 row_gap_8">
+            <img src="/img/slap.gif" alt="" style="max-height: 600px; max-width: 340px" />
 
             <div>
                 <h2>Seconde après seconde, votre motion design s’anime.</h2>
@@ -74,9 +88,9 @@
             </div>
         </div>
 
-        <div class="card flex flex_col justify_center items_center row_gap_4">
+        <div class="card flex flex_col justify_center items_center row_gap_4 mt_6 md_mt_14">
             <span class="text_2xl font_bold uppercase">Curieux d'en savoir + ?</span>
-            <a href="#" class="uppercase btn btn__blue mt_2 md_mt_0">
+            <a href="/contact" class="uppercase btn btn__blue mt_2 md_mt_0">
                 Me contacter
                 <svg class="icon ml_2" height="24px">
                     <use xlink:href="/icons.svg#paper_plane"></use>
