@@ -26,18 +26,18 @@ async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse
         #[derive(Debug)]
         struct Illustration {
             path: String,
-            name: Option<String>
+            name: Option<String>,
         }
-        
+
         #[derive(Template)]
         #[template(path = "components/project_tile.html")]
         struct ProjectTile {
             name: String,
             uri: String,
             illustration: Illustration,
-            categories: Vec<services::projects::Category>
+            categories: Vec<services::projects::Category>,
         }
-        
+
         #[derive(Template)]
         #[template(path = "portfolio.html")]
         struct Portfolio {
@@ -57,18 +57,22 @@ async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse
         let mut formatted_projects = vec![];
 
         for project in &projects {
-            let project_categories = sqlx::query!("SELECT category_id FROM projects_categories WHERE project_id = $1", project.id)
-                .fetch_all(pool.as_ref())
-                .await
-                .unwrap();
+            let project_categories = sqlx::query!(
+                "SELECT category_id FROM projects_categories WHERE project_id = $1",
+                project.id
+            )
+            .fetch_all(pool.as_ref())
+            .await
+            .unwrap();
             let mut c = vec![];
 
             for project_category in project_categories {
                 if let Some(category) = categories
                     .iter()
-                    .find(|category| category.id == project_category.category_id) {
-                        c.push(category.clone());
-                    }
+                    .find(|category| category.id == project_category.category_id)
+                {
+                    c.push(category.clone());
+                }
             }
 
             formatted_projects.push(ProjectTile {
@@ -86,7 +90,7 @@ async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse
                 .fetch_one(pool.as_ref())
                 .await
                 .unwrap(),
-                categories: c
+                categories: c,
             });
         }
 
@@ -262,11 +266,9 @@ impl services::projects::ProjectInformations {
             .clean(self.content.trim())
             .to_string();
 
-        self.name.len() >= 2
-            && self.name.len() <= 120
-            && self.content.len() >= 30
-            // && self.category_id > 0
-            // && services::projects::categories::exists(pool, self.category_id).await
+        self.name.len() >= 2 && self.name.len() <= 120 && self.content.len() >= 30
+        // && self.category_id > 0
+        // && services::projects::categories::exists(pool, self.category_id).await
     }
 }
 
@@ -546,7 +548,12 @@ mod tests {
         dotenv().ok();
 
         let pool = create_pool().await.unwrap();
-        let mut app = test::init_service(App::new().data(pool.clone()).service(web::scope("/portfolio").service(super::index))).await;
+        let mut app = test::init_service(
+            App::new()
+                .data(pool.clone())
+                .service(web::scope("/portfolio").service(super::index)),
+        )
+        .await;
         let resp = test::TestRequest::get()
             .uri("/portfolio")
             .send_request(&mut app)

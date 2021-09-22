@@ -22,7 +22,7 @@ pub struct Project {
 #[derive(Debug, Clone)]
 pub struct Asset {
     pub id: i16,
-    pub path: String
+    pub path: String,
 }
 
 pub async fn get_all(pool: &PgPool, category_id: Option<i16>) -> Vec<Project> {
