@@ -17,14 +17,27 @@ pub async fn exists(pool: &PgPool, id: i16) -> bool {
         .is_ok()
 }
 
-pub async fn get_all(pool: &PgPool) -> Vec<super::Category> {
-    sqlx::query_as!(
-        super::Category,
-        "SELECT id, name, description, is_visible, is_seo FROM blog_categories"
-    )
-    .fetch_all(pool)
-    .await
-    .unwrap()
+pub async fn get_all<
+    T: std::marker::Unpin + std::marker::Send + for<'c> sqlx::FromRow<'c, sqlx::postgres::PgRow>,
+>(
+    pool: &PgPool,
+    fields: &str,
+    is_visible: Option<bool>,
+    is_seo: Option<bool>,
+) -> Vec<T> {
+    let is_visible = is_visible.unwrap_or(true);
+    let is_seo = is_seo.unwrap_or(true);
+    let query = format!(
+        r#"SELECT {} FROM blog_categories WHERE is_visible = $1 AND is_seo = $2 ORDER BY "order""#,
+        fields
+    );
+
+    sqlx::query_as::<_, T>(&query)
+        .bind(is_visible)
+        .bind(is_seo)
+        .fetch_all(pool)
+        .await
+        .unwrap()
 }
 
 pub async fn insert(pool: &PgPool, category: &CategoryInformations) -> Result<i16, Error> {

@@ -153,6 +153,7 @@ async fn main() -> std::io::Result<()> {
                     .service(controllers::user::login)
                     .service(controllers::user::logout),
             )
+            .service(web::scope("/blog").service(controllers::blog::index))
             .service(controllers::metrics::log)
             .service(serve_upload_file)
             .service(serve_public_file)

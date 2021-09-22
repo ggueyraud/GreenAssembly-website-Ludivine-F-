@@ -3,21 +3,22 @@ use chrono::{DateTime, Utc};
 pub mod articles;
 pub mod categories;
 
+#[derive(sqlx::FromRow)]
 pub struct Category {
-    id: i16,
-    name: String,
-    description: Option<String>,
-    is_visible: Option<bool>,
-    is_seo: Option<bool>,
+    pub id: i16,
+    pub name: String,
+    pub description: Option<String>,
+    pub is_visible: Option<bool>,
+    pub is_seo: Option<bool>,
 }
 
 pub struct Article {
-    id: i16,
-    category: Option<serde_json::Value>,
+    pub id: i16,
+    pub category: Option<serde_json::Value>,
     // cover:
-    name: String,
-    content: String,
-    date: DateTime<Utc>,
-    is_published: bool,
-    is_seo: bool,
+    pub name: String,
+    pub content: String,
+    pub date: DateTime<Utc>,
+    pub is_published: bool,
+    pub is_seo: bool,
 }

@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block head %}
+    {% match description %}
+        {% when Some with (description) %}
+            <meta name="description" content="{{ description }}" />
+        {% when None %}
+    {% endmatch %}
+
+    {% match metric_token %}
+        {% when Some with (token) %}
+            <script>
+                localStorage.setItem("METRIC_TOKEN", "{{ token }}");
+            </script>
+        {% when None %}
+    {% endmatch %}
+
+    <link rel="stylesheet" href="/css/pages/blog.css" />
+{% endblock %}
+
+{% block content %}
+<section>
+    <div class="md_order_2">
+        <h3>Catégories</h3>
+
+        <nav>
+            {% for category in categories %}
+                <a href="categories/{{ category.uri }}">{{ category.name }}</a>
+            {% endfor %}
+        </nav>
+    </div>
+
+    <div class="grid grid_cols_1 md_grid_cols_2 gap_4">
+        <h1>Blog</h1>
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+        {% for article in articles %}
+            <a href="articles/{{ article.id }}">
+                <article>
+                    <header>
+                        <h2>{{ article.name }}</h2>
+                    </header>
+                </article>
+            </a>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

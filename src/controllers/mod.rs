@@ -4,6 +4,7 @@ use askama_actix::{Template, TemplateIntoResponse};
 use chrono::Datelike;
 use sqlx::PgPool;
 
+pub mod blog;
 pub mod contact;
 pub mod metrics;
 pub mod portfolio;
@@ -72,7 +73,7 @@ async fn motion_design(req: HttpRequest, pool: web::Data<PgPool>) -> Result<Http
             title: page.title,
             description: page.description,
             year: chrono::Utc::now().year(),
-            metric_token: token
+            metric_token: token,
         }
         .into_response();
     }

@@ -8,6 +8,33 @@ pub async fn exists(pool: &PgPool, id: i16) -> bool {
         .is_ok()
 }
 
+pub async fn get_all1<
+    T: std::marker::Unpin + std::marker::Send + for<'c> sqlx::FromRow<'c, sqlx::postgres::PgRow>,
+>(
+    pool: &PgPool,
+    fields: &str,
+    is_published: Option<bool>,
+    is_seo: Option<bool>,
+) -> Vec<T> {
+    let is_published = is_published.unwrap_or(true);
+    let is_seo = is_seo.unwrap_or(true);
+    let query = format!(
+        "SELECT {}
+        FROM blog_articles ba
+        LEFT JOIN files f ON ba.cover_id = f.id
+        WHERE ba.is_published = $1 AND ba.is_seo = $2
+        ORDER BY ba.id DESC",
+        fields
+    );
+
+    sqlx::query_as::<_, T>(&query)
+        .bind(is_published)
+        .bind(is_seo)
+        .fetch_all(pool)
+        .await
+        .unwrap()
+}
+
 pub async fn get_all(pool: &PgPool) -> Vec<super::Article> {
     sqlx::query!(
         r#"SELECT

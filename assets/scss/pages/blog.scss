@@ -1,0 +1,27 @@
+@import '../custom.scss';
+@import 'style-box/abstracts/mixins/breakpoints';
+@import 'style-box/abstracts/mixins/text';
+@import 'style-box/base/display';
+@import 'style-box/abstracts/functions/utilities';
+@import 'style-box/base/grid';
+
+section {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: 1fr;
+    
+    @include md {
+        grid-template-columns: auto 1fr;
+
+    }
+
+    article {
+        h2 {
+            color: color(blue);
+            text-transform: uppercase;
+        }
+        time {
+            @include text(sm)
+        }
+    }
+}
