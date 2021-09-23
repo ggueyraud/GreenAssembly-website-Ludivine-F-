@@ -14,11 +14,11 @@ INSERT INTO page_chunks (page_id, identifier, content) VALUES
 INSERT INTO "user" (email, password) VALUES
 ('contact@ludivinefarat.fr', '$argon2id$v=19$m=4096,t=3,p=1$Mp3DjJs9YxfrRDu0TUIbcw$+W67zS2FLYB6ruKPI1MHCB4KD+QrEJhN4D2VBzeVuOs');
 
-INSERT INTO blog_categories (name, description, is_visible, is_seo, "order") VALUES
-('Print', 'Lorem ipsum dolor sit amet', true, true, 1),
-('Motion design', null, false, false, 2);
+INSERT INTO blog_categories (name, uri, description, is_visible, is_seo, "order") VALUES
+('Print', 'print-1', 'Lorem ipsum dolor sit amet', true, true, 1),
+('Motion design', 'motion-design-2', null, false, false, 2);
 
-INSERT INTO blog_articles (category_id, cover_id, name, content, is_published) VALUES
-(1, null, 'Les aventures de lulu', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam id felis feugiat, rhoncus nisi nec, consequat elit. Duis velit nibh, hendrerit id lectus id, dapibus posuere sem. Pellentesque consequat tortor id vestibulum pellentesque. Sed et erat rutrum, congue ligula at, facilisis justo. Morbi felis elit, commodo sed rhoncus et, dignissim.', false),
-(1, null, 'Les aventures de lulu partie 2', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam id felis feugiat, rhoncus nisi nec, consequat elit. Duis velit nibh, hendrerit id lectus id, dapibus posuere sem. Pellentesque consequat tortor id vestibulum pellentesque. Sed et erat rutrum, congue ligula at, facilisis justo. Morbi felis elit, commodo sed rhoncus et, dignissim.', true),
-(2, null, 'Les aventures de lulu partie 3', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam id felis feugiat, rhoncus nisi nec, consequat elit. Duis velit nibh, hendrerit id lectus id, dapibus posuere sem. Pellentesque consequat tortor id vestibulum pebi felis elit, commodo sed rhoncus et, dignissim.', true);
+INSERT INTO blog_articles (category_id, cover_id, name, uri, content, is_published) VALUES
+(1, 1, 'Les aventures de lulu', 'les-aventures-de-lulu', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam id felis feugiat, rhoncus nisi nec, consequat elit. Duis velit nibh, hendrerit id lectus id, dapibus posuere sem. Pellentesque consequat tortor id vestibulum pellentesque. Sed et erat rutrum, congue ligula at, facilisis justo. Morbi felis elit, commodo sed rhoncus et, dignissim.', false),
+(1, 1, 'Les aventures de lulu partie 2', 'les-aventures-de-lulu-partie-2', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam id felis feugiat, rhoncus nisi nec, consequat elit. Duis velit nibh, hendrerit id lectus id, dapibus posuere sem. Pellentesque consequat tortor id vestibulum pellentesque. Sed et erat rutrum, congue ligula at, facilisis justo. Morbi felis elit, commodo sed rhoncus et, dignissim.', true),
+(2, 1, 'Les aventures de lulu partie 3', 'les-aventures-de-lulu-partie-3', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam id felis feugiat, rhoncus nisi nec, consequat elit. Duis velit nibh, hendrerit id lectus id, dapibus posuere sem. Pellentesque consequat tortor id vestibulum pebi felis elit, commodo sed rhoncus et, dignissim.', true);
