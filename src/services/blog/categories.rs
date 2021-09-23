@@ -17,6 +17,31 @@ pub async fn exists(pool: &PgPool, id: i16) -> bool {
         .is_ok()
 }
 
+pub async fn exists_for_uri(pool: &PgPool, uri: &str) -> bool {
+    sqlx::query!("SELECT 1 AS one FROM blog_categories WHERE uri = $1", uri)
+        .fetch_one(pool)
+        .await
+        .is_ok()
+}
+
+pub async fn get<
+    T: std::marker::Unpin + std::marker::Send + for<'c> sqlx::FromRow<'c, sqlx::postgres::PgRow>,
+>(
+    pool: &PgPool,
+    fields: &str,
+    id: i16,
+) -> Result<T, Error> {
+    let category = sqlx::query_as::<_, T>(&format!(
+        "SELECT {} FROM blog_categories WHERE id = $1 LIMIT 1",
+        fields
+    ))
+    .bind(id)
+    .fetch_one(pool)
+    .await?;
+
+    Ok(category)
+}
+
 pub async fn get_all<
     T: std::marker::Unpin + std::marker::Send + for<'c> sqlx::FromRow<'c, sqlx::postgres::PgRow>,
 >(

@@ -5,23 +5,109 @@
 @import 'style-box/abstracts/functions/utilities';
 @import 'style-box/base/grid';
 
-section {
+main {
     display: grid;
-    gap: 1rem;
-    grid-template-columns: 1fr;
+    gap: space(6);
     
-    @include md {
-        grid-template-columns: auto 1fr;
-
+    h1 {
+        text-align: center;
+        margin-bottom: space(6)
     }
 
-    article {
-        h2 {
-            color: color(blue);
-            text-transform: uppercase;
+    nav {
+        order: 2;
+
+        a {
+            position: relative;
+            padding: space(2) space(3);
+
+            &::after {
+                position: absolute;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                content: '';
+                height: 100%;
+                width: 1px;
+                background-color: color(blue);
+                z-index: -1;
+                transition: width 250ms linear;
+            }
+
+            &.active {
+                color: color('white');
+                &::after {
+                    width: 100%
+                }
+            }
         }
-        time {
-            @include text(sm)
+    }
+
+    section {
+        order: 3;
+
+        .post {
+            box-shadow: 0px 0px 20px rgba(28, 4, 252, 0.3);
+        
+            &__cover {
+                height: 130px;
+                width: 100%;
+                background-image: var(--cover-path);
+                background-repeat: no-repeat;
+                background-size: cover;
+            }
+            
+            &__body {
+                padding: space(4) space(6);
+        
+                header {
+                    margin-bottom: space(4);
+        
+                    h2 {
+                        color: color(blue);
+                        text-transform: uppercase;
+                        margin-bottom: space(1)
+                    }
+        
+                    time {
+                        @include text(sm)
+                    }
+                }
+            }
+        }
+    }
+
+    @include md {
+        nav {
+            margin-bottom: space(4);
+
+            h3 {
+                margin-bottom: space(8);
+                text-align: initial;
+            }
+        }
+
+        & > header:first-child {
+            display: grid;
+            gap: space(6);
+            align-items: center;
+            grid-template-columns: 1fr 1fr;
+            margin-bottom: space(4);
+
+            h1 {
+                text-align: initial;
+                margin-bottom: 0;
+            }
+        }
+    }
+
+    @include lg {
+        grid-template-areas:    "header nav",
+                                "section nav";
+        grid-template-columns: 1fr auto;
+
+        nav h3 {
+            text-align: center
         }
     }
 }

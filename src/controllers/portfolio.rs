@@ -4,7 +4,7 @@ use actix_extract_multipart::*;
 use actix_identity::Identity;
 use actix_web::{delete, get, patch, post, put, web, Error, HttpRequest, HttpResponse};
 use askama_actix::{Template, TemplateIntoResponse};
-use chrono::{DateTime, Datelike, Utc};
+use chrono::Datelike;
 use serde::Deserialize;
 use sqlx::PgPool;
 use std::{collections::HashSet, path::Path};
@@ -152,7 +152,7 @@ async fn get_project(
                 description: project.description,
                 content: project.content,
                 date: project.date.format("%d/%m/%Y").to_string(),
-                international_date: project.date.format("%Y-%m-%d").to_string(),
+                international_date: project.date.to_rfc3339(),
                 asset_0: assets.get(0),
                 asset_1: assets.get(1),
                 assets: if assets.len() - 2 > 0 {

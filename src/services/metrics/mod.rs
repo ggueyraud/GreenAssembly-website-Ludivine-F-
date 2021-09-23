@@ -5,6 +5,7 @@ pub mod tokens;
 pub enum BelongsTo {
     Page(i16),
     Project(i16),
+    BlogPost(i16),
 }
 
 pub async fn add(
@@ -31,6 +32,10 @@ pub async fn add(
             BelongsTo::Project(project_id) => {
                 id = Some(project_id);
                 "project_id"
+            }
+            BelongsTo::BlogPost(post_id) => {
+                id = Some(post_id);
+                "post_id"
             }
         }
     );

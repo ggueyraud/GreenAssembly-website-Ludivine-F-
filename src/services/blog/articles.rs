@@ -15,24 +15,33 @@ pub async fn get_all1<
     fields: &str,
     is_published: Option<bool>,
     is_seo: Option<bool>,
+    category_id: Option<i16>,
 ) -> Vec<T> {
     let is_published = is_published.unwrap_or(true);
     let is_seo = is_seo.unwrap_or(true);
-    let query = format!(
+    let mut query = format!(
         "SELECT {}
         FROM blog_articles ba
-        LEFT JOIN files f ON ba.cover_id = f.id
-        WHERE ba.is_published = $1 AND ba.is_seo = $2
-        ORDER BY ba.id DESC",
+        JOIN files f ON ba.cover_id = f.id
+        WHERE ba.is_published = $1 AND ba.is_seo = $2",
         fields
     );
 
-    sqlx::query_as::<_, T>(&query)
+    if let Some(category_id) = category_id {
+        query += " AND ba.category_id = $3"
+    }
+
+    query += "ORDER BY ba.id DESC";
+
+    let mut q = sqlx::query_as::<_, T>(&query)
         .bind(is_published)
-        .bind(is_seo)
-        .fetch_all(pool)
-        .await
-        .unwrap()
+        .bind(is_seo);
+
+    if let Some(category_id) = category_id {
+        q = q.bind(category_id);
+    }
+
+    q.fetch_all(pool).await.unwrap()
 }
 
 pub async fn get_all(pool: &PgPool) -> Vec<super::Article> {

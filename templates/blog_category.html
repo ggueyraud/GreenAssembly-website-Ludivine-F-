@@ -22,8 +22,12 @@
 
 {% block content %}
 <header>
-    <h1>Blog</h1>
-    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+    <h1>{{ title }}</h1>
+    {% match description %}
+        {% when Some with (description) %}
+            <p>{{ description }}</p>
+        {% when None %}
+    {% endmatch %}
 </header>
 
 <nav class="md_order_2">
