@@ -74,6 +74,9 @@ CREATE TABLE metrics (
     project_id SMALLINT
         REFERENCES projects (id)
         ON DELETE SET NULL,
+    post_id SMALLINT
+        REFERENCES blog_articles (id)
+        ON DELETE SET NULL,
     ip VARCHAR(60),
     browser VARCHAR(20),
     os VARCHAR(20),
@@ -136,6 +139,7 @@ DROP TABLE IF EXISTS blog_categories CASCADE;
 CREATE TABLE blog_categories (
     id SMALLINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     name VARCHAR(60) NOT NULL,
+    uri VARCHAR(70) NOT NULL,
     description VARCHAR(255),
     is_visible BOOLEAN,
     is_seo BOOLEAN,
@@ -148,10 +152,11 @@ CREATE TABLE blog_articles (
     id SMALLINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     category_id SMALLINT
         REFERENCES blog_categories (id),
-    cover_id INT
+    cover_id INT NOT NULL
         REFERENCES files (id)
         ON DELETE SET NULL,
     name VARCHAR(255) NOT NULL,
+    uri VARCHAR(260) NOT NULL,
     content TEXT NOT NULL,
     "date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     is_published BOOLEAN NOT NULL DEFAULT TRUE,
