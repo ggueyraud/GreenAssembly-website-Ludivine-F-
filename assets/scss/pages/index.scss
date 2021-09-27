@@ -168,9 +168,10 @@
             grid-column: 1;
             grid-row: 2;
             .ludivine {
-                position:unset;
-                width: 100%;
-                background-position-y: 0px;
+                position:relative;
+                width: 150%;
+                left: -80px;
+                background-position: -180px 0px;
             }
         }
 
@@ -183,6 +184,8 @@
                 display: none;
             }
             .send-icon {
+                width: 70px;
+                height: 70px;
                 transform: unset;
                 margin-top: 3rem;
                 margin-right: 2rem;
