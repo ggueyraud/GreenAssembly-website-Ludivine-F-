@@ -156,7 +156,8 @@ async fn main() -> std::io::Result<()> {
             .service(
                 web::scope("/blog")
                     .service(controllers::blog::index)
-                    .service(controllers::blog::show_category),
+                    .service(controllers::blog::show_category)
+                    .service(controllers::blog::show_article),
             )
             .service(controllers::metrics::log)
             .service(serve_upload_file)

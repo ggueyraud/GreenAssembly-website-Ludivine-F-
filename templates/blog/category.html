@@ -42,17 +42,21 @@
 
 <section class="grid grid_cols_1 md_grid_cols_2 gap_6">
     {% for article in articles %}
-        <a href="articles/{{ article.uri }}" class="post">
+        <a href="blog/articles/{{ article.uri }}" class="post">
             <article>
                 <div class="post__cover" style="--cover-path: url(/uploads/{{ article.cover }})"></div>
 
                 <div class="post__body">
                     <header>
-                        <h2>{{ article.name }}</h2>
+                        <h2>{{ article.title }}</h2>
                         <time datetime="{{ article.international_date }}">{{ article.date }}</time>
                     </header>
 
-                    <p>{{ article.content }}</p>
+                    {% match article.description %}
+                        {% when Some with (description) %}
+                            <p>{{ description }}</p>
+                        {% when None %}
+                    {% endmatch %}
                 </div>
             </article>
         </a>

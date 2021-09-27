@@ -16,8 +16,7 @@ pub struct Article {
     pub id: i16,
     pub category: Option<serde_json::Value>,
     // cover:
-    pub name: String,
-    pub content: String,
+    pub title: String,
     pub date: DateTime<Utc>,
     pub is_published: bool,
     pub is_seo: bool,

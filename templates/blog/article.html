@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}{{ article.title }}{% endblock %}
+
+{% block head %}
+    {% match article.description %}
+        {% when Some with (description) %}
+            <meta name="description" content="{{ description }}" />
+        {% when None %}
+    {% endmatch %}
+
+    {% match metric_token %}
+        {% when Some with (token) %}
+            <script>
+                localStorage.setItem("METRIC_TOKEN", "{{ token }}");
+            </script>
+        {% when None %}
+    {% endmatch %}
+
+    <link rel="stylesheet" href="/css/pages/blog.css" />
+{% endblock %}
+
+{% block content %}
+
+{% endblock %}

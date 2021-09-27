@@ -1,11 +1,38 @@
 use serde::Deserialize;
 use sqlx::{Error, PgPool};
 
+pub mod blocks;
+
 pub async fn exists(pool: &PgPool, id: i16) -> bool {
     sqlx::query!("SELECT 1 AS one FROM blog_articles WHERE id = $1", id)
         .fetch_one(pool)
         .await
         .is_ok()
+}
+
+pub async fn exists_for_uri(pool: &PgPool, uri: &str) -> bool {
+    sqlx::query!("SELECT 1 AS one FROM blog_articles WHERE uri = $1", uri)
+        .fetch_one(pool)
+        .await
+        .is_ok()
+}
+
+pub async fn get<
+    T: std::marker::Unpin + std::marker::Send + for<'c> sqlx::FromRow<'c, sqlx::postgres::PgRow>,
+>(
+    pool: &PgPool,
+    fields: &str,
+    id: i16,
+) -> Result<T, Error> {
+    let article = sqlx::query_as::<_, T>(&format!(
+        "SELECT {} FROM blog_articles WHERE id = $1 LIMIT 1",
+        fields
+    ))
+    .bind(id)
+    .fetch_one(pool)
+    .await?;
+
+    Ok(article)
 }
 
 pub async fn get_all1<
@@ -48,8 +75,7 @@ pub async fn get_all(pool: &PgPool) -> Vec<super::Article> {
     sqlx::query!(
         r#"SELECT
             ba.id AS article_id,
-            ba.name AS article_name,
-            ba.content AS article_content,
+            ba.title AS article_title,
             ba.date AS article_date,
             ba.is_published AS article_is_published,
             ba.is_seo AS article_is_seo,
@@ -73,8 +99,7 @@ pub async fn get_all(pool: &PgPool) -> Vec<super::Article> {
         } else {
             None
         },
-        name: row.article_name.clone(),
-        content: row.article_content.clone(),
+        title: row.article_title.clone(),
         date: row.article_date,
         is_published: row.article_is_published,
         is_seo: row.article_is_seo,
@@ -86,8 +111,7 @@ pub async fn get_all(pool: &PgPool) -> Vec<super::Article> {
 pub struct ArticleInformations {
     category_id: Option<i16>,
     cover_id: Option<i32>,
-    name: String,
-    content: String,
+    title: String,
     is_published: bool,
     is_seo: bool,
 }
@@ -95,13 +119,12 @@ pub struct ArticleInformations {
 pub async fn insert(pool: &PgPool, article: &ArticleInformations) -> Result<i16, Error> {
     let res = sqlx::query!(
         "INSERT INTO blog_articles
-            (category_id, cover_id, name, content, is_published, is_seo)
-        VALUES ($1, $2, $3, $4, $5, $6)
+            (category_id, cover_id, title, is_published, is_seo)
+        VALUES ($1, $2, $3, $4, $5)
         RETURNING id",
         article.category_id,
         article.cover_id,
-        article.name,
-        article.content,
+        article.title,
         article.is_published,
         article.is_seo
     )
@@ -116,15 +139,13 @@ pub async fn update(pool: &PgPool, id: i16, article: &ArticleInformations) -> Re
         "UPDATE blog_articles SET
             category_id = $1,
             cover_id = $2,
-            name = $3,
-            content = $4,
-            is_published = $5,
-            is_seo = $6
-        WHERE id = $7",
+            title = $3,
+            is_published = $4,
+            is_seo = $5
+        WHERE id = $6",
         article.category_id,
         article.cover_id,
-        article.name,
-        article.content,
+        article.title,
         article.is_published,
         article.is_seo,
         id
