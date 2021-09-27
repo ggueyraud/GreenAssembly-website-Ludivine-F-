@@ -1,0 +1,57 @@
+@import '../custom.scss';
+@import 'style-box/abstracts/mixins/breakpoints';
+@import 'style-box/abstracts/functions/utilities';
+@import 'style-box/base/display';
+@import 'style-box/base/grid';
+@import 'style-box/base/space';
+@import '../components/card';
+@import '../components/button';
+
+header {
+    margin-bottom: space(4);
+    text-align: center;
+
+    @include md {
+        margin-bottom: space(12);
+        text-align: left;
+
+        h1 {
+            font-family: 'Urbanist', sans-serif;
+            text-transform: uppercase;
+            margin-bottom: space(4)
+        }
+
+        #date_category {
+            align-items: center;
+            flex-direction: row !important;
+        }
+    }
+
+    h1 {
+        margin-bottom: space(2)
+    }
+
+    #date_category {
+        display: inline-flex;
+        flex-direction: column;
+        gap: space(4);
+        margin-bottom: space(4);
+
+        a {
+            border-radius: 10px;
+            font-size: .9rem;
+        }
+    }
+    
+    #cover {
+        width: 100%;
+        height: 300px;
+        background-repeat: no-repeat;
+        background-size: cover;
+        background-image: var(--bg);
+    }
+}
+
+h2 {
+    color: color(blue)
+}

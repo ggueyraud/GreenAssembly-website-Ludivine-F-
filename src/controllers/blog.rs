@@ -157,9 +157,13 @@ async fn show_article(
     #[derive(sqlx::FromRow, Debug)]
     struct Article {
         title: String,
+        category_id: i16,
+        cover_path: String,
         description: Option<String>,
         date: String,
         international_date: String,
+        // As international date format
+        modified_date: Option<String>,
         is_published: bool,
         is_seo: bool,
     }
@@ -167,11 +171,19 @@ async fn show_article(
     let article = services::blog::articles::get::<Article>(
         &pool,
         r#"title,
-    description,
-    TO_CHAR(date, 'DD/MM/YYYY') AS "date",
-    TO_CHAR(date, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS international_date,
-    is_published,
-    is_seo"#,
+        category_id,
+        f.path AS cover_path,
+        description,
+        TO_CHAR(date, 'DD/MM/YYYY') AS "date",
+        TO_CHAR(date, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS international_date,
+        CASE
+            WHEN modified_date IS NOT NULL
+                THEN 
+                    TO_CHAR(modified_date, 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
+            ELSE NULL
+        END AS modified_date,
+        is_published,
+        is_seo"#,
         id,
     )
     .await;
@@ -182,7 +194,7 @@ async fn show_article(
             return Ok(HttpResponse::NotFound().finish());
         }
 
-        #[derive(sqlx::FromRow)]
+        #[derive(sqlx::FromRow, Clone)]
         struct Block {
             title: Option<String>,
             content: String,
@@ -194,13 +206,23 @@ async fn show_article(
         #[template(path = "blog/article.html")]
         struct BlogArticle {
             article: Article,
-            blocks: Vec<Block>,
+            category: Category,
+            left_blocks: Vec<Block>,
+            right_blocks: Vec<Block>,
             year: i32,
             metric_token: Option<String>,
         }
 
-        let (metric_id, blocks) = futures::join!(
+        #[derive(sqlx::FromRow)]
+        struct Category {
+            id: i16,
+            name: String,
+            uri: String
+        }
+
+        let (metric_id, category, blocks) = futures::join!(
             metrics::add(&pool, &req, services::metrics::BelongsTo::BlogPost(id)),
+            services::blog::categories::get::<Category>(&pool, "id, name, uri", article.category_id),
             services::blog::articles::blocks::get_all::<Block>(
                 &pool,
                 r#"title, content, left_column, "order""#,
@@ -217,7 +239,9 @@ async fn show_article(
 
         return BlogArticle {
             article,
-            blocks,
+            category: category.unwrap(),
+            left_blocks: blocks.iter().filter(|&block| block.left_column == true).cloned().collect::<Vec<_>>(),
+            right_blocks: blocks.iter().filter(|&block| block.left_column == false).cloned().collect::<Vec<_>>(),
             year: chrono::Utc::now().year(),
             metric_token: token,
         }

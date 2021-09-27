@@ -90,3 +90,28 @@ img {
 p {
     margin: 0
 }
+
+.know_more {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    row-gap: space(4);
+    margin-top: space(6);
+
+    @include md {
+        justify-content: space-between;
+        margin-top: space(14);
+        flex-direction: row;
+
+        a.btn {
+            margin-top: 0
+        }
+    }
+
+    a.btn {
+        text-transform: uppercase;
+        margin-top: space(2);
+        white-space: nowrap
+    }
+}

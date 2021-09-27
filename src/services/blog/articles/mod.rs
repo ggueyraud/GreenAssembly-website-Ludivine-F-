@@ -25,7 +25,11 @@ pub async fn get<
     id: i16,
 ) -> Result<T, Error> {
     let article = sqlx::query_as::<_, T>(&format!(
-        "SELECT {} FROM blog_articles WHERE id = $1 LIMIT 1",
+        "SELECT
+            {}
+        FROM blog_articles ba
+        JOIN files f ON f.id = ba.cover_id
+        WHERE ba.id = $1 LIMIT 1",
         fields
     ))
     .bind(id)
