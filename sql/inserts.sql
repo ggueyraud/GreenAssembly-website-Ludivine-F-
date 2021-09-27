@@ -18,7 +18,13 @@ INSERT INTO blog_categories (name, uri, description, is_visible, is_seo, "order"
 ('Print', 'print-1', 'Lorem ipsum dolor sit amet', true, true, 1),
 ('Motion design', 'motion-design-2', null, false, false, 2);
 
-INSERT INTO blog_articles (category_id, cover_id, name, uri, content, is_published) VALUES
-(1, 1, 'Les aventures de lulu', 'les-aventures-de-lulu', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam id felis feugiat, rhoncus nisi nec, consequat elit. Duis velit nibh, hendrerit id lectus id, dapibus posuere sem. Pellentesque consequat tortor id vestibulum pellentesque. Sed et erat rutrum, congue ligula at, facilisis justo. Morbi felis elit, commodo sed rhoncus et, dignissim.', false),
-(1, 1, 'Les aventures de lulu partie 2', 'les-aventures-de-lulu-partie-2', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam id felis feugiat, rhoncus nisi nec, consequat elit. Duis velit nibh, hendrerit id lectus id, dapibus posuere sem. Pellentesque consequat tortor id vestibulum pellentesque. Sed et erat rutrum, congue ligula at, facilisis justo. Morbi felis elit, commodo sed rhoncus et, dignissim.', true),
-(2, 1, 'Les aventures de lulu partie 3', 'les-aventures-de-lulu-partie-3', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam id felis feugiat, rhoncus nisi nec, consequat elit. Duis velit nibh, hendrerit id lectus id, dapibus posuere sem. Pellentesque consequat tortor id vestibulum pebi felis elit, commodo sed rhoncus et, dignissim.', true);
+INSERT INTO blog_articles (category_id, cover_id, title, uri, is_published, is_seo) VALUES
+(1, 1, 'Les aventures de lulu', 'les-aventures-de-lulu', false, true),
+(1, 1, 'Les aventures de lulu partie 2', 'les-aventures-de-lulu-partie-2', true, true),
+(2, 1, 'Les aventures de lulu partie 3', 'les-aventures-de-lulu-partie-3', true, true),
+(2, 1, 'Les aventures de lulu partie 3', 'les-aventures-de-lulu-partie-4', true, false);
+
+INSERT INTO blog_article_blocks (article_id, title, content, left_column, "order") VALUES
+(1, 'Lorem ipsum', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam id felis feugiat, rhoncus nisi nec, consequat elit. Duis velit nibh, hendrerit id lectus id, dapibus posuere sem. Pellentesque consequat tortor id vestibulum pellentesque. Sed et erat rutrum, congue ligula at, facilisis justo. Morbi felis elit, commodo sed rhoncus et, dignissim.', true, 1),
+(1, 'Dolor sit amet', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam id felis feugiat, rhoncus nisi nec, consequat elit. Duis velit nibh, hendrerit id lectus id, dapibus posuere sem. Pellentesque consequat tortor id vestibulum pellentesque. Sed et erat rutrum, congue ligula at, facilisis justo. Morbi felis elit, commodo sed rhoncus et, dignissim.', true, 2),
+(2, 'Lorem ipsum', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam id felis feugiat, rhoncus nisi nec, consequat elit. Duis velit nibh, hendrerit id lectus id, dapibus posuere sem. Pellentesque consequat tortor id vestibulum pellentesque. Sed et erat rutrum, congue ligula at, facilisis justo. Morbi felis elit, commodo sed rhoncus et, dignissim.', true, 1);
