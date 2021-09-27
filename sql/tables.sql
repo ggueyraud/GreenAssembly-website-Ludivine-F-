@@ -159,6 +159,7 @@ CREATE TABLE blog_articles (
     description VARCHAR(320),
     uri VARCHAR(260) NOT NULL,
     "date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    modified_date TIMESTAMP WITH TIME ZONE,
     is_published BOOLEAN NOT NULL DEFAULT TRUE,
     is_seo BOOLEAN NOT NULL DEFAULT TRUE
 );
