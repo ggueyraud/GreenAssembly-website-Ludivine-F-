@@ -7,9 +7,9 @@ use sqlx::PgPool;
 
 #[get("/connexion")]
 pub async fn show_login(id: Identity) -> Result<HttpResponse, Error> {
-    if id.identity().is_some() {
-        return Ok(HttpResponse::Ok().header(http::header::LOCATION, "/"))
-    }
+    // if id.identity().is_some() {
+    //     return Ok(HttpResponse::Ok().header(http::header::LOCATION, "/"))
+    // }
 
     #[derive(Template)]
     #[template(path = "pages/login.html")]
