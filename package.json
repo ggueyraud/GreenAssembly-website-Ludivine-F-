@@ -13,7 +13,7 @@
   "dependencies": {
     "router": "../Router",
     "carousel": "../Carousel",
-    "style-box": "../style-box"
+    "style-box": "git://github.com/GreenAssembly/style-box.git"
   },
   "browserslist": [
     "> 1%",
