@@ -159,6 +159,7 @@ async fn main() -> std::io::Result<()> {
                     .service(controllers::blog::show_category)
                     .service(controllers::blog::show_article),
             )
+            .service(controllers::user::show_login)
             .service(controllers::metrics::log)
             .service(serve_upload_file)
             .service(serve_public_file)
