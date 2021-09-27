@@ -31,6 +31,7 @@
         <h3>Catégories</h3>
     </header>
 
+    <a href="/blog">Tout</a>
     {% for category in categories %}
         <a href="blog/categories/{{ category.uri }}">{{ category.name }}</a>
     {% endfor %}

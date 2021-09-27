@@ -17,6 +17,10 @@ main {
     nav {
         order: 2;
 
+        h3 {
+            margin-bottom: space(4)
+        }
+
         a {
             position: relative;
             padding: space(2) space(3);
