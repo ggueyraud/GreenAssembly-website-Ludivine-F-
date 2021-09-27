@@ -54,7 +54,7 @@ async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse
         }
 
         #[derive(Template)]
-        #[template(path = "blog/index.html")]
+        #[template(path = "pages/blog/index.html")]
         struct Blog {
             title: String,
             description: Option<String>,
@@ -123,7 +123,7 @@ async fn show_category(
     }
 
     #[derive(Template)]
-    #[template(path = "blog/category.html")]
+    #[template(path = "pages/blog/category.html")]
     struct BlogCategory {
         title: String,
         description: Option<String>,
@@ -203,7 +203,7 @@ async fn show_article(
         }
 
         #[derive(Template)]
-        #[template(path = "blog/article.html")]
+        #[template(path = "pages/blog/article.html")]
         struct BlogArticle {
             article: Article,
             category: Category,

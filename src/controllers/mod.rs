@@ -23,7 +23,7 @@ pub async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResp
             }
         }
         #[derive(Template)]
-        #[template(path = "index.html")]
+        #[template(path = "pages/index.html")]
         struct Index {
             title: String,
             description: Option<String>,
@@ -59,7 +59,7 @@ async fn motion_design(req: HttpRequest, pool: web::Data<PgPool>) -> Result<Http
         }
 
         #[derive(Template)]
-        #[template(path = "motion_design.html")]
+        #[template(path = "pages/motion_design.html")]
         struct MotionDesign {
             videos: Vec<services::videos::Video>,
             title: String,

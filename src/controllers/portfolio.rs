@@ -39,7 +39,7 @@ async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse
         }
 
         #[derive(Template)]
-        #[template(path = "portfolio.html")]
+        #[template(path = "pages/portfolio.html")]
         struct Portfolio {
             categories: Vec<services::projects::Category>,
             projects: Vec<ProjectTile>,
@@ -133,7 +133,7 @@ async fn get_project(
             }
 
             #[derive(Template)]
-            #[template(path = "portfolio_project.html")]
+            #[template(path = "pages/portfolio_project.html")]
             struct PortfolioProject<'a> {
                 title: String,
                 description: Option<String>,

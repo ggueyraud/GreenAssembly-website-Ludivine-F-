@@ -44,7 +44,7 @@ fn serve_file(req: &HttpRequest, path: &Path, cache_duration: i64) -> Result<Htt
             use askama::Template;
 
             #[derive(Template)]
-            #[template(path = "404.html")]
+            #[template(path = "pages/404.html")]
             struct NotFound;
 
             Ok(HttpResponse::NotFound()

@@ -22,7 +22,7 @@ async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse
         println!("Token {:?}", token);
 
         #[derive(Template)]
-        #[template(path = "contact.html")]
+        #[template(path = "pages/contact.html")]
         struct Contact {
             title: String,
             description: Option<String>,
