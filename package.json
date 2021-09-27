@@ -11,9 +11,9 @@
     "url": "git+https://github.com/GreenAssembly/LudivineFarat.git"
   },
   "dependencies": {
-    "router": "../Router",
-    "carousel": "../Carousel",
-    "style-box": "../style-box"
+    "router": "https://github.com/GreenAssembly/Router/tree/development",
+    "carousel": "https://github.com/GreenAssembly/Carousel",
+    "style-box": "https://github.com/GreenAssembly/style-box"
   },
   "browserslist": [
     "> 1%",
