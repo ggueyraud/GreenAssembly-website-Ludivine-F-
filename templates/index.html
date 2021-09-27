@@ -3,6 +3,13 @@
 {% block title %}{{ title }}{% endblock %}
 
 {% block head %}
+    {% match description %}
+        {% when Some with (description) %}
+            <meta name="description" content="{{ description }}" />
+        {% when None %}
+    {% endmatch %}
+
+    <link rel="stylesheet" href="/css/pages/index.css" />
     {% match metric_token %}
         {% when Some with (token) %}
             <script>
@@ -10,6 +17,60 @@
             </script>
         {% when None %}
     {% endmatch %}
+{% endblock %}
+
+{% block content %}
+    <div class="index-frame-header">
+        <div class="description">
+            <div>
+                <b class="upscale-text">Hello</b><br>
+                Moi c’est Ludivine<br>
+                <b>Je suis <span class="blue-text">designer graphique.</span></b>
+            </div>
+        </div>
+        <div class="ludivine-bg">
+            <div class="ludivine">
+                <div class="gradiant"></div>
+            </div>
+        </div>
+        <div class="arrow-container">
+            <div class="arrow"></div>
+            <a href="/contact" class="send-icon">
+                <div class="icon-wrapper">
+                    <svg class="icon icon--sm ml_2" height="24px">
+                        <use xlink:href="/icons.svg#paper_plane"></use>
+                    </svg>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="index-sections">
+        <div class="blue-text">
+            <p>Osez le style avec une identité visuelle <span class="upscale-text">audacieuse</span> et originale.</p>
+        </div>
+        <section class="a-propos">
+            <h2>À propos</h2>
+            <p>
+                Faire de votre marque celle qui marquera les esprits, tel est le défi que je relève pour vous.
+            </p>
+            <p>
+                Création charte graphique, design site web, conception de logos, animation vidéo, réalisation motion design,
+                illustrations animées ou statiques pour vos réseaux sociaux…
+            </p>
+            <p>
+                Confiez-moi votre envie de sortir du lot. Je me charge de mettre votre singularité en image en jouant sur les
+                codes couleurs et style typographique. Le mélange des genres tout en cohérence. Le sur-mesure esprit tendance
+                créative. La technicité du design graphique mêlée à ma créativité artistique.
+            </p>
+            <p>
+                Explorer, tester, créer, innover. Si telle est votre vision de l’originalité, alors imaginons ensemble votre
+                plus belle identité visuelle.
+            </p>
+        </section>
+    </div>
+    <nav class="links">
+        <a href="/portfolio" class="special">Mon travail en images</a>
+    </nav>
 {% endblock %}
 
 {% block year %}{{ year }}{% endblock %}
