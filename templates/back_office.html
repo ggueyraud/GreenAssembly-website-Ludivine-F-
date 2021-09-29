@@ -7,16 +7,15 @@
         <title>{% block title %}Administration : {{ title }}{% endblock %} | Ludivine Farat</title>
 
         <link rel="icon" type="image/png" href="/favicon.png" />
+        <meta name="robots" content="noindex">
 
         {% block head %}{% endblock %}
     </head>
-    <body>
-        <div class="container mx_auto">
-            <ga-frame name="main">
-                <main>
-                    {% block content %}{% endblock %}
-                </main>
-            </ga-frame>
-        </div>
+    <body class="container mx_auto">
+        <ga-frame name="main">
+            <main>
+                {% block content %}{% endblock %}
+            </main>
+        </ga-frame>
     </body>
 </html>

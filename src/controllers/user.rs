@@ -1,8 +1,26 @@
 use crate::services;
 use actix_identity::Identity;
-use actix_web::{get, post, web, HttpRequest, HttpResponse};
+use actix_web::{Error, HttpRequest, HttpResponse, get, http, post, web};
+use askama_actix::{Template, TemplateIntoResponse};
 use serde::Deserialize;
 use sqlx::PgPool;
+
+#[get("/connexion")]
+pub async fn show_login(id: Identity) -> Result<HttpResponse, Error> {
+    // if id.identity().is_some() {
+    //     return Ok(HttpResponse::Ok().header(http::header::LOCATION, "/"))
+    // }
+
+    #[derive(Template)]
+    #[template(path = "pages/login.html")]
+    struct Login {
+        title: String
+    }
+
+    return Login {
+        title: String::from("Connexion")
+    }.into_response()
+}
 
 #[derive(Deserialize)]
 pub struct LoginForm {
