@@ -145,6 +145,7 @@ async fn main() -> std::io::Result<()> {
                     .service(controllers::portfolio::get_project) // .service(controllers::portfolio::update_project)
                     .service(controllers::portfolio::insert_asset),
             )
+            .service(controllers::my_little_plus)
             .service(controllers::motion_design)
             .service(controllers::contact::index)
             .service(controllers::contact::post)

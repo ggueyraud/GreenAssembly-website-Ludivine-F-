@@ -1,0 +1,105 @@
+@use '../custom';
+@use 'style-box/base/grid';
+@use '../components/button';
+@use 'style-box/abstracts/functions/utilities';
+@import 'style-box/abstracts/mixins/breakpoints';
+
+.page-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    margin: 0 1rem;
+
+    .title {
+        grid-area: title;
+    }
+    .intro {
+        grid-area: intro;
+    }
+    .paint-and-brand {
+        grid-area: paint;
+    }
+    .photo {
+        grid-area: photo;
+    }
+    .intro {
+        grid-area: intro;
+    }
+
+    h1 {
+        font-size: 3.5rem;
+        font-weight: 300;
+
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    h2, .description {
+        font-size: 3rem;
+        font-family: "Urbanist";
+        font-weight: 600;
+        line-height: 3rem;
+        margin-bottom: 2rem;
+
+        text-align: center;
+        text-transform: uppercase;
+    }
+    h2 {
+        color: utilities.color(blue);
+    }
+    .description {
+        margin-bottom: 0;
+    }
+
+    p {
+        text-align: justify;
+    }
+
+    .links {
+        margin-top: 2rem;
+        text-align: center;
+
+        .special {
+            padding-bottom: 0.5rem;
+            font-size: 1.2em;
+            text-transform: uppercase;
+        }
+    }
+    
+    .images-left {
+        grid-area: images_left;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        grid-row: repeat(2, 1fr);
+        gap: 1rem;
+
+    }
+
+    .images-right {
+        grid-area: images_right;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        grid-row: repeat(2, 1fr);
+        gap: 1rem;
+
+        .col-3 {
+            grid-column: span 3;
+        }
+    }
+    // md, lg, xl
+    @include lg {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-areas: "title intro"
+                             "paint photo"
+                             "images_left images_right";
+        row-gap: 5rem;
+        margin-top: 3rem;
+
+        h1 {
+            font-size: 6rem;
+        }
+        .links {
+            text-align: right;
+        }
+    }
+}
