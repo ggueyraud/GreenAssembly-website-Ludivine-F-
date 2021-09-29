@@ -21,6 +21,16 @@ INSERT INTO blog_categories (name, uri, description, is_visible, is_seo, "order"
 INSERT INTO files (name, path) VALUES
 ('first file', 'path');
 
+-- We prepare the rows for the 7 images in the my_little_plus_images page
+INSERT INTO my_little_plus_images (file_id) VALUES
+(NULL), -- #1
+(NULL), -- #2
+(NULL), -- #3
+(NULL), -- #4
+(NULL), -- #5
+(NULL), -- #6
+(NULL); -- #7
+
 INSERT INTO blog_articles (category_id, cover_id, title, uri, is_published, is_seo) VALUES
 (1, 1, 'Les aventures de lulu', 'les-aventures-de-lulu', false, true),
 (1, 1, 'Les aventures de lulu partie 2', 'les-aventures-de-lulu-partie-2', true, true),
