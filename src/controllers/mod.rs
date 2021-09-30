@@ -8,6 +8,7 @@ pub mod blog;
 pub mod contact;
 pub mod metrics;
 pub mod portfolio;
+pub mod my_little_plus;
 pub mod user;
 
 #[get("/")]

@@ -1,0 +1,113 @@
+{% extends "front_office.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block head %}
+    {% match description %}
+        {% when Some with (description) %}
+            <meta name="description" content="{{ description }}" />
+        {% when None %}
+    {% endmatch %}
+
+    <link rel="stylesheet" href="/css/pages/my_little_plus.css" />
+
+    {% match metric_token %}
+        {% when Some with (token) %}
+            <script>
+                localStorage.setItem("METRIC_TOKEN", "{{ token }}");
+            </script>
+        {% when None %}
+    {% endmatch %}
+{% endblock %}
+
+{% block content %}
+    <div class="page-container">
+        <div class="title">
+            <h1>Mes petits +</h1>
+            <div class="description">
+                De l’art et la manière 
+                de créer votre identité visuelle
+            </div>
+        </div>
+        <section class="intro">
+            <p>
+                Sensible à l’art et au message qu’il véhicule, j’ose me définir comme étant
+                une GRAPHISTE avec une âme d’artiste. Une graphiste curieuse de ce qui
+                l’entoure et qui s’est donnée pour mission de trouver ce PETIT + qui fait votre différence.
+            </p>
+            <p>
+                Véritable touche à tout, j’aime créer, travailler la matière, mélanger les couleurs, jouer
+                avec la lumière. Toute petite, j’étais déjà très manuelle. J’étudiais une multitude de
+                supports et de techniques (couture, peinture, collages, photo, dessin).
+            </p>
+            <p>
+                Aujourd’hui, j’explore, je sors de l’ordinateur, j’observe, je teste la matière. Cela me
+                permet de développer ma créativité et mon imagination. Une imagination sans limites pour
+                des design uniques.
+            </p>
+            <div class="links">
+                <a href="/contact" target="_blank" rel="noopener" class="uppercase btn btn__blue mt_2 md_mt_0">
+                    Me contacter
+                    <svg class="icon ml_2" height="24px">
+                        <use xlink:href="/icons.svg#paper_plane"></use>
+                    </svg>
+                </a>
+            </div>
+        </section>
+        <section class="paint-and-brand">
+            <h2>Peinture et brand Identity, tout un art</h2>
+            <p>
+                Parce que j’aime tester, coller, je crée, je peins et j'observe le résultat. La peinture,
+                et ma pratique artistique de manière générale, me nourrissent et me permettent de voir
+                le monde différemment.
+            </p>
+            <p>
+                Mes peintures sont hétéroclites et colorées. Aquarelle, papier collé, perspectives, gouache,
+                crayon, pastel, body painting... l’art plastique inspire mes créations graphiques et m’aide
+                à réaliser des design FAITS MAIN que l’on ne trouve nulle part ailleurs.
+            </p>
+            <p>Pour mieux marquer les esprits et faire que l’on reconnaîtra votre marque au premier coup d’œil.</p>
+            <div class="links">
+                <a href="/portfolio" class="special">
+                    Découvrir mes créations
+                </a>
+            </div>
+        </section>
+        <section class="images-left">
+            <img src="/img/Peinture_1.jpg">
+            <img src="/img/Peinture_2.jpg">
+            <img src="/img/Peinture_3.jpg">
+            <img src="/img/OISEAU_1.jpg" class="col_span_3">
+        </section>
+        <section class="photo">
+            <h2>La photographie au cœur de vos design</h2>
+            <p>
+                Le métier de graphiste webdesigner bouge beaucoup, il faut tout le temps être à l’affût, au
+                fait des nouveautés et des tendances.
+            </p>
+            <p>
+                Jeux d’ombre et de lumière, profondeur de champ, arrière-plan, balance des blancs, cadrage,
+                filtre, objectif, mise au point… J’essaye des techniques et des modes différents sur mon
+                appareil photo.
+            </p>
+            <p>
+                La PHOTO m’aide à comprendre comment capter la lumière et jouer avec pour mettre en valeur
+                les couleurs. Et, ainsi, attirer le regard pour mieux retenir l’attention.
+            </p>
+            <p>
+                Donnez un coup de neuf à votre communication. Démarquez-vous avec des visuels atypiques et
+                uniques en leur genre. Comme vous.
+            </p>
+            <div class="links">
+                <a href="/portfolio" class="special">
+                    Découvrir mes shooting
+                </a>
+            </div>
+        </section>
+        <section class="images-right">
+            <img src="/img/PHOTO_01.jpg" class="col_span_3">
+            <img src="/img/PHOTO_3.jpg">
+            <img src="/img/PHOTO_02.jpg" class="col_span_2">
+        </section>    
+    </div>
+{% endblock %}
