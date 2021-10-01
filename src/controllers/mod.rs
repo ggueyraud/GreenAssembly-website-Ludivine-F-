@@ -26,6 +26,7 @@ pub async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResp
         #[derive(Template)]
         #[template(path = "pages/index.html")]
         struct Index {
+            banner: String, // Image de la bannière
             title: String,
             description: Option<String>,
             year: i32,
@@ -33,6 +34,7 @@ pub async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResp
         }
 
         return Index {
+            banner: "index.png".to_string(),
             title: page.title,
             description: page.description,
             year: chrono::Utc::now().year(),
