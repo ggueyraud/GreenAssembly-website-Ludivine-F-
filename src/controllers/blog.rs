@@ -217,12 +217,16 @@ async fn show_article(
         struct Category {
             id: i16,
             name: String,
-            uri: String
+            uri: String,
         }
 
         let (metric_id, category, blocks) = futures::join!(
             metrics::add(&pool, &req, services::metrics::BelongsTo::BlogPost(id)),
-            services::blog::categories::get::<Category>(&pool, "id, name, uri", article.category_id),
+            services::blog::categories::get::<Category>(
+                &pool,
+                "id, name, uri",
+                article.category_id
+            ),
             services::blog::articles::blocks::get_all::<Block>(
                 &pool,
                 r#"title, content, left_column, "order""#,
@@ -240,8 +244,16 @@ async fn show_article(
         return BlogArticle {
             article,
             category: category.unwrap(),
-            left_blocks: blocks.iter().filter(|&block| block.left_column == true).cloned().collect::<Vec<_>>(),
-            right_blocks: blocks.iter().filter(|&block| block.left_column == false).cloned().collect::<Vec<_>>(),
+            left_blocks: blocks
+                .iter()
+                .filter(|&block| block.left_column == true)
+                .cloned()
+                .collect::<Vec<_>>(),
+            right_blocks: blocks
+                .iter()
+                .filter(|&block| block.left_column == false)
+                .cloned()
+                .collect::<Vec<_>>(),
             year: chrono::Utc::now().year(),
             metric_token: token,
         }
