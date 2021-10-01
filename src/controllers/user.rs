@@ -1,26 +1,9 @@
 use crate::services;
 use actix_identity::Identity;
-use actix_web::{Error, HttpRequest, HttpResponse, get, http, post, web};
+use actix_web::{get, http, post, web, Error, HttpRequest, HttpResponse};
 use askama_actix::{Template, TemplateIntoResponse};
 use serde::Deserialize;
 use sqlx::PgPool;
-
-#[get("/connexion")]
-pub async fn show_login(id: Identity) -> Result<HttpResponse, Error> {
-    // if id.identity().is_some() {
-    //     return Ok(HttpResponse::Ok().header(http::header::LOCATION, "/"))
-    // }
-
-    #[derive(Template)]
-    #[template(path = "pages/login.html")]
-    struct Login {
-        title: String
-    }
-
-    return Login {
-        title: String::from("Connexion")
-    }.into_response()
-}
 
 #[derive(Deserialize)]
 pub struct LoginForm {
@@ -58,6 +41,7 @@ pub async fn login(
         return HttpResponse::TooManyRequests().finish();
     }
 
+    // TODO : move into model
     match sqlx::query!(
         r#"SELECT password FROM "user" WHERE email = $1 LIMIT 1"#,
         form.email
@@ -125,11 +109,54 @@ pub async fn login(
     }
 }
 
+#[derive(Deserialize)]
+pub struct LostPasswordForm {
+    email: String,
+}
+
+#[post("/lost-password")]
+pub async fn lost_password(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    mut form: web::Form<LostPasswordForm>
+) -> HttpResponse {
+    use regex::Regex;
+
+    form.email = form.email.trim().to_string();
+
+    let email_regex = Regex::new(r#"^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$"#).unwrap();
+
+    if !email_regex.is_match(&form.email) {
+        return HttpResponse::BadRequest().finish();
+    }
+
+    if services::user::exist_for_email(&pool, &form.email).await {
+        use rand::seq::SliceRandom;
+        use rand::thread_rng;
+
+        let mut rng = thread_rng();
+        let mut token = String::from("@-_!ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
+        
+        unsafe {
+            token.as_mut_vec().shuffle(&mut rng);
+            println!("Generated token : {:?}", &token[..60]);
+        }
+
+        // TODO : update user, set token and send email
+
+        return HttpResponse::Ok().finish()
+    }
+
+    // TODO : add attempts
+
+    HttpResponse::NotFound().finish()
+}
+
 #[get("/logout")]
 pub async fn logout(id: Identity) -> HttpResponse {
     id.forget();
 
-    HttpResponse::Found().header("location", "/").finish()
+    HttpResponse::Found().header("location", "/admin").finish()
 }
 
 #[cfg(test)]

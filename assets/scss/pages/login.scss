@@ -1,0 +1,128 @@
+@use '../custom.scss';
+@use 'style-box/abstracts/functions/utilities';
+@use 'style-box/abstracts/mixins/breakpoints';
+@use 'style-box/abstracts/mixins/text';
+
+@import 'style-box/base/float';
+@import 'style-box/base/margin';
+@import 'style-box/base/display';
+@import 'style-box/base/text';
+@import '../components/button';
+@import '../components/input';
+
+.text_muted {
+    color: #a1a5b7;
+}
+
+html {
+    body {
+        color: #181c32;
+        font-family: Poppins, Helvetica, sans-serif;
+        background-color: #fff;
+        font-size: 18px;
+        margin: 0
+    }
+}
+
+h1 {
+    @include text.text(3xl, true);
+    color: #fff;
+    line-height: 1;
+    text-align: center;
+    text-transform: inherit;
+}
+
+a {
+    text-decoration: none;
+    color: utilities.color(blue);
+    font-weight: bold;
+}
+
+@include breakpoints.md {
+    label, a {
+        @include text.text(base, true)
+    }
+
+    main {
+        grid-template-columns: 35% 1fr;
+    }
+
+    h1 {
+        @include text.text(4xl, true);
+    }
+
+    #banner {
+        height: 100vh !important;
+    }
+
+    section#content {
+        padding: utilities.space(20);
+
+        form {
+            max-width: 50%;
+        }
+    }
+}
+
+@include breakpoints.xl {
+    h1 {
+        @include text.text(5xl, true)
+    }
+}
+
+#login_error {
+    @include text.text(sm);
+    color: #f1416c
+}
+
+#banner {
+    padding-top: 3rem;
+    background-color: utilities.color(gray);
+    height: 50vh;
+    background-image: url(/img/login.svg);
+    background-repeat: no-repeat;
+    background-size: 80%;
+    background-position-y: bottom;
+    background-position-x: center;
+}
+
+section#content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+label, a {
+    @include text.text(sm)
+}
+
+// input {
+//     background-color: #f5f8fa;
+//     border: 1px solid #f5f8fa;
+//     color: #5e6278;
+//     transition: color .2s ease,background-color .2s ease;
+//     width: 100%;
+//     outline: none;
+//     border-radius: .65rem;
+//     padding: .825rem 1.5rem;
+// }
+
+// button[type=button], button[type=submit] {
+//     margin-top: utilities.space(10);
+//     font-weight: bold;
+//     padding: utilities.space(4) utilities.space(8);
+//     font-size: inherit;
+//     cursor: pointer;
+//     border-radius: .65rem;
+//     border-style: none;
+// }
+
+// button[type=button] {
+//     background-color: #e4fff4;
+//     color: #20d489
+// }
+
+// button[type=submit] {
+//     background-color: #20d489;
+//     color: #fff;
+// }

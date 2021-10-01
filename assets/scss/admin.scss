@@ -1,0 +1,57 @@
+@use 'custom';
+@use 'style-box/abstracts/functions/utilities';
+@use 'style-box/abstracts/mixins/breakpoints';
+
+@import url('https://fonts.googleapis.com/css2?family=Urbanist&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Urbanist:wght@400;800&display=swap');
+
+@font-face {
+    font-family: "Quakiez";
+    src: url("/fonts/Quakiez.ttf");
+}
+
+html {
+    body {
+        font-family: 'Urbanist', sans-serif;
+        color: color('black');
+        font-size: 18px;
+        margin: 0;
+        background-color: utilities.color('white');
+    }
+}
+
+* {
+    box-sizing: border-box
+}
+
+main {
+    display: grid;
+    grid-template-columns: 1fr;
+    height: 100vh
+}
+
+@include breakpoints.md {
+    main {
+        grid-template-columns: 20% 1fr;
+    }
+}
+
+#sidenav {
+    background-color: utilities.color(gray);
+    height: 100%;
+
+    nav {
+        display: flex;
+        flex-direction: column;
+
+        a {
+            text-decoration: none;
+            color: utilities.color('white')
+        }
+    }
+}
+
+section#content {
+    padding: utilities.space(8);
+    height: 100%;
+}

@@ -6,9 +6,10 @@ use sqlx::PgPool;
 
 pub mod blog;
 pub mod contact;
+pub mod dashboard;
 pub mod metrics;
-pub mod portfolio;
 pub mod my_little_plus;
+pub mod portfolio;
 pub mod user;
 
 #[get("/")]

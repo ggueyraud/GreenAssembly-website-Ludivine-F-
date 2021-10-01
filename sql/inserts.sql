@@ -12,7 +12,7 @@ INSERT INTO page_chunks (page_id, identifier, content) VALUES
 (4, 'link_shootings', '{"value": ""}');
 
 INSERT INTO "user" (username, email, password) VALUES
-('Ludivine', 'contact@ludivinefarat.fr', '$argon2id$v=19$m=4096,t=3,p=1$Mp3DjJs9YxfrRDu0TUIbcw$+W67zS2FLYB6ruKPI1MHCB4KD+QrEJhN4D2VBzeVuOs');
+('Ludivine', 'hello@ludivinefarat.fr', '$argon2id$v=19$m=4096,t=3,p=1$Mp3DjJs9YxfrRDu0TUIbcw$+W67zS2FLYB6ruKPI1MHCB4KD+QrEJhN4D2VBzeVuOs');
 
 INSERT INTO blog_categories (name, uri, description, is_visible, is_seo, "order") VALUES
 ('Print', 'print-1', 'Lorem ipsum dolor sit amet', true, true, 1),

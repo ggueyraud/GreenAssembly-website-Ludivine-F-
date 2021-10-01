@@ -152,7 +152,8 @@ async fn main() -> std::io::Result<()> {
             .service(
                 web::scope("/user")
                     .service(controllers::user::login)
-                    .service(controllers::user::logout),
+                    .service(controllers::user::logout)
+                    .service(controllers::user::lost_password)
             )
             .service(
                 web::scope("/blog")
@@ -160,7 +161,7 @@ async fn main() -> std::io::Result<()> {
                     .service(controllers::blog::show_category)
                     .service(controllers::blog::show_article),
             )
-            .service(controllers::user::show_login)
+            .service(web::scope("/admin").service(controllers::dashboard::index))
             .service(controllers::metrics::log)
             .service(serve_upload_file)
             .service(serve_public_file)

@@ -1,0 +1,53 @@
+{% extends "back_office.html" %}
+
+{% block title %}Connexion{% endblock %}
+
+{% block head %}
+    <script src="/js/login.js" async></script>
+    <link rel="stylesheet" href="/css/pages/login.css" />
+{% endblock %}
+
+{% block sidenav %}
+    <header id="banner">
+        <h1>Espace d'administration</h1>
+    </header>
+{% endblock %}
+
+{% block content %}
+    <section id="content">
+        <form name="login">
+            <header class="mb_15">
+                <h2 class="mb_1 mt_0">Connexion</h2>
+                <p class="text_muted my_0">Saisissez vos informations identifiants</p>
+            </header>
+
+            <label for="email">Email</label>
+            <input type="email" name="email" id="email" class="mb_10" autofocus tabindex="1" />
+        
+            <a href="javascript:;" class="change_state_btn float_right">Mot de passe oublié ?</a>
+            <label for="password">Mot de passe</label>
+            <input type="password" name="password" id="password" tabindex="2" />
+
+            <div id="login_error" class="hidden">L'identifiant saisit n'existe pas</div>
+        
+            <div class="text_center md_text_left mt_10">
+                <button type="submit">Connexion</button>
+            </div>
+        </form>
+
+        <form name="lost_password" class="hidden">
+            <header class="mb_15">
+                <h2 class="mb_1 mt_0">Mot de passe oublié ?</h2>
+                <p class="text_muted my_0">Entrez votre email pour reset votre mot de passe</p>
+            </header>
+
+            <label for="email">Email</label>
+            <input type="email" name="email" id="email" />
+
+            <div class="text_center md_text_left mt_10">
+                <button type="submit" class="btn btn__blue">Envoyer</button>
+                <button type="button" class="change_state_btn">Annuler</button>
+            </div>
+        </form>
+    </section>
+{% endblock %}
