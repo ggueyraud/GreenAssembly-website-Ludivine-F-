@@ -129,17 +129,17 @@ DROP TABLE IF EXISTS "user" CASCADE;
 CREATE TABLE "user" (
     email VARCHAR(255) NOT NULL,
     username VARCHAR(60) NOT NULL,
-    password VARCHAR(255) NOT NULL
+    password VARCHAR(255) NOT NULL,
+    token VARCHAR(60),
+    token_validity_date TIMESTAMP WITH TIME ZONE
 );
 
-DROP TABLE IF EXISTS login_attempts CASCADE;
-CREATE TABLE login_attempts (
+DROP TABLE IF EXISTS attempts CASCADE;
+CREATE TABLE attempts (
     id SMALLINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     email VARCHAR(250) NOT NULL,
     ip VARCHAR(60) NOT NULL,
-    browser VARCHAR(20),
-    os VARCHAR(20),
-    device_type VARCHAR(20),
+    is_login BOOLEAN NOT NULL,
     "date" tIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 

@@ -41,11 +41,31 @@
                 <p class="text_muted my_0">Entrez votre email pour reset votre mot de passe</p>
             </header>
 
-            <label for="email">Email</label>
-            <input type="email" name="email" id="email" />
+            <label for="recovery_email">Email</label>
+            <input type="email" name="recovery_email" id="recovery_email" />
+
+            <div id="lost_password_error" class="hidden"></div>
 
             <div class="text_center md_text_left mt_10">
                 <button type="submit" class="btn btn__blue">Envoyer</button>
+                <button type="button" class="change_state_btn">Annuler</button>
+            </div>
+        </form>
+
+        <form name="recovery" class="hidden">
+            <header class="mb_15">
+                <h2 class="mb_1 mt_0">Récupération de mot de passe</h2>
+                <p class="text_muted my_0">Saisissez votre nouveau mot de passe</p>
+            </header>
+
+            <label for="password_recovery">Mot de passe</label>
+            <input type="password" name="password" id="password_recovery" />
+    
+            <label for="retype_password_recovery">Saisissez à nouveau le mot de passe</label>
+            <input type="password" name="retype_password_recovery" id="retype_password_recovery" />
+    
+            <div class="text_center md_text_left mt_10">
+                <button type="submit">Envoyer</button>
                 <button type="button" class="change_state_btn">Annuler</button>
             </div>
         </form>

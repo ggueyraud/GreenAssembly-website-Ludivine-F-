@@ -1,6 +1,6 @@
 pub mod blog;
 pub mod files;
-pub mod login_attempts;
+pub mod attempts;
 pub mod metrics;
 pub mod pages;
 pub mod projects;

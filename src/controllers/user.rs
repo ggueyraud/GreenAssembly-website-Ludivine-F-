@@ -22,23 +22,30 @@ pub async fn login(
     form.email = form.email.trim().to_string();
     form.password = form.password.trim().to_string();
 
-    let email_regex = Regex::new(r#"^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$"#).unwrap();
-
-    if !email_regex.is_match(&form.email) {
-        return HttpResponse::BadRequest().finish();
-    }
-
     let ip = if cfg!(debug_assertions) {
         "localhost".to_string()
     } else {
         req.peer_addr().unwrap().ip().to_string()
     };
-
-    // let ip = ;
-    let attempts_counter = services::login_attempts::count(&pool, &ip).await;
+    let attempts_counter = services::attempts::count(&pool, &ip, true).await;
 
     if attempts_counter > 10 {
         return HttpResponse::TooManyRequests().finish();
+    }
+
+    services::attempts::add(
+        &pool,
+        &form.email,
+        &ip,
+        true
+    )
+    .await
+    .unwrap();
+
+    let email_regex = Regex::new(r#"^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$"#).unwrap();
+
+    if !email_regex.is_match(&form.email) {
+        return HttpResponse::BadRequest().finish();
     }
 
     // TODO : move into model
@@ -62,7 +69,7 @@ pub async fn login(
             match argon2.verify_password(form.password.as_bytes(), &parsed_hash) {
                 Ok(_) => {
                     if attempts_counter >= 1 {
-                        services::login_attempts::clear(&pool, &ip).await;
+                        services::attempts::clear(&pool, &ip).await;
                     }
 
                     // TODO : see what to save in session
@@ -85,26 +92,7 @@ pub async fn login(
             }
         }
         _ => {
-            use crate::utils::ua::UserAgent;
-            use actix_web::{dev::Payload, FromRequest};
-
-            match UserAgent::from_request(&req, &mut Payload::None).await {
-                Ok(ua) => {
-                    services::login_attempts::add(
-                        &pool,
-                        &form.email,
-                        &ip,
-                        ua.name.as_deref(),
-                        ua.os.as_deref(),
-                        ua.category.as_deref(),
-                    )
-                    .await
-                    .unwrap();
-                }
-                _ => (),
-            }
-
-            return HttpResponse::BadRequest().finish();
+            return HttpResponse::InternalServerError().finish();
         }
     }
 }
@@ -124,6 +112,26 @@ pub async fn lost_password(
 
     form.email = form.email.trim().to_string();
 
+    let ip = if cfg!(debug_assertions) {
+        "localhost".to_string()
+    } else {
+        req.peer_addr().unwrap().ip().to_string()
+    };
+    let attempts_counter = services::attempts::count(&pool, &ip, false).await;
+
+    if attempts_counter > 3 {
+        return HttpResponse::TooManyRequests().finish();
+    }
+
+    services::attempts::add(
+        &pool,
+        &form.email,
+        &ip,
+        false
+    )
+    .await
+    .unwrap();
+
     let email_regex = Regex::new(r#"^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$"#).unwrap();
 
     if !email_regex.is_match(&form.email) {
@@ -133,23 +141,78 @@ pub async fn lost_password(
     if services::user::exist_for_email(&pool, &form.email).await {
         use rand::seq::SliceRandom;
         use rand::thread_rng;
+        use lettre::{SmtpClient, Transport};
+        use lettre_email::EmailBuilder;
 
         let mut rng = thread_rng();
         let mut token = String::from("@-_!ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
         
         unsafe {
             token.as_mut_vec().shuffle(&mut rng);
-            println!("Generated token : {:?}", &token[..60]);
+            token = token[..60].to_string();
+        }
+        
+        if attempts_counter >= 1 {
+            services::attempts::clear(&pool, &ip).await;
         }
 
-        // TODO : update user, set token and send email
+        sqlx::query!(r#"UPDATE "user" SET token = $1, token_validity_date = NOW() + interval '30 minutes'"#, token)
+            .execute(pool.as_ref())
+            .await
+            .unwrap();
 
+        let email = EmailBuilder::new()
+            .to("contact@guillaume-gueyraud.fr")
+            .from("hello@ludivinefarat.fr")
+            .subject("Mot de passe oublié - Ludivine Farat")
+            .html(r#"Vous avez effectué la demande de récupération de votre mot de passe, pour le récupérer merci de cliquer sur le bouton ci-dessous afin d'en saisir un nouveau.\n<a href="https://ludivinefarat.fr/admin/recuperation-mot-de-passe">Récupérer mon mot de passe</a>"#)
+            .build();
+
+        if let Ok(email) = email {
+            let mut mailer = SmtpClient::new_unencrypted_localhost().unwrap().transport();
+
+            if let Ok(_) = mailer.send(email.into()) {
+                return HttpResponse::Ok().json(serde_json::json!({
+                    "valid": true
+                }))
+            }
+        }
+
+        return HttpResponse::InternalServerError().finish()
+    }
+
+    HttpResponse::Ok().json(serde_json::json!({
+        "valid": false
+    }))
+}
+
+#[derive(Deserialize)]
+pub struct PasswordRecoveryForm {
+    password: String,
+    token: String
+}
+
+// TODO : need to be finish
+#[post("/password-recovery")]
+pub async fn password_recovery(
+    pool: web::Data<PgPool>,
+    mut form: web::Form<PasswordRecoveryForm>
+) -> HttpResponse  {
+    use regex::Regex;
+
+    form.password = form.password.trim().to_owned();
+
+    println!("{} - {}", form.password, form.password.len());
+
+    //^(?:.*[a-z]).{8,}$
+    // ^(?:.*\d)(?:.*[a-z])(?:.*[A-Z])(?:.*[!@#$%^&*]).{8,}$
+    let password_regex = Regex::new(r#"^.{7,}$"#).unwrap();
+
+    if password_regex.is_match(&form.password) {
         return HttpResponse::Ok().finish()
     }
 
-    // TODO : add attempts
-
-    HttpResponse::NotFound().finish()
+    HttpResponse::BadRequest().finish()
 }
 
 #[get("/logout")]
