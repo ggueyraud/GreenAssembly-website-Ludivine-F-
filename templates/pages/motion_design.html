@@ -81,8 +81,8 @@
             </div>
         </div>
 
-        <div class="grid grid_cols_1 md_grid_cols_2 col_gap_4 row_gap_8">
-            <img src="/img/hand_sewn_video.gif" alt="Vidéo cousue main" style="max-height: 600px; max-width: 340px" />
+        <div class="grid grid_cols_1 md_grid_cols_2 col_gap_4 row_gap_8 items_center">
+            <img src="/img/hand_sewn_video.gif" alt="Vidéo cousue main" />
 
             <div>
                 <h2>Seconde après seconde, votre motion design s’anime.</h2>
@@ -96,18 +96,20 @@
         </div>
 
         <div class="know_more card">
-            <div class="text_center md_text_left">
-                <div class="text_2xl font_bold uppercase mb_4">Curieux d'en savoir + ?</div>
-        
-                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+            <div class="card__body">
+                <div class="text_center md_text_left">
+                    <div class="text_2xl font_bold uppercase mb_4">Curieux d'en savoir + ?</div>
+            
+                    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+                </div>
+            
+                <a href="/contact" class="btn btn__blue">
+                    Me contacter
+                    <svg class="icon ml_2" height="24px">
+                        <use xlink:href="/icons.svg#paper_plane"></use>
+                    </svg>
+                </a>
             </div>
-        
-            <a href="/contact" class="btn btn__blue">
-                Me contacter
-                <svg class="icon ml_2" height="24px">
-                    <use xlink:href="/icons.svg#paper_plane"></use>
-                </svg>
-            </a>
         </div>
     </section>
 {% endblock %}
