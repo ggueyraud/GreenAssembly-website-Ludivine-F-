@@ -13,8 +13,11 @@
   "dependencies": {
     "carousel": "github:GreenAssembly/carousel",
     "formvalidation": "github:GreenAssembly/formvalidation",
+    "quill": "^1.3.7",
     "router": "github:GreenAssembly/router#development",
-    "style-box": "github:GreenAssembly/style-box"
+    "sortablejs": "^1.14.0",
+    "style-box": "github:GreenAssembly/style-box",
+    "sweetalert2": "^11.1.7"
   },
   "browserslist": [
     "> 1%",
