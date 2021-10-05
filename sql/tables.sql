@@ -1,9 +1,8 @@
 DROP TABLE IF EXISTS project_categories CASCADE;
 CREATE TABLE project_categories (
     id SMALLINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    name VARCHAR(120) NOT NULL,
-    "order" SMALLINT NOT NULL,
-    UNIQUE ("order")
+    name VARCHAR(30) NOT NULL,
+    "order" SMALLINT NOT NULL
 );
 
 DROP TABLE IF EXISTS projects CASCADE;
@@ -23,7 +22,8 @@ CREATE TABLE projects_categories (
         REFERENCES projects (id)
         ON DELETE CASCADE,
     category_id SMALLINT
-        REFERENCES project_categories (id),
+        REFERENCES project_categories (id)
+        ON DELETE CASCADE,
     PRIMARY KEY (project_id, category_id)
 );
 
