@@ -18,6 +18,11 @@ INSERT INTO blog_categories (name, uri, description, is_visible, is_seo, "order"
 ('Print', 'print-1', 'Lorem ipsum dolor sit amet', true, true, 1),
 ('Motion design', 'motion-design-2', null, false, false, 2);
 
+INSERT INTO project_categories (name, "order") VALUES
+('Lorem', 1),
+('Ipsum', 2),
+('Dolor', 3);
+
 INSERT INTO files (name, path) VALUES
 ('first file', 'path');
 
