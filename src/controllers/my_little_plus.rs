@@ -1,8 +1,8 @@
 use super::metrics;
 use crate::services;
-use actix_web::{get, patch, web, Error, HttpRequest, HttpResponse};
-use actix_identity::Identity;
 use actix_extract_multipart::*;
+use actix_identity::Identity;
+use actix_web::{get, patch, web, Error, HttpRequest, HttpResponse};
 use askama_actix::{Template, TemplateIntoResponse};
 use chrono::Datelike;
 use serde::Deserialize;
@@ -10,8 +10,8 @@ use sqlx::PgPool;
 
 #[derive(Deserialize)]
 struct PatchImage {
-    image: Option<File>, // Image to upload (create a new row in files SQL table)
-    file_id: Option<i32> // ID of the file in the files SQL table, if we want use existing file
+    image: Option<File>,  // Image to upload (create a new row in files SQL table)
+    file_id: Option<i32>, // ID of the file in the files SQL table, if we want use existing file
 }
 
 const IMG_PATH: &str = "public/img/";
@@ -69,8 +69,9 @@ async fn save_image(pool: &PgPool, image: &File, path: &str) -> Result<i32, Http
 
     let extension = match image.name().rsplit_once('.') {
         Some(ext) => ext.1,
-        None => return Err(HttpResponse::BadRequest()
-        .json(format!("File don't have any extension")))
+        None => {
+            return Err(HttpResponse::BadRequest().json(format!("File don't have any extension")))
+        }
     };
     let name = image.name().strip_suffix(extension);
     let path = format!("{}{}", path, image.name());
@@ -81,7 +82,7 @@ async fn save_image(pool: &PgPool, image: &File, path: &str) -> Result<i32, Http
             delete_image_file(image.name(), IMG_PATH);
 
             return Err(HttpResponse::InternalServerError()
-                .json(format!("Bdd insertion failed\"{}\"", image.name())))
+                .json(format!("Bdd insertion failed\"{}\"", image.name())));
         }
     }
 }
@@ -98,40 +99,39 @@ async fn patch_image(
     payload: actix_multipart::Multipart,
 ) -> Result<HttpResponse, Error> {
     if session.identity().is_none() {
-        return Ok(HttpResponse::Unauthorized().finish())
+        return Ok(HttpResponse::Unauthorized().finish());
     }
 
     let id = id.into_inner();
 
     let form_data = match extract_multipart::<PatchImage>(payload).await {
         Ok(data) => data,
-        Err(_) => return Ok(HttpResponse::BadRequest().json("The data received does not correspond to those expected"))
+        Err(_) => {
+            return Ok(HttpResponse::BadRequest()
+                .json("The data received does not correspond to those expected"))
+        }
     };
 
     let image_file = form_data.image;
     let mut file_id = form_data.file_id;
 
-    if (image_file.is_none() && file_id.is_none()) || 
-       (image_file.is_some() && file_id.is_some())
-    {
-        return Ok(HttpResponse::BadRequest().json("You must send an image or the file id"))
+    if (image_file.is_none() && file_id.is_none()) || (image_file.is_some() && file_id.is_some()) {
+        return Ok(HttpResponse::BadRequest().json("You must send an image or the file id"));
     }
 
     if let Some(img_data) = image_file {
         file_id = match save_image(&pool, &img_data, IMG_PATH).await {
             Ok(f_id) => Some(f_id),
-            Err(e) => return Ok(e)
+            Err(e) => return Ok(e),
         };
-
     }
 
     if !services::my_little_plus::patch_image(&pool, id, file_id.unwrap()).await {
-        return Ok(HttpResponse::InternalServerError().json("Image update failed"))
+        return Ok(HttpResponse::InternalServerError().json("Image update failed"));
     }
 
     Ok(HttpResponse::Ok().finish())
 }
-
 
 #[cfg(test)]
 mod tests {

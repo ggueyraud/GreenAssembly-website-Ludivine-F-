@@ -33,14 +33,9 @@ pub async fn login(
         return HttpResponse::TooManyRequests().finish();
     }
 
-    services::attempts::add(
-        &pool,
-        &form.email,
-        &ip,
-        true
-    )
-    .await
-    .unwrap();
+    services::attempts::add(&pool, &form.email, &ip, true)
+        .await
+        .unwrap();
 
     let email_regex = Regex::new(r#"^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$"#).unwrap();
 
@@ -106,7 +101,7 @@ pub struct LostPasswordForm {
 pub async fn lost_password(
     req: HttpRequest,
     pool: web::Data<PgPool>,
-    mut form: web::Form<LostPasswordForm>
+    mut form: web::Form<LostPasswordForm>,
 ) -> HttpResponse {
     use regex::Regex;
 
@@ -123,14 +118,9 @@ pub async fn lost_password(
         return HttpResponse::TooManyRequests().finish();
     }
 
-    services::attempts::add(
-        &pool,
-        &form.email,
-        &ip,
-        false
-    )
-    .await
-    .unwrap();
+    services::attempts::add(&pool, &form.email, &ip, false)
+        .await
+        .unwrap();
 
     let email_regex = Regex::new(r#"^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$"#).unwrap();
 
@@ -139,27 +129,31 @@ pub async fn lost_password(
     }
 
     if services::user::exist_for_email(&pool, &form.email).await {
-        use rand::seq::SliceRandom;
-        use rand::thread_rng;
         use lettre::{SmtpClient, Transport};
         use lettre_email::EmailBuilder;
+        use rand::seq::SliceRandom;
+        use rand::thread_rng;
 
         let mut rng = thread_rng();
-        let mut token = String::from("@-_!ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
-        
+        let mut token =
+            String::from("@-_!ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
+
         unsafe {
             token.as_mut_vec().shuffle(&mut rng);
             token = token[..60].to_string();
         }
-        
+
         if attempts_counter >= 1 {
             services::attempts::clear(&pool, &ip).await;
         }
 
-        sqlx::query!(r#"UPDATE "user" SET token = $1, token_validity_date = NOW() + interval '30 minutes'"#, token)
-            .execute(pool.as_ref())
-            .await
-            .unwrap();
+        sqlx::query!(
+            r#"UPDATE "user" SET token = $1, token_validity_date = NOW() + interval '30 minutes'"#,
+            token
+        )
+        .execute(pool.as_ref())
+        .await
+        .unwrap();
 
         let email = EmailBuilder::new()
             .to("contact@guillaume-gueyraud.fr")
@@ -174,11 +168,11 @@ pub async fn lost_password(
             if let Ok(_) = mailer.send(email.into()) {
                 return HttpResponse::Ok().json(serde_json::json!({
                     "valid": true
-                }))
+                }));
             }
         }
 
-        return HttpResponse::InternalServerError().finish()
+        return HttpResponse::InternalServerError().finish();
     }
 
     HttpResponse::Ok().json(serde_json::json!({
@@ -189,15 +183,15 @@ pub async fn lost_password(
 #[derive(Deserialize)]
 pub struct PasswordRecoveryForm {
     password: String,
-    token: String
+    token: String,
 }
 
 // TODO : need to be finish
 #[post("/password-recovery")]
 pub async fn password_recovery(
     pool: web::Data<PgPool>,
-    mut form: web::Form<PasswordRecoveryForm>
-) -> HttpResponse  {
+    mut form: web::Form<PasswordRecoveryForm>,
+) -> HttpResponse {
     use regex::Regex;
 
     form.password = form.password.trim().to_owned();
@@ -209,7 +203,7 @@ pub async fn password_recovery(
     let password_regex = Regex::new(r#"^.{7,}$"#).unwrap();
 
     if password_regex.is_match(&form.password) {
-        return HttpResponse::Ok().finish()
+        return HttpResponse::Ok().finish();
     }
 
     HttpResponse::BadRequest().finish()
