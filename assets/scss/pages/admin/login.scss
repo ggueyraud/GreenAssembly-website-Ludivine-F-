@@ -1,27 +1,20 @@
-@use '../custom.scss';
+@use 'style-box/abstracts/variables' with (
+    $colors: (
+        'green': #20d489
+    )
+);
 @use 'style-box/abstracts/functions/utilities';
 @use 'style-box/abstracts/mixins/breakpoints';
 @use 'style-box/abstracts/mixins/text';
+@import '../../themes/admin';
 
 @import 'style-box/base/float';
 @import 'style-box/base/margin';
 @import 'style-box/base/display';
 @import 'style-box/base/text';
-@import '../components/button';
-@import '../components/input';
 
 .text_muted {
     color: #a1a5b7;
-}
-
-html {
-    body {
-        color: #181c32;
-        font-family: Poppins, Helvetica, sans-serif;
-        background-color: #fff;
-        font-size: 18px;
-        margin: 0
-    }
 }
 
 h1 {
@@ -33,8 +26,7 @@ h1 {
 }
 
 a {
-    text-decoration: none;
-    color: utilities.color(blue);
+    color: utilities.color('green');
     font-weight: bold;
 }
 
@@ -77,7 +69,7 @@ a {
 
 #banner {
     padding-top: 3rem;
-    background-color: utilities.color(gray);
+    background-color: utilities.color('green');
     height: 50vh;
     background-image: url(/img/login.svg);
     background-repeat: no-repeat;
@@ -96,33 +88,6 @@ label, a {
     @include text.text(sm)
 }
 
-// input {
-//     background-color: #f5f8fa;
-//     border: 1px solid #f5f8fa;
-//     color: #5e6278;
-//     transition: color .2s ease,background-color .2s ease;
-//     width: 100%;
-//     outline: none;
-//     border-radius: .65rem;
-//     padding: .825rem 1.5rem;
-// }
-
-// button[type=button], button[type=submit] {
-//     margin-top: utilities.space(10);
-//     font-weight: bold;
-//     padding: utilities.space(4) utilities.space(8);
-//     font-size: inherit;
-//     cursor: pointer;
-//     border-radius: .65rem;
-//     border-style: none;
-// }
-
-// button[type=button] {
-//     background-color: #e4fff4;
-//     color: #20d489
-// }
-
-// button[type=submit] {
-//     background-color: #20d489;
-//     color: #fff;
-// }
+[name="main"] {
+    grid-template-columns: 1fr !important;
+}

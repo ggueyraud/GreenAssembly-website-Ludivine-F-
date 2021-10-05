@@ -1,0 +1,71 @@
+@use 'style-box/abstracts/mixins/text';
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    visibility: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    &__dialog {
+        // TODO : change to add multiples configuration
+        width: 900px;
+        background-color: #fff;
+        border: 0 solid rgba(0,0,0,.2);
+        border-radius: .65rem;
+
+        &__header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            @include text.text(2xl);
+            border-bottom: 1px solid #eff2f5;
+            padding: 1.75rem 1.75rem;
+            font-weight: bold;
+
+            &__close {
+                border: none;
+                outline: none;
+                background-color: transparent;
+                cursor: pointer;
+                font-size: 0;
+                padding: 0;
+                color: #a1a5b7
+            }
+        }
+
+        &__body {
+            padding-top: 2.5rem;
+            padding-bottom: 2.5rem;
+            padding-right: 2.5rem;
+            padding-left: 2.5rem;
+        }
+    }
+
+    &--show {
+        visibility: visible;
+    }
+}
+
+.modal_fade {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: #000;
+    opacity: .3;
+    visibility: hidden;
+    z-index: 1;
+
+    &--show {
+        visibility: visible;
+    }
+}

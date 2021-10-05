@@ -1,6 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Urbanist&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Urbanist:wght@400;800&display=swap');
 @import 'custom.scss';
+@import 'base/base';
 @import 'style-box/abstracts/functions/utilities';
 @import 'style-box/abstracts/mixins/breakpoints';
 @import 'style-box/base/margin';
@@ -26,7 +27,6 @@ html {
         font-family: 'Urbanist', sans-serif;
         background-color: color('white');
         font-size: 18px;
-        margin: 0
     }
 }
 
@@ -48,7 +48,6 @@ h1 {
 }
 
 a {
-    text-decoration: none;
     color: inherit;
 
     &.special {
@@ -76,19 +75,6 @@ a {
             border-left : 10px solid color(blue);
         }
     }
-}
-
-* {
-    box-sizing: border-box
-}
-
-img {
-    width: 100%;
-    height: auto;
-}
-
-p {
-    margin: 0
 }
 
 .know_more {
