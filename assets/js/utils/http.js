@@ -28,7 +28,7 @@ export const get = (url, options = {}) =>
 
             resolve(response)
         })
-        .catch(e => reject(e))
+        .catch(reject)
     })
 
 export const post = (url, options = {}) =>
@@ -56,7 +56,7 @@ export const patch = (url, options = {}) =>
 
             resolve(response)
         })
-        .catch(e => reject(e))
+        .catch(reject)
     })
 
 export const put = (url, options = {}) =>
@@ -70,7 +70,7 @@ export const put = (url, options = {}) =>
 
             resolve(response)
         })
-        .catch(e => reject(e))
+        .catch(reject)
     })
 
 export const del = (url, options = {}) =>
@@ -84,6 +84,6 @@ export const del = (url, options = {}) =>
 
             resolve(response)
         })
-        .catch(e => reject(e))
+        .catch(reject)
     })
   
