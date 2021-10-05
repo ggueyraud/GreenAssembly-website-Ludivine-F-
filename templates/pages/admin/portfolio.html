@@ -1,0 +1,88 @@
+{% extends "back_office.html" %}
+
+{% block title %}Portfolio{% endblock %}
+
+{% block head %}
+    <script src="/js/dashboard/portfolio.js" async></script>
+{% endblock %}
+
+{% block content %}
+    <script>
+        const categories = {{ categories|json }};
+        const projects = {{ projects|json }}
+    </script>
+
+    <div class="card">
+        <div class="card__header">
+            Catégories
+        </div>
+
+        <div class="card__body">
+            <ul class="categories">
+                {#{% for category in categories %}
+                    <li class="categories__item" data-id="{{ category.id }}">
+                        <span class="categories__item__name">
+                            {{ category.name }}
+                        </span>
+
+                        <input type="text" maxlength="30" />
+        
+                        <a href="javascript:;" class="delete_category">
+                            <svg class="icon" height="20px">
+                                <use xlink:href="/dashboard_icons.svg#delete"></use>
+                            </svg>
+                        </a>
+                    </li>
+                {% endfor %}
+                #}
+            </ul>
+        </div>
+
+        <div class="card__footer">
+            <input
+                type="text"
+                placeholder="Saisir un nom de catégorie"
+                name="new_category_name"
+                maxlength="30"
+            />
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card__header flex justify_between">
+            Projets
+
+            <button type="button" class="btn btn__green btn--sm" id="create_project">Ajouter un projet</button>
+        </div>
+
+        <div class="card__body">
+            <div class="projects"></div>
+
+            <div class="modal">
+                <div class="modal__dialog">
+                    <div class="modal__dialog__header">Ajouter un projet</div>
+
+                    <form action="" name="create_project" class="modal__dialog__body">
+                        <label for="name">Nom <span class="text_error">*</span></label>
+                        <input type="text" id="name" name="name" />
+
+                        <label for="description" class="mt_2">Description</label>
+                        <textarea name="description" id="description"></textarea>
+
+                        <label for="content" class="mt_2">Contenu <span class="text_error">*</span></label>
+                        <div id="content_editor"></div>
+                        <input type="text" name="content" class="hidden" />
+
+                        <div>
+                            <label for="categories" class="mt_2">Catégories</label>
+                        </div>
+
+                        <div class="flex justify_end">
+                            <button type="submit" class="btn btn__green btn--sm">Créer</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

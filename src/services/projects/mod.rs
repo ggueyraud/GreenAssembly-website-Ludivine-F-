@@ -1,17 +1,17 @@
 use chrono::{DateTime, Utc};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use sqlx::{Error, FromRow, PgPool};
 
 pub mod assets;
 pub mod categories;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, FromRow)]
 pub struct Category {
     pub id: i16,
     pub name: String,
 }
 
-#[derive(Debug, FromRow)]
+#[derive(Debug, FromRow, Serialize)]
 pub struct Project {
     pub id: i16,
     pub name: String,

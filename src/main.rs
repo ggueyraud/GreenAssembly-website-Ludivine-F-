@@ -143,7 +143,11 @@ async fn main() -> std::io::Result<()> {
                 web::scope("/portfolio")
                     .service(controllers::portfolio::index)
                     .service(controllers::portfolio::get_project) // .service(controllers::portfolio::update_project)
-                    .service(controllers::portfolio::insert_asset),
+                    .service(controllers::portfolio::delete_project)
+                    .service(controllers::portfolio::insert_asset)
+                    .service(controllers::portfolio::create_category)
+                    .service(controllers::portfolio::update_category)
+                    .service(controllers::portfolio::delete_category),
             )
             .service(controllers::my_little_plus::index)
             .service(controllers::motion_design)
@@ -154,6 +158,7 @@ async fn main() -> std::io::Result<()> {
                     .service(controllers::user::login)
                     .service(controllers::user::logout)
                     .service(controllers::user::lost_password)
+                    .service(controllers::user::password_recovery),
             )
             .service(
                 web::scope("/blog")
@@ -161,7 +166,11 @@ async fn main() -> std::io::Result<()> {
                     .service(controllers::blog::show_category)
                     .service(controllers::blog::show_article),
             )
-            .service(web::scope("/admin").service(controllers::dashboard::index))
+            .service(
+                web::scope("/admin")
+                    .service(controllers::dashboard::index)
+                    .service(controllers::dashboard::portfolio),
+            )
             .service(controllers::metrics::log)
             .service(serve_upload_file)
             .service(serve_public_file)

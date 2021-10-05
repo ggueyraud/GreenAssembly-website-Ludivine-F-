@@ -21,7 +21,7 @@
                     {% block sidenav %}
                         <nav>
                             <a href="#">Tableau de bord</a>
-                            <a href="#">Portfolio</a>
+                            <a href="/admin/portfolio">Portfolio</a>
                             <a href="#">Blog</a>
                             <a href="#">Pages</a>
                             <a href="#">Paramètres</a>
@@ -32,9 +32,7 @@
             </ga-frame>
 
             <ga-frame name="main">
-                <section id="content">
                     {% block content %}{% endblock %}
-                </section>
             </ga-frame>
         </main>
     </body>

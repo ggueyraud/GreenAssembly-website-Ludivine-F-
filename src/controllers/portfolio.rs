@@ -5,7 +5,7 @@ use actix_identity::Identity;
 use actix_web::{delete, get, patch, post, put, web, Error, HttpRequest, HttpResponse};
 use askama_actix::{Template, TemplateIntoResponse};
 use chrono::Datelike;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use std::{collections::HashSet, path::Path};
 
@@ -52,7 +52,7 @@ async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse
         let (_, projects, categories) = futures::join!(
             metrics::add(&pool, &req, services::metrics::BelongsTo::Page(page.id)),
             services::projects::get_all(&pool, None),
-            services::projects::categories::get_all(&pool)
+            services::projects::categories::get_all(&pool, None)
         );
         let mut formatted_projects = vec![];
 
@@ -173,14 +173,13 @@ async fn get_project(
 #[derive(Deserialize)]
 pub struct CategoryForm {
     name: String,
-    order: i16,
 }
 
 impl CategoryForm {
     fn is_valid(&mut self) -> bool {
         self.name = self.name.trim().to_string();
 
-        self.name.len() >= 2 && self.name.len() <= 120
+        self.name.len() <= 30
     }
 }
 
@@ -195,8 +194,8 @@ async fn create_category(
             return HttpResponse::BadRequest().finish();
         }
 
-        return match services::projects::categories::insert(&pool, &form.name, form.order).await {
-            Ok(id) => HttpResponse::Ok().json(id),
+        return match services::projects::categories::insert(&pool, &form.name).await {
+            Ok(id) => HttpResponse::Created().json(id),
             _ => HttpResponse::InternalServerError().finish(),
         };
     }
@@ -204,22 +203,120 @@ async fn create_category(
     HttpResponse::Unauthorized().finish()
 }
 
+use serde::de::Deserializer;
+
+#[derive(Debug, std::cmp::PartialEq, Serialize)]
+enum Patch<T> {
+    Undefined,
+    Null,
+    Value(T),
+}
+
+impl<T> Default for Patch<T> {
+    fn default() -> Self {
+        Patch::Undefined
+    }
+}
+
+impl<T> From<Option<T>> for Patch<T> {
+    fn from(opt: Option<T>) -> Patch<T> {
+        match opt {
+            Some(v) => Patch::Value(v),
+            None => Patch::Null,
+        }
+    }
+}
+
+impl<'de, T> Deserialize<'de> for Patch<T>
+where
+    T: Deserialize<'de>,
+{
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        Option::deserialize(deserializer).map(Into::into)
+    }
+}
+
+#[derive(Deserialize, Debug, Serialize)]
+pub struct UpdateCategoryForm {
+    #[serde(default)]
+    name: Patch<String>,
+    #[serde(default)]
+    order: Patch<i16>,
+}
+
+impl UpdateCategoryForm {
+    fn is_valid(&mut self) -> bool {
+        if let Patch::Value(value) = &self.name {
+            let value = value.trim().to_string();
+
+            if value.len() > 30 {
+                return false;
+            }
+        }
+
+        if let Patch::Value(nb) = self.order {
+            if nb < 0 {
+                return false;
+            }
+        }
+
+        true
+    }
+}
+
 #[put("/categories/{id}")]
 async fn update_category(
     pool: web::Data<PgPool>,
     session: Identity,
-    mut form: web::Form<CategoryForm>,
+    mut form: web::Form<UpdateCategoryForm>,
     web::Path(id): web::Path<i16>,
 ) -> HttpResponse {
     if let Some(_) = session.identity() {
+        if !services::projects::categories::exists(&pool, id).await {
+            return HttpResponse::NotFound().finish();
+        }
+
         if !form.is_valid() {
             return HttpResponse::BadRequest().finish();
         }
 
-        return match services::projects::categories::update(&pool, id, &form.name, form.order).await
+        use serde_json::Value;
+        use std::collections::HashMap;
+
+        type PatchForm = HashMap<String, Value>;
+
+        let mut need_updated_fields: PatchForm = HashMap::new();
+
+        for (name, obj) in serde_json::json!(*form).as_object().unwrap().iter() {
+            println!("{:?}", obj);
+
+            match obj {
+                Value::String(_) => {
+                    if obj.as_str().unwrap() != "Undefined" {
+                        need_updated_fields.insert(name.to_string(), obj.clone());
+                    }
+                }
+                Value::Object(map) => {
+                    if let Some(value) = map.get("Value") {
+                        need_updated_fields.insert(name.to_string(), value.clone());
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        println!("{:?}", need_updated_fields);
+
+        return match services::projects::categories::update_2(&pool, id, need_updated_fields).await
         {
-            Ok(_) => HttpResponse::Ok().finish(),
-            _ => HttpResponse::InternalServerError().finish(),
+            Ok(_) => return HttpResponse::Ok().finish(),
+            e => {
+                eprintln!("{:?}", e);
+                HttpResponse::InternalServerError().finish()
+            }
         };
     }
 
@@ -266,7 +363,9 @@ impl services::projects::ProjectInformations {
             .clean(self.content.trim())
             .to_string();
 
-        self.name.len() >= 2 && self.name.len() <= 120 && self.content.len() >= 30
+        self.name.len() <= 120
+            && self.content.len() >= 30
+            && (self.description.is_some() && self.description.as_ref().unwrap().len() <= 320)
         // && self.category_id > 0
         // && services::projects::categories::exists(pool, self.category_id).await
     }

@@ -1,22 +1,50 @@
 use actix_identity::Identity;
-use actix_web::{get, Error, HttpResponse};
+use actix_web::{get, web, Error, HttpResponse};
 use askama_actix::{Template, TemplateIntoResponse};
+use sqlx::PgPool;
+
+use crate::services;
 
 #[get("")]
 pub async fn index(id: Identity) -> Result<HttpResponse, Error> {
     if let Some(id) = id.identity() {
         #[derive(Template)]
-        #[template(path = "pages/dashboard/index.html")]
+        #[template(path = "pages/admin/index.html")]
         struct Dashboard;
 
         return Dashboard {}.into_response();
     }
 
     #[derive(Template)]
-    #[template(path = "pages/dashboard/login.html")]
+    #[template(path = "pages/admin/login.html")]
     struct Login;
 
     Login {}.into_response()
+}
+
+#[get("/portfolio")]
+pub async fn portfolio(id: Identity, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
+    if let Some(id) = id.identity() {
+        let (categories, projects) = futures::join!(
+            services::projects::categories::get_all(&pool, None),
+            services::projects::get_all(&pool, None)
+        );
+
+        #[derive(Template)]
+        #[template(path = "pages/admin/portfolio.html")]
+        struct Portfolio {
+            categories: Vec<services::projects::Category>,
+            projects: Vec<services::projects::Project>,
+        }
+
+        return Portfolio {
+            categories,
+            projects,
+        }
+        .into_response();
+    }
+
+    Ok(HttpResponse::Found().header("location", "/admin").finish())
 }
 
 #[cfg(test)]

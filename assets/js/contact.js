@@ -4,8 +4,6 @@ const on_mount = () => {
         .forEach(input_container => {
             const input = input_container.querySelector('input, textarea');
 
-            console.log(input instanceof HTMLTextAreaElement)
-
             // Set autoheight
             if (input instanceof HTMLTextAreaElement) {
                 input
@@ -17,7 +15,6 @@ const on_mount = () => {
 
             input
                 .addEventListener('blur', e => {
-                    console.log('ok')
                     if (e.target.value.length > 0) {
                         input_container.classList.add('valid')
                     }
