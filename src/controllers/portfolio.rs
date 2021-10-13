@@ -346,6 +346,8 @@ impl services::projects::ProjectInformations {
     async fn is_valid(&mut self, pool: &PgPool) -> bool {
         use ammonia::Builder;
 
+        println!("is_valid");
+
         self.name = self.name.trim().to_string();
         if let Some(description) = &mut self.description {
             *description = description.trim().to_string();
@@ -356,12 +358,15 @@ impl services::projects::ProjectInformations {
         allowed_tags.insert("h2");
         allowed_tags.insert("h3");
         allowed_tags.insert("ul");
+        allowed_tags.insert("ol");
         allowed_tags.insert("li");
         allowed_tags.insert("a");
         self.content = Builder::default()
             .tags(allowed_tags)
             .clean(self.content.trim())
             .to_string();
+
+        println!("{:?}", self.content);
 
         self.name.len() <= 120
             && self.content.len() >= 30
@@ -383,7 +388,7 @@ pub async fn insert_project(
         }
 
         return match services::projects::insert(&pool, &*form).await {
-            Ok(id) => HttpResponse::Ok().json(id),
+            Ok(id) => HttpResponse::Created().json(id),
             _ => HttpResponse::InternalServerError().finish(),
         };
     }

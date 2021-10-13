@@ -143,6 +143,7 @@ async fn main() -> std::io::Result<()> {
                 web::scope("/portfolio")
                     .service(controllers::portfolio::index)
                     .service(controllers::portfolio::get_project) // .service(controllers::portfolio::update_project)
+                    .service(controllers::portfolio::insert_project)
                     .service(controllers::portfolio::delete_project)
                     .service(controllers::portfolio::insert_asset)
                     .service(controllers::portfolio::create_category)

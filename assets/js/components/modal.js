@@ -57,7 +57,7 @@ export default class Modal {
 
     open() {
         this.fade.classList.add('modal_fade--show');
-        this.modal.classList.add('modal--show')
+        this.modal.classList.add('modal--show');
 
         if (this.events.has('open')) {
             this.events.get('open')(this)

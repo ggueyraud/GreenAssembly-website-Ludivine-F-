@@ -30,7 +30,7 @@ pub async fn get_all(pool: &PgPool, category_id: Option<i16>) -> Vec<Project> {
         "SELECT
             id, name, content, date
         FROM projects
-        ORDER BY date, last_update_date",
+        ORDER BY date DESC",
     );
 
     // if category_id.is_some() {

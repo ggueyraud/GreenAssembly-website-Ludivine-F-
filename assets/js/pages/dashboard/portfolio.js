@@ -5,6 +5,10 @@ import Quill from 'quill';
 import { post, put, del } from '@js/utils/http';
 import '@js/components/modal';
 import Modal from '../../components/modal';
+import DOMPurify from 'dompurify'
+import { formatDistance } from 'date-fns'
+import { fr } from 'date-fns/locale';
+import Cropper from 'cropperjs';
 
 let categories_container = null;
 let projects_container = null;
@@ -44,7 +48,7 @@ const add_category = (id, name) => {
     input.addEventListener('keydown', e => {
         const value = e.target.value;
 
-        if (e.which === 13 && value) {
+        if (e.key === 'Enter' && value) {
             put(`/portfolio/categories/${category.dataset.id}`, {
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
@@ -93,7 +97,7 @@ const add_category = (id, name) => {
     categories_container.appendChild(category);
 }
 
-const add_project = (id, name, content, date) => {
+const add_project = (id, name, content, date, after = true) => {
     const project = document.createElement('div');
     project.classList.add('projects__item');
 
@@ -103,7 +107,9 @@ const add_project = (id, name, content, date) => {
 
     const project_content = document.createElement('div');
     project_content.classList.add('projects__item__content');
-    project_content.innerText = content;
+    project_content.innerText = DOMPurify.sanitize(content, {
+        ALLOWED_TAGS: []
+    });
 
     const project_actions = document.createElement('div');
     project_actions.classList.add('projects__item__actions');
@@ -148,13 +154,19 @@ const add_project = (id, name, content, date) => {
 
     const project_footer = document.createElement('div');
     project_footer.classList.add('projects__item__footer');
-    project_footer.innerText = date;
+    // project_footer.innerText = formatRelative(, { locale: fr });
+    project_footer.innerText = formatDistance(new Date(date), new Date(), { addSuffix: true, locale: fr });
 
     project.appendChild(project_title);
     project.appendChild(project_content);
     project.appendChild(project_actions);
     project.appendChild(project_footer);
-    projects_container.appendChild(project);
+
+    if (after) {
+        projects_container.appendChild(project);
+    } else {
+        projects_container.prepend(project)
+    }
 }
 
 const on_mount = () => {
@@ -204,27 +216,83 @@ const on_mount = () => {
         });
 
     // Projects
-    const m = new Modal(document.querySelector('.modal'));
-    m.on('open', e => {
-        console.log(e);
-        console.log('modal open');
-    });
-
-    document.querySelector('#create_project').addEventListener('click', () => m.open())
-
-    new Quill('#content_editor', {
+    const editor = new Quill('#content_editor', {
         modules: {
             toolbar: [
                 [{ header: [2, 3, false] }],
                 [{ list: 'ordered' }, { list: 'bullet' }],
-                ['link', 'clean']
+                ['bold', 'link', 'clean']
             ]
         },
         theme: 'snow'
     });
+    editor.on('text-change', e => {
+        const value = editor.getText().length === 1 ? '' : editor.root.innerHTML;
+        const content = document.querySelector('[name=content]');
+        content.value = value;
+        content.dispatchEvent(new Event('input'));
+    })
+
+    const add_project_modal = new Modal(document.querySelector('#add_project_modal'));
+    add_project_modal.on('open', e => {
+        // window.addEventListener('keydown', e =>)
+        // console.log(e, e.modal, );
+        e.modal.querySelector('[name="name"]').focus();
+        console.log('modal open');
+    });
+    
+    let cropper = null;
+    const asset_editor_modal = new Modal(document.querySelector('#asset_editor_modal'));
+    document.querySelector('#rotate').addEventListener('input', e => {
+        const value = parseInt(e.target.value);
+        e.target.nextElementSibling.innerText = `${value}%`;
+        cropper.rotateTo(value);
+    });
+    asset_editor_modal.on('open', () => console.log('Open', cropper))
+    document.querySelector('#valid_crop').addEventListener('click', () => {
+        console.log('cropper', cropper);
+        cropper.getCroppedCanvas().toBlob(blob => {
+            window.img2change.src = URL.createObjectURL(blob);
+            window.img2change.classList.remove('hidden');
+        });
+
+        asset_editor_modal.close();
+    });
+    document.querySelector('#create_project').addEventListener('click', () => add_project_modal.open())
+
+    document
+        .querySelectorAll('.assets input[type=file]')
+        .forEach(input => {
+            input.addEventListener('change', () => {
+                const reader = new FileReader();
+
+                reader.onload = e => {
+                    document.querySelector('#cropper').src = e.target.result;
+                    window.img2change = input.nextElementSibling;
+
+                    if (cropper) {
+                        cropper.replace(e.target.result);
+                    } else {
+                        cropper = new Cropper(document.querySelector('#cropper'), {
+                            minCropBoxWidth: 320,
+                            zoom(e) {
+                                if (e.detail.ratio <= 0.5 || e.detail.ratio >= 2.5) {
+                                    e.preventDefault()
+                                }
+                                console.log(e)
+                            }
+                        });
+                    }
+                    asset_editor_modal.open();
+                }
+
+                reader.readAsDataURL(input.files[0]);
+            });
+        });
+    
     document.querySelector('[name=description]').addEventListener('input', e => {
-        e.target.style.height = "5px";
-        e.target.style.height = (e.target.scrollHeight)+"px";
+        e.target.style.height = '5px';
+        e.target.style.height = `${e.target.scrollHeight}px`;
     });
     new Form(document.querySelector('[name=create_project]'), {
         fields: {
@@ -235,11 +303,28 @@ const on_mount = () => {
                 validators: [new StringLength(0, 320)]
             },
             content: {
-                validators: [new Required(), new StringLength(1, 1000)]
+                validators: [new Required(), new StringLength(30, 1000)]
             }
         }
     })
         .on('valid', () => console.log('valid'))
+        .on('send', e => {
+            console.log(e)
+            post('/portfolio/projects', {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: new URLSearchParams(e.detail)
+            })
+                .then(async res => {
+                    const id = await res.json();
+
+                    add_project_modal.close();
+
+                    add_project(id, e.detail.name, e.detail.content, new Date(), false)
+                })
+                .catch(swal_error)
+        });
 }
 
 const on_destroy = () => {

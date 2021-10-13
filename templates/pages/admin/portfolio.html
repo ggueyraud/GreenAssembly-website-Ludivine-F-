@@ -4,13 +4,92 @@
 
 {% block head %}
     <script src="/js/dashboard/portfolio.js" async></script>
+    <link rel="stylesheet" href="/css/pages/admin/portfolio.css" />
 {% endblock %}
 
 {% block content %}
     <script>
         const categories = {{ categories|json }};
-        const projects = {{ projects|json }}
+        const projects = {{ projects|json }};
     </script>
+
+    <div class="modal" id="add_project_modal">
+        <div class="modal__dialog">
+            <div class="modal__dialog__header">Ajouter un projet</div>
+
+            <form action="" name="create_project" class="modal__dialog__body">
+                <label for="name">Nom <span class="text_error">*</span></label>
+                <input type="text" id="name" name="name" />
+
+                <label for="description" class="mt_2">Description</label>
+                <textarea name="description" id="description"></textarea>
+
+                <label for="content" class="mt_2">Contenu <span class="text_error">*</span></label>
+                <div id="content_editor"></div>
+                <input type="hidden" name="content" />
+
+                <div>
+                    <label for="categories" class="mt_2">Catégories</label>
+                </div>
+
+                <label>Photos</label>
+                <div class="assets mt_2">
+                    <div class="col_span_2 row_span_2">
+                        <input type="file" accept="image/png, image/jpeg" />
+                        <img src="" class="hidden" />
+                    </div>
+                    <div>
+                        <input type="file" accept="image/png, image/jpeg" />
+                        <img src="" class="hidden" />
+                    </div>
+                    <div>
+                        <input type="file" accept="image/png, image/jpeg" />
+                        <img src="" class="hidden" />
+                    </div>
+                    <div class="col_span_2">
+                        <input type="file" accept="image/png, image/jpeg" />
+                        <img src="" class="hidden" />
+                    </div>
+                    <div>
+                        <input type="file" accept="image/png, image/jpeg" />
+                        <img src="" class="hidden" />
+                    </div>
+                </div>
+
+                <div class="flex justify_end">
+                    <button type="submit" class="btn btn__green btn--sm">Créer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="asset_editor_modal">
+        <div class="modal__dialog">
+            <div class="modal__dialog__header">Édition d'image</div>
+            
+            <div class="modal__dialog__body pb_2">
+                <div>
+                    <img id="cropper" />
+                </div>
+                <small class="text_center my_2 block">Le double clique sur la zone permet de changer de mode entre déplaçable et sélection</small>
+
+                <input
+                    type="range"
+                    id="rotate"
+                    step="1"
+                    value="0"
+                    min="0"
+                    max="360"
+                    class="pb_1 m_0"
+                />
+                <span class="block text_center">0%</span>
+            </div>
+
+            <div class="modal__dialog__footer pt_2">
+                <button id="valid_crop" type="button" class="btn btn__green">Valider</button>
+            </div>
+        </div>
+    </div>
 
     <div class="card">
         <div class="card__header">
@@ -18,24 +97,7 @@
         </div>
 
         <div class="card__body">
-            <ul class="categories">
-                {#{% for category in categories %}
-                    <li class="categories__item" data-id="{{ category.id }}">
-                        <span class="categories__item__name">
-                            {{ category.name }}
-                        </span>
-
-                        <input type="text" maxlength="30" />
-        
-                        <a href="javascript:;" class="delete_category">
-                            <svg class="icon" height="20px">
-                                <use xlink:href="/dashboard_icons.svg#delete"></use>
-                            </svg>
-                        </a>
-                    </li>
-                {% endfor %}
-                #}
-            </ul>
+            <ul class="categories"></ul>
         </div>
 
         <div class="card__footer">
@@ -57,32 +119,6 @@
 
         <div class="card__body">
             <div class="projects"></div>
-
-            <div class="modal">
-                <div class="modal__dialog">
-                    <div class="modal__dialog__header">Ajouter un projet</div>
-
-                    <form action="" name="create_project" class="modal__dialog__body">
-                        <label for="name">Nom <span class="text_error">*</span></label>
-                        <input type="text" id="name" name="name" />
-
-                        <label for="description" class="mt_2">Description</label>
-                        <textarea name="description" id="description"></textarea>
-
-                        <label for="content" class="mt_2">Contenu <span class="text_error">*</span></label>
-                        <div id="content_editor"></div>
-                        <input type="text" name="content" class="hidden" />
-
-                        <div>
-                            <label for="categories" class="mt_2">Catégories</label>
-                        </div>
-
-                        <div class="flex justify_end">
-                            <button type="submit" class="btn btn__green btn--sm">Créer</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
         </div>
     </div>
 {% endblock %}

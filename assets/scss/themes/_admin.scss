@@ -60,6 +60,11 @@ body {
     &--sm {
         padding: utilities.space(3) utilities.space(4)
     }
+
+    &__blue {
+        color: #fff;
+        background-color: utilities.color('blue');
+    }
 }
 
 
