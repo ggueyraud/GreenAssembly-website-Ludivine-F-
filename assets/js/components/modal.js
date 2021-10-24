@@ -10,8 +10,8 @@ export default class Modal {
         });
         this.events = new Map();
 
+        // Fade
         const fade = document.querySelector('.modal_fade');
-
         if (!fade) {
             this.fade = document.createElement('div');
             this.fade.classList.add('modal_fade');
@@ -55,17 +55,28 @@ export default class Modal {
         return this
     }
 
+    #fire(event_name, args = []) {
+        if (this.events.has(event_name)) {
+            return this.events.get(event_name)(this, ...args);
+        }
+
+        // throw new TypeError(`Event "${event_name}" doesn't exist!`);
+    }
+
     open() {
         this.fade.classList.add('modal_fade--show');
         this.modal.classList.add('modal--show');
 
-        if (this.events.has('open')) {
-            this.events.get('open')(this)
-        }
+        this.#fire('open');
     }
 
     close() {
-        this.fade.classList.remove('modal_fade--show');
+        this.#fire('close');
+
         this.modal.classList.remove('modal--show');
+
+        if (document.querySelectorAll('.modal--show').length === 0) {
+            this.fade.classList.remove('modal_fade--show');
+        }
     }
 }
