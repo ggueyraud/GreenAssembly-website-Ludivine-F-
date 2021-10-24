@@ -9,6 +9,7 @@ import DOMPurify from 'dompurify'
 import { formatDistance } from 'date-fns'
 import { fr } from 'date-fns/locale';
 import Cropper from 'cropperjs';
+import AssetsGrid from '@js/components/assets_grid';
 
 let categories_container = null;
 let projects_container = null;
@@ -226,7 +227,7 @@ const on_mount = () => {
         },
         theme: 'snow'
     });
-    editor.on('text-change', e => {
+    editor.on('text-change', () => {
         const value = editor.getText().length === 1 ? '' : editor.root.innerHTML;
         const content = document.querySelector('[name=content]');
         content.value = value;
@@ -235,65 +236,65 @@ const on_mount = () => {
 
     const add_project_modal = new Modal(document.querySelector('#add_project_modal'));
     add_project_modal.on('open', e => {
-        // window.addEventListener('keydown', e =>)
-        // console.log(e, e.modal, );
         e.modal.querySelector('[name="name"]').focus();
-        console.log('modal open');
+    });
+    add_project_modal.on('close', () => {
+        assets_grid.clear();
+    });
+
+    const cropper_el = document.querySelector('#cropper');
+    let cropper = null;
+    const assets_grid = new AssetsGrid(document.querySelector('.assets'));
+    assets_grid.on('select', (_, image, img) => {
+        cropper_el.setAttribute('src', image);
+        window.img2change = img;
+
+        if (cropper) {
+            cropper.replace(image);
+        } else {
+            cropper = new Cropper(cropper_el, {
+                minCropBoxWidth: 320,
+                zoom(e) {
+                    if (e.detail.ratio <= 0.5 || e.detail.ratio >= 2.5) {
+                        e.preventDefault()
+                    }
+                    console.log(e)
+                }
+            });
+        }
+        asset_editor_modal.open();
     });
     
-    let cropper = null;
     const asset_editor_modal = new Modal(document.querySelector('#asset_editor_modal'));
     document.querySelector('#rotate').addEventListener('input', e => {
         const value = parseInt(e.target.value);
+
         e.target.nextElementSibling.innerText = `${value}%`;
         cropper.rotateTo(value);
     });
-    asset_editor_modal.on('open', () => console.log('Open', cropper))
+
     document.querySelector('#valid_crop').addEventListener('click', () => {
-        console.log('cropper', cropper);
         cropper.getCroppedCanvas().toBlob(blob => {
-            window.img2change.src = URL.createObjectURL(blob);
-            window.img2change.classList.remove('hidden');
+            // const { image, blob } = window.img2change;
+            // console.log(blob, window.img2change);
+            window.img2change.blob = blob;
+            window.img2change.image.src = URL.createObjectURL(blob);
+            window.img2change.image.classList.remove('hidden');
+            window.img2change.image.parentElement.classList.add('assets__item--is-filled')
+            window.img2change.image.setAttribute('draggable', true);
         });
 
         asset_editor_modal.close();
     });
-    document.querySelector('#create_project').addEventListener('click', () => add_project_modal.open())
+    document.querySelector('#create_project').addEventListener('click', () => add_project_modal.open());
 
-    document
-        .querySelectorAll('.assets input[type=file]')
-        .forEach(input => {
-            input.addEventListener('change', () => {
-                const reader = new FileReader();
-
-                reader.onload = e => {
-                    document.querySelector('#cropper').src = e.target.result;
-                    window.img2change = input.nextElementSibling;
-
-                    if (cropper) {
-                        cropper.replace(e.target.result);
-                    } else {
-                        cropper = new Cropper(document.querySelector('#cropper'), {
-                            minCropBoxWidth: 320,
-                            zoom(e) {
-                                if (e.detail.ratio <= 0.5 || e.detail.ratio >= 2.5) {
-                                    e.preventDefault()
-                                }
-                                console.log(e)
-                            }
-                        });
-                    }
-                    asset_editor_modal.open();
-                }
-
-                reader.readAsDataURL(input.files[0]);
-            });
-        });
-    
+    // Quill auto-height
     document.querySelector('[name=description]').addEventListener('input', e => {
         e.target.style.height = '5px';
         e.target.style.height = `${e.target.scrollHeight}px`;
     });
+
+    // Form validation
     new Form(document.querySelector('[name=create_project]'), {
         fields: {
             name: {
@@ -309,12 +310,21 @@ const on_mount = () => {
     })
         .on('valid', () => console.log('valid'))
         .on('send', e => {
-            console.log(e)
+            const form_data = new FormData();
+
+            for (const [key, value] of Object.entries(e.detail)) {
+                form_data.append(key, value);
+            }
+
+            assets_grid.value.forEach(img => form_data.append('files[]', img));
+            // form_data.append('files', assets_grid.value[0])
+
             post('/portfolio/projects', {
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: new URLSearchParams(e.detail)
+                // headers: {
+                //     'Content-Type': 'multipart/form-data'
+                // },
+                // body: new URLSearchParams(e.detail)
+                body: form_data
             })
                 .then(async res => {
                     const id = await res.json();

@@ -26,5 +26,10 @@ module.exports = {
     experiments: {
         syncWebAssembly: true,
         asset: true
-    }
+    },
+    // module: {
+    //     rules: [
+    //       { test: /\.js$/, exclude: /node_modules/, loader: "babel-loader" }
+    //     ]
+    // }
 }
