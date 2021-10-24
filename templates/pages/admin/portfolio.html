@@ -22,7 +22,7 @@
                 <input type="text" id="name" name="name" />
 
                 <label for="description" class="mt_2">Description</label>
-                <textarea name="description" id="description"></textarea>
+                <textarea name="description" id="description" maxlength="320"></textarea>
 
                 <label for="content" class="mt_2">Contenu <span class="text_error">*</span></label>
                 <div id="content_editor"></div>
@@ -34,25 +34,60 @@
 
                 <label>Photos</label>
                 <div class="assets mt_2">
-                    <div class="col_span_2 row_span_2">
+                    <div class="assets__item col_span_2 row_span_2">
                         <input type="file" accept="image/png, image/jpeg" />
-                        <img src="" class="hidden" />
+
+                        <img src="" />
+
+                        <button type="button">
+                            <svg class="icon icon--sm" height="24px">
+                                <use xlink:href="/icons.svg#close"></use>
+                            </svg>
+                        </button>
                     </div>
-                    <div>
-                        <input type="file" accept="image/png, image/jpeg" />
-                        <img src="" class="hidden" />
+                    <div class="assets__item">
+                        <input type="file" accept="image/png, image/jpeg" disabled />
+
+                        <img src="" />
+
+                        <button type="button">
+                            <svg class="icon icon--sm" height="24px">
+                                <use xlink:href="/icons.svg#close"></use>
+                            </svg>
+                        </button>
                     </div>
-                    <div>
-                        <input type="file" accept="image/png, image/jpeg" />
-                        <img src="" class="hidden" />
+                    <div class="assets__item">
+                        <input type="file" accept="image/png, image/jpeg" disabled />
+
+                        <img src="" />
+
+                        <button type="button">
+                            <svg class="icon icon--sm" height="24px">
+                                <use xlink:href="/icons.svg#close"></use>
+                            </svg>
+                        </button>
                     </div>
-                    <div class="col_span_2">
-                        <input type="file" accept="image/png, image/jpeg" />
-                        <img src="" class="hidden" />
+                    <div class="assets__item col_span_2">
+                        <input type="file" accept="image/png, image/jpeg" disabled />
+
+                        <img src="" />
+
+                        <button type="button">
+                            <svg class="icon icon--sm" height="24px">
+                                <use xlink:href="/icons.svg#close"></use>
+                            </svg>
+                        </button>
                     </div>
-                    <div>
-                        <input type="file" accept="image/png, image/jpeg" />
-                        <img src="" class="hidden" />
+                    <div class="assets__item">
+                        <input type="file" accept="image/png, image/jpeg" disabled />
+
+                        <img src="" />
+
+                        <button type="button">
+                            <svg class="icon icon--sm" height="24px">
+                                <use xlink:href="/icons.svg#close"></use>
+                            </svg>
+                        </button>
                     </div>
                 </div>
 

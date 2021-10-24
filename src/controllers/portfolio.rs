@@ -2,6 +2,7 @@ use super::metrics;
 use crate::services;
 use actix_extract_multipart::*;
 use actix_identity::Identity;
+use actix_multipart::Multipart;
 use actix_web::{delete, get, patch, post, put, web, Error, HttpRequest, HttpResponse};
 use askama_actix::{Template, TemplateIntoResponse};
 use chrono::Datelike;
@@ -342,16 +343,23 @@ async fn delete_category(
     HttpResponse::Unauthorized().finish()
 }
 
-impl services::projects::ProjectInformations {
+#[derive(Deserialize, Debug)]
+pub struct ProjectForm {
+    #[serde(flatten)]
+    infos: services::projects::ProjectInformations,
+    // files: actix_extract_multipart::File
+    files: Vec<actix_extract_multipart::File>
+}
+
+impl ProjectForm {
     async fn is_valid(&mut self, pool: &PgPool) -> bool {
         use ammonia::Builder;
 
-        println!("is_valid");
-
-        self.name = self.name.trim().to_string();
-        if let Some(description) = &mut self.description {
+        self.infos.name = self.infos.name.trim().to_string();
+        if let Some(description) = &mut self.infos.description {
             *description = description.trim().to_string();
         }
+
         // Sanitize content for only print allowed html tags
         let mut allowed_tags: HashSet<&str> = HashSet::new();
         allowed_tags.insert("b");
@@ -361,33 +369,46 @@ impl services::projects::ProjectInformations {
         allowed_tags.insert("ol");
         allowed_tags.insert("li");
         allowed_tags.insert("a");
-        self.content = Builder::default()
+        self.infos.content = Builder::default()
             .tags(allowed_tags)
-            .clean(self.content.trim())
+            .clean(self.infos.content.trim())
             .to_string();
 
-        println!("{:?}", self.content);
-
-        self.name.len() <= 120
-            && self.content.len() >= 30
-            && (self.description.is_some() && self.description.as_ref().unwrap().len() <= 320)
+        self.infos.name.len() <= 120
+            && self.infos.content.len() >= 30
+            && ((self.infos.description.is_some() && self.infos.description.as_ref().unwrap().len() <= 320)
+                || self.infos.description.is_none())
         // && self.category_id > 0
         // && services::projects::categories::exists(pool, self.category_id).await
     }
 }
 
+
+
 #[post("/projects")]
 pub async fn insert_project(
     pool: web::Data<PgPool>,
-    mut form: web::Form<services::projects::ProjectInformations>,
+    // mut form: web::Form<services::projects::ProjectInformations>,
+    payload: Multipart,
     session: Identity,
 ) -> HttpResponse {
     if let Some(_) = session.identity() {
+        let mut form =
+            match extract_multipart::<ProjectForm>(payload).await {
+                Ok(data) => data,
+                Err(e) => {
+                    eprintln!("{:?}", e);
+                    return HttpResponse::BadRequest().finish()
+                },
+            };
+
+        println!("{:?}", form);
+
         if !form.is_valid(&pool).await {
             return HttpResponse::BadRequest().finish();
         }
 
-        return match services::projects::insert(&pool, &*form).await {
+        return match services::projects::insert(&pool, &form.infos).await {
             Ok(id) => HttpResponse::Created().json(id),
             _ => HttpResponse::InternalServerError().finish(),
         };
@@ -403,16 +424,16 @@ pub async fn update_project(
     session: Identity,
     web::Path(id): web::Path<i16>,
 ) -> HttpResponse {
-    if let Some(_) = session.identity() {
-        if !form.is_valid(&pool).await {
-            return HttpResponse::BadRequest().finish();
-        }
+    // if let Some(_) = session.identity() {
+    //     if !form.is_valid(&pool).await {
+    //         return HttpResponse::BadRequest().finish();
+    //     }
 
-        return match services::projects::update(&pool, id, &*form).await {
-            Ok(id) => HttpResponse::Ok().json(id),
-            _ => HttpResponse::InternalServerError().finish(),
-        };
-    }
+    //     return match services::projects::update(&pool, id, &*form).await {
+    //         Ok(id) => HttpResponse::Ok().json(id),
+    //         _ => HttpResponse::InternalServerError().finish(),
+    //     };
+    // }
 
     HttpResponse::Unauthorized().finish()
 }
