@@ -1,19 +1,28 @@
-const fs = require('fs');
 const path = require('path');
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+
+let plugins = [];
+
+if (process.env.NODE_ENV === 'production') {
+    plugins.push(new BundleAnalyzerPlugin());
+}
+
+const entry_path = './assets/js/pages';
 
 module.exports = {
     resolve: {
         alias: {
-            '@js': path.resolve(__dirname, 'assets/js/')
+            '@js': path.resolve(__dirname, 'assets/js')
         }
     },
     entry: {
-        global: './assets/js/global.js',
-        contact: './assets/js/contact.js',
-        project: './assets/js/project.js',
-        portfolio: './assets/js/portfolio.js',
-        login: './assets/js/login.js',
-        'dashboard/portfolio': './assets/js/pages/dashboard/portfolio.js'
+        global: `${entry_path}/global.js`,
+        contact: `${entry_path}/contact.js`,
+        project: `${entry_path}/project.js`,
+        portfolio: `${entry_path}/portfolio.js`,
+        login: `${entry_path}/login.js`,
+        'admin/portfolio': `${entry_path}/admin/portfolio.js`,
+        'admin/settings': `${entry_path}/admin/settings.js`
     },
     watch: process.env.NODE_ENV === 'development',
     watchOptions: {
@@ -32,4 +41,5 @@ module.exports = {
     //       { test: /\.js$/, exclude: /node_modules/, loader: "babel-loader" }
     //     ]
     // }
+    plugins
 }

@@ -1,25 +1,14 @@
 export default class Modal {
-    constructor(element, options = {}) {
+    // #modal = null;
+    #events = new Map();
+
+    constructor(element) {
         this.modal = element;
-        this.options = options;
-        this.fade = document.querySelector('.modal_fade');
         this.modal.addEventListener('click', e => {
             if (this.is_open && e.target === this.modal) {
                 this.close();
             }
         });
-        this.events = new Map();
-
-        // Fade
-        const fade = document.querySelector('.modal_fade');
-        if (!fade) {
-            this.fade = document.createElement('div');
-            this.fade.classList.add('modal_fade');
-            this.fade.addEventListener('click', () => {
-                this.close();
-            });
-            document.querySelector('body').insertAdjacentElement('beforeend', this.fade);
-        }
 
         window.addEventListener('keydown', e => {
             if (this.is_open && e.key === 'Escape') {
@@ -48,23 +37,22 @@ export default class Modal {
     }
 
     on(event_name, callback) {
-        if (!this.events.has(event_name)) {
-            this.events.set(event_name, callback);
+        if (!this.#events.has(event_name)) {
+            this.#events.set(event_name, callback);
         }
 
         return this
     }
 
     #fire(event_name, args = []) {
-        if (this.events.has(event_name)) {
-            return this.events.get(event_name)(this, ...args);
+        if (this.#events.has(event_name)) {
+            return this.#events.get(event_name)(this, ...args);
         }
 
         // throw new TypeError(`Event "${event_name}" doesn't exist!`);
     }
 
     open() {
-        this.fade.classList.add('modal_fade--show');
         this.modal.classList.add('modal--show');
 
         this.#fire('open');
@@ -74,9 +62,5 @@ export default class Modal {
         this.#fire('close');
 
         this.modal.classList.remove('modal--show');
-
-        if (document.querySelectorAll('.modal--show').length === 0) {
-            this.fade.classList.remove('modal_fade--show');
-        }
     }
 }

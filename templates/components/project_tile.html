@@ -3,14 +3,18 @@
     href="/portfolio/{{ uri }}"
     class="project col_span_2 row_span_2"
 >
-    <img
-        src="/uploads/{{ illustration.path }}"
-        {% match illustration.name %}
-            {% when Some with (name) %}
-                alt="{{ name }}"
-            {% when None %}
-        {% endmatch %}
-    />
+    <picture>
+        <source srcset="/uploads/{{ fallback_illustration.path }}" type="image/webp" />
+
+        <img
+            src="/uploads/{{ illustration.path }}"
+            {% match illustration.name %}
+                {% when Some with (name) %}
+                    alt="{{ name }}"
+                {% when None %}
+            {% endmatch %}
+        />
+    </picture>
 
     <div class="details">
         <h3 title="{{ name }}">{{ name }}</h3>

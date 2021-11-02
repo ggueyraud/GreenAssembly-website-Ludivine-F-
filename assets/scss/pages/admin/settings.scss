@@ -1,0 +1,9 @@
+@import '../../components/drop_zone';
+
+[name="main"] {
+    grid-template-columns: 1fr;
+
+    .card {
+        height: 100%
+    }
+}

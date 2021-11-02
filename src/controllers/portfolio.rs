@@ -2,13 +2,14 @@ use super::metrics;
 use crate::services;
 use actix_extract_multipart::*;
 use actix_identity::Identity;
-use actix_multipart::Multipart;
+use ammonia::Builder;
 use actix_web::{delete, get, patch, post, put, web, Error, HttpRequest, HttpResponse};
 use askama_actix::{Template, TemplateIntoResponse};
 use chrono::Datelike;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
-use std::{collections::HashSet, path::Path};
+use webp::Encoder;
+use std::{collections::HashSet, io::Write, path::Path};
 
 #[get("")]
 async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
@@ -28,6 +29,7 @@ async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse
         struct Illustration {
             path: String,
             name: Option<String>,
+            // fallback_path: String
         }
 
         #[derive(Template)]
@@ -36,6 +38,7 @@ async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse
             name: String,
             uri: String,
             illustration: Illustration,
+            fallback_illustration: Illustration,
             categories: Vec<services::projects::Category>,
         }
 
@@ -76,10 +79,7 @@ async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse
                 }
             }
 
-            formatted_projects.push(ProjectTile {
-                name: project.name.clone(),
-                uri: slugify(&format!("{}-{}", project.name, project.id)),
-                illustration: sqlx::query_as!(
+            let illustration = sqlx::query_as!(
                     Illustration,
                     r#"SELECT
                         f.path AS "path", f.name AS "name"
@@ -90,7 +90,16 @@ async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse
                 )
                 .fetch_one(pool.as_ref())
                 .await
-                .unwrap(),
+                .unwrap();
+
+            formatted_projects.push(ProjectTile {
+                name: project.name.clone(),
+                uri: slugify(&format!("{}-{}", project.name, project.id)),
+                fallback_illustration: Illustration {
+                    path: format!("{}.webp", illustration.path.clone().split(".").collect::<Vec<_>>().get(0).unwrap()),
+                    name: None
+                },
+                illustration,
                 categories: c,
             });
         }
@@ -156,7 +165,7 @@ async fn get_project(
                 international_date: project.date.to_rfc3339(),
                 asset_0: assets.get(0),
                 asset_1: assets.get(1),
-                assets: if assets.len() - 2 > 0 {
+                assets: if assets.len() > 2 && assets.len() - 2 > 0 {
                     Some(assets.get(2..).unwrap().to_vec())
                 } else {
                     None
@@ -344,19 +353,17 @@ async fn delete_category(
 }
 
 #[derive(Deserialize, Debug)]
-pub struct ProjectForm {
-    #[serde(flatten)]
-    infos: services::projects::ProjectInformations,
-    // files: actix_extract_multipart::File
-    files: Vec<actix_extract_multipart::File>
+struct ProjectInformations {
+    name: String,
+    description: Option<String>,
+    content: String,
+    categories: Option<Vec<i16>>,
 }
 
-impl ProjectForm {
-    async fn is_valid(&mut self, pool: &PgPool) -> bool {
-        use ammonia::Builder;
-
-        self.infos.name = self.infos.name.trim().to_string();
-        if let Some(description) = &mut self.infos.description {
+impl ProjectInformations {
+    fn is_valid(&mut self) -> bool {
+        self.name = self.name.trim().to_string();
+        if let Some(description) = &mut self.description {
             *description = description.trim().to_string();
         }
 
@@ -369,47 +376,170 @@ impl ProjectForm {
         allowed_tags.insert("ol");
         allowed_tags.insert("li");
         allowed_tags.insert("a");
-        self.infos.content = Builder::default()
+        allowed_tags.insert("p");
+        self.content = Builder::default()
             .tags(allowed_tags)
-            .clean(self.infos.content.trim())
+            .clean(self.content.trim())
             .to_string();
 
-        self.infos.name.len() <= 120
-            && self.infos.content.len() >= 30
-            && ((self.infos.description.is_some() && self.infos.description.as_ref().unwrap().len() <= 320)
-                || self.infos.description.is_none())
-        // && self.category_id > 0
-        // && services::projects::categories::exists(pool, self.category_id).await
+        self.name.len() <= 120
+            && self.content.len() >= 30
+            && ((self.description.is_some()
+                && self.description.as_ref().unwrap().len() <= 320)
+                || self.description.is_none()) 
     }
 }
 
+#[derive(Deserialize, Debug)]
+pub struct ProjectAddForm {
+    #[serde(flatten)]
+    infos: ProjectInformations,
+    files: Vec<actix_extract_multipart::File> // TODO : change to Option
+}
 
+impl ProjectAddForm {
+    async fn is_valid(&mut self) -> bool {
+        if !self.infos.is_valid() {
+            return false
+        }
+
+        for file in &self.files {
+            if !&["image/png", "image/jpeg", "image/webp"].contains(&file.file_type().as_str())
+                || file.len() >= 1000000
+            {
+                return false;
+            }
+        }
+
+        return true
+    }
+}
 
 #[post("/projects")]
 pub async fn insert_project(
     pool: web::Data<PgPool>,
-    // mut form: web::Form<services::projects::ProjectInformations>,
-    payload: Multipart,
+    mut form: actix_extract_multipart::Multipart<ProjectAddForm>,
     session: Identity,
 ) -> HttpResponse {
     if let Some(_) = session.identity() {
-        let mut form =
-            match extract_multipart::<ProjectForm>(payload).await {
-                Ok(data) => data,
-                Err(e) => {
-                    eprintln!("{:?}", e);
-                    return HttpResponse::BadRequest().finish()
-                },
-            };
-
-        println!("{:?}", form);
-
-        if !form.is_valid(&pool).await {
+        if !form.is_valid().await {
             return HttpResponse::BadRequest().finish();
         }
 
-        return match services::projects::insert(&pool, &form.infos).await {
-            Ok(id) => HttpResponse::Created().json(id),
+        // Check if specified categories exist
+        if let Some(categories) = &form.infos.categories {
+            for category_id in categories {
+                if !services::projects::categories::exists(&pool, *category_id).await {
+                    return HttpResponse::NotFound().finish()
+                }
+            }
+        }
+
+        return match services::projects::insert(&pool, &form.infos.name, form.infos.description.as_deref(), &form.infos.content).await {
+            Ok(id) => {
+                // Categories
+                if let Some(categories) = &form.infos.categories {
+                    let mut categories_fut = vec![];
+
+                    for category_id in categories {
+                        categories_fut.push(services::projects::link_to_category(&pool, id, *category_id));
+                    }
+
+                    futures::future::join_all(categories_fut).await;
+                }
+
+                // Handle assets
+                let mut i = 1;
+                for file in &form.files {
+                    let image = image::load_from_memory(&file.data()).unwrap();
+                    let name = {
+                        use slugmin::slugify;
+
+                        slugify(&format!(
+                            "{}_{}",
+                            file.name(),
+                            chrono::Utc::now().timestamp()
+                        ))
+                    };
+
+                    const MAX_MOBILE: (u32, u32) = (500, 500);
+                    const MAX_DESKTOP: (u32, u32) = (700, 700);
+
+                    // Create thumbnail
+                    if image.color().has_alpha() {
+                        image
+                            .thumbnail(MAX_MOBILE.0, MAX_MOBILE.1)
+                            .save_with_format(
+                                format!("./uploads/mobile/{}.png", name.clone()),
+                                image::ImageFormat::Png,
+                            )
+                            .unwrap();
+
+                        image
+                            .thumbnail(MAX_DESKTOP.0, MAX_DESKTOP.1)
+                            .save_with_format(
+                                format!("./uploads/{}.png", name.clone()),
+                                image::ImageFormat::Png,
+                            )
+                            .unwrap();
+                    } else {
+                        image
+                            .thumbnail(MAX_MOBILE.0, MAX_MOBILE.1)
+                            .save_with_format(
+                                format!("./uploads/mobile/{}.jpg", name.clone()),
+                                image::ImageFormat::Jpeg,
+                            )
+                            .unwrap();
+
+                        image
+                            .thumbnail(MAX_DESKTOP.0, MAX_DESKTOP.1)
+                            .save_with_format(
+                                format!("./uploads/{}.jpg", name.clone()),
+                                image::ImageFormat::Png,
+                            )
+                            .unwrap();
+                    }
+
+                    // Create webp format
+                    let image_webp = Encoder::from_image(&image.resize(MAX_MOBILE.0, MAX_MOBILE.1, image::imageops::CatmullRom))
+                        .encode(100.0);
+                    let v = image_webp.iter().map(|a| *a).collect::<Vec<u8>>();
+                    let mut webp_file = std::fs::File::create(format!("./uploads/mobile/{}.webp", name)).unwrap();
+                    webp_file.write_all(&v).unwrap();
+
+                    let image_webp = Encoder::from_image(&image.resize(MAX_DESKTOP.0, MAX_DESKTOP.1, image::imageops::CatmullRom))
+                        .encode(100.0);
+                    let v = image_webp.iter().map(|a| *a).collect::<Vec<u8>>();
+                    let mut webp_file = std::fs::File::create(format!("./uploads/{}.webp", name)).unwrap();
+                    webp_file.write_all(&v).unwrap();
+
+                    // files_fut.push(services::files::insert(&pool, None, None));
+                    let file_id = services::files::insert(
+                        &pool,
+                        Some(file.name()),
+                        &format!(
+                            "{}.{}",
+                            &name.clone(),
+                            if image.color().has_alpha() {
+                                "png"
+                            } else {
+                                "jpg"
+                            }
+                        ),
+                    )
+                    .await
+                    .unwrap();
+                    services::projects::assets::insert(&pool, id, file_id, i)
+                        .await
+                        .unwrap();
+
+                    i += 1;
+                }
+
+                // futures::future::join_all(files_fut).await;
+
+                HttpResponse::Created().json(id)
+            }
             _ => HttpResponse::InternalServerError().finish(),
         };
     }
@@ -417,14 +547,28 @@ pub async fn insert_project(
     HttpResponse::Unauthorized().finish()
 }
 
+// pub struct ProjectUpdateAssetForm {
+//     file: Option<File>,
+//     to_delete: Option<bool>
+// }
+
+#[derive(Deserialize)]
+pub struct ProjectUpdateForm {
+    #[serde(flatten)]
+    infos: ProjectInformations,
+    categories: Option<Vec<i16>>,
+//     files: Vec<ProjectUpdateAssetForm>
+}
+
 #[patch("/projects/{id}")]
 pub async fn update_project(
     pool: web::Data<PgPool>,
-    mut form: web::Form<services::projects::ProjectInformations>,
+    // mut form: web::Form<services::projects::ProjectInformations>,
+    mut form: actix_extract_multipart::Multipart<ProjectUpdateForm>,
     session: Identity,
     web::Path(id): web::Path<i16>,
 ) -> HttpResponse {
-    // if let Some(_) = session.identity() {
+    if let Some(_) = session.identity() {
     //     if !form.is_valid(&pool).await {
     //         return HttpResponse::BadRequest().finish();
     //     }
@@ -433,7 +577,7 @@ pub async fn update_project(
     //         Ok(id) => HttpResponse::Ok().json(id),
     //         _ => HttpResponse::InternalServerError().finish(),
     //     };
-    // }
+    }
 
     HttpResponse::Unauthorized().finish()
 }
@@ -500,98 +644,98 @@ pub async fn insert_asset(
     web::Path(id): web::Path<i16>,
     payload: actix_multipart::Multipart,
 ) -> HttpResponse {
-    if let Some(_) = session.identity() {
-        let mut form = match extract_multipart::<AssetForm>(payload).await {
-            Ok(data) => data,
-            Err(_) => return HttpResponse::BadRequest().finish(),
-        };
-        if !form.is_valid() {
-            return HttpResponse::BadRequest().finish();
-        }
+    // if let Some(_) = session.identity() {
+    //     let mut form = match extract_multipart::<AssetForm>(payload).await {
+    //         Ok(data) => data,
+    //         Err(_) => return HttpResponse::BadRequest().finish(),
+    //     };
+    //     if !form.is_valid() {
+    //         return HttpResponse::BadRequest().finish();
+    //     }
 
-        if services::projects::exists(&pool, id).await {
-            use std::fs::File;
-            use std::io::prelude::*;
-            use webp::Encoder;
+    //     if services::projects::exists(&pool, id).await {
+    //         use std::fs::File;
+    //         use std::io::prelude::*;
+    //         use webp::Encoder;
 
-            let image = image::load_from_memory(&form.file.data()).unwrap();
+    //         let image = image::load_from_memory(&form.file.data()).unwrap();
 
-            let name = if let Some(name) = form.name {
-                use slugmin::slugify;
+    //         let name = if let Some(name) = form.name {
+    //             use slugmin::slugify;
 
-                slugify(&format!("{}_{}", name, id))
-            } else {
-                format!("{}_{}", id, chrono::Utc::now().timestamp())
-            };
+    //             slugify(&format!("{}_{}", name, id))
+    //         } else {
+    //             format!("{}_{}", id, chrono::Utc::now().timestamp())
+    //         };
 
-            match form.file.file_type() {
-                FileType::ImageJPEG
-                | FileType::ImagePNG
-                | FileType::ImageWEBP
-                | FileType::ImageGIF => {
-                    let format = if image.color().has_alpha() {
-                        image::ImageFormat::Png
-                    } else {
-                        image::ImageFormat::Jpeg
-                    };
+    //         // match form.file.file_type() {
+    //         //     FileType::ImageJPEG
+    //         //     | FileType::ImagePNG
+    //         //     | FileType::ImageWEBP
+    //         //     | FileType::ImageGIF => {
+    //         //         let format = if image.color().has_alpha() {
+    //         //             image::ImageFormat::Png
+    //         //         } else {
+    //         //             image::ImageFormat::Jpeg
+    //         //         };
 
-                    match format {
-                        image::ImageFormat::Png => {}
-                        _ => {}
-                    }
+    //         //         match format {
+    //         //             image::ImageFormat::Png => {}
+    //         //             _ => {}
+    //         //         }
 
-                    if image.color().has_alpha() {
-                        image
-                            .thumbnail(500, 500)
-                            .save_with_format(
-                                format!("./uploads/mobile/{}.png", name),
-                                image::ImageFormat::Jpeg,
-                            )
-                            .unwrap();
+    //         //         if image.color().has_alpha() {
+    //         //             image
+    //         //                 .thumbnail(500, 500)
+    //         //                 .save_with_format(
+    //         //                     format!("./uploads/mobile/{}.png", name),
+    //         //                     image::ImageFormat::Jpeg,
+    //         //                 )
+    //         //                 .unwrap();
 
-                        image
-                            .resize(800, 800, image::imageops::CatmullRom)
-                            .save_with_format(
-                                format!("./uploads/{}.png", name),
-                                image::ImageFormat::Jpeg,
-                            )
-                            .unwrap();
-                    } else {
-                        image
-                            .thumbnail(500, 500)
-                            .save_with_format(
-                                format!("./uploads/mobile/{}.jpg", name),
-                                image::ImageFormat::Jpeg,
-                            )
-                            .unwrap();
-                    }
+    //         //             image
+    //         //                 .resize(800, 800, image::imageops::CatmullRom)
+    //         //                 .save_with_format(
+    //         //                     format!("./uploads/{}.png", name),
+    //         //                     image::ImageFormat::Jpeg,
+    //         //                 )
+    //         //                 .unwrap();
+    //         //         } else {
+    //         //             image
+    //         //                 .thumbnail(500, 500)
+    //         //                 .save_with_format(
+    //         //                     format!("./uploads/mobile/{}.jpg", name),
+    //         //                     image::ImageFormat::Jpeg,
+    //         //                 )
+    //         //                 .unwrap();
+    //         //         }
 
-                    let image_webp =
-                        Encoder::from_image(&image.resize(500, 500, image::imageops::CatmullRom))
-                            .encode(100.0);
-                    let v = image_webp.iter().map(|a| *a).collect::<Vec<u8>>();
-                    let mut file = File::create(format!("./uploads/mobile/{}.webp", name)).unwrap();
-                    file.write_all(&v).unwrap();
+    //         //         let image_webp =
+    //         //             Encoder::from_image(&image.resize(500, 500, image::imageops::CatmullRom))
+    //         //                 .encode(100.0);
+    //         //         let v = image_webp.iter().map(|a| *a).collect::<Vec<u8>>();
+    //         //         let mut file = File::create(format!("./uploads/mobile/{}.webp", name)).unwrap();
+    //         //         file.write_all(&v).unwrap();
 
-                    // Desktop image size
-                    let image_webp =
-                        Encoder::from_image(&image.resize(800, 800, image::imageops::CatmullRom))
-                            .encode(100.0);
-                    let v = image_webp.iter().map(|a| *a).collect::<Vec<u8>>();
-                    let mut file = File::create(format!("./uploads/{}.webp", name)).unwrap();
-                    file.write_all(&v).unwrap();
-                }
-                // MP4
-                _ => {}
-            }
+    //         //         // Desktop image size
+    //         //         let image_webp =
+    //         //             Encoder::from_image(&image.resize(800, 800, image::imageops::CatmullRom))
+    //         //                 .encode(100.0);
+    //         //         let v = image_webp.iter().map(|a| *a).collect::<Vec<u8>>();
+    //         //         let mut file = File::create(format!("./uploads/{}.webp", name)).unwrap();
+    //         //         file.write_all(&v).unwrap();
+    //         //     }
+    //         //     // MP4
+    //         //     _ => {}
+    //         // }
 
-            // services::projects::assets::insert(&pool, id, path, form.order, form.is_visible).await;
+    //         // services::projects::assets::insert(&pool, id, path, form.order, form.is_visible).await;
 
-            return HttpResponse::Created().finish();
-        }
+    //         return HttpResponse::Created().finish();
+    //     }
 
-        return HttpResponse::NotFound().finish();
-    }
+    //     return HttpResponse::NotFound().finish();
+    // }
 
     HttpResponse::Unauthorized().finish()
 }

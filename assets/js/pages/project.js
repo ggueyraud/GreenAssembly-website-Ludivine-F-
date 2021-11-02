@@ -1,5 +1,5 @@
 import Carousel, { CarouselPagination, CarouselTouch } from 'carousel';
-import lightbox, { init } from './components/lightbox';
+import lightbox, { init } from '@js/components/lightbox';
 
 const on_mount = () => {
     lightbox('img')

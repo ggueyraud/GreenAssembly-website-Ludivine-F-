@@ -29,7 +29,7 @@ serde_json = "1.0.66"
 actix-identity = "0.3.1"
 argon2 = "0.2.4"
 rand_core = { version = "0.6.3", features = ["std"] }
-actix_extract_multipart = "0.2.1"
+actix_extract_multipart = "1.0.0"
 actix-multipart = "0.3.0"
 ammonia = "3.1.2"
 image = "0.23.14"

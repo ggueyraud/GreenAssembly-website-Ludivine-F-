@@ -1,0 +1,27 @@
+<div class="modal" id="asset_editor_modal">
+    <div class="modal__dialog">
+        <div class="modal__dialog__header">Édition d'image</div>
+        
+        <div class="modal__dialog__body pb_2">
+            <div>
+                <img id="cropper" />
+            </div>
+            <small class="text_center my_2 block">Le double clique sur la zone permet de changer de mode entre déplaçable et sélection</small>
+
+            <input
+                type="range"
+                id="rotate"
+                step="1"
+                value="0"
+                min="0"
+                max="360"
+                class="pb_1 m_0"
+            />
+            <input type="number" step="1" class="block mx_auto" style="width: 100px" />
+        </div>
+
+        <div class="modal__dialog__footer pt_2">
+            <button id="valid_crop" type="button" class="btn btn__green">Valider</button>
+        </div>
+    </div>
+</div>

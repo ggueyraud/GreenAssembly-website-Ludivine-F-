@@ -169,8 +169,9 @@ async fn main() -> std::io::Result<()> {
             )
             .service(
                 web::scope("/admin")
-                    .service(controllers::dashboard::index)
-                    .service(controllers::dashboard::portfolio),
+                    .service(controllers::admin::index)
+                    .service(controllers::admin::portfolio)
+                    .service(controllers::admin::settings)
             )
             .service(controllers::metrics::log)
             .service(serve_upload_file)

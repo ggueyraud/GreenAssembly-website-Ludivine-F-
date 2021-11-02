@@ -6,7 +6,7 @@ use sqlx::PgPool;
 
 pub mod blog;
 pub mod contact;
-pub mod dashboard;
+pub mod admin;
 pub mod metrics;
 pub mod my_little_plus;
 pub mod portfolio;

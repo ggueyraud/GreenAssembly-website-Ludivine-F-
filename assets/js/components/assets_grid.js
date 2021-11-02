@@ -1,31 +1,33 @@
-const is_filled_class = 'assets__item--is-filled';
-const hover_class = 'assets__item--hover';
+const is_filled_class = 'drop_zone--is-filled';
+const hover_class = 'drop_zone--hover';
 
-class DropZone {
+// TODO : implement max file size
+export class DropZone {
+    #events = new Map();
+
     constructor(container) {
         this.container = container;
         this.image = container.querySelector('img');
         this.input = container.querySelector('input');
         this.blob = null;
+        this.#events.set('change', (_, image) => {
+            this.image.setAttribute('src', image);
+        });
 
-        // const observer = new MutationObserver(mutations => {
-        //     mutations.forEach(mutation => {
-        //         if (mutation.type === 'attributes' && mutation.attributeName === 'src') {
-        //             if (mutation.target.getAttribute('src') === '') {
-        //                 console.log(this.input.value);
-        //                 this.input.value = null;
-        //                 console.log(this.input.value);
-        //                 console.log('clear input value and set is_filled to false')
-        //             }
-        //         }
-        //     });
-        // });
+        const remove_btn = this.container.querySelector('button');
+        remove_btn.addEventListener('click', () => {
+            this.#fire('clear');
+        });
 
-        // observer.observe(this.image, {
-        //     attributes: true,
-        //     childList: false,
-        //     CharacterData: false
-        // });
+        this.input.addEventListener('change', () => {
+            const reader = new FileReader();
+
+            reader.onload = e => {
+                this.#fire('change', [e.target.result]);
+            }
+
+            reader.readAsDataURL(this.input.files[0]);
+        });
     }
 
     get is_filled() {
@@ -45,6 +47,20 @@ class DropZone {
             });
         // }, 250);
     }
+
+    #fire(event_name, args = []) {
+        if (this.#events.has(event_name)) {
+            return this.#events.get(event_name)(this, ...args);
+        }
+
+        // throw new TypeError(`Event "${event_name}" doesn't exist!`);
+    }
+
+    on(event_name, callback) {
+        this.#events.set(event_name, callback);
+
+        return this;
+    }
 }
 
 export default class AssetsGrid {
@@ -54,42 +70,49 @@ export default class AssetsGrid {
     #limit = 0;
 
     constructor(container) {
-        this.#items = [...container.querySelectorAll('.assets__item')].map((item, index) => {
+        this.#items = [...container.querySelectorAll('.drop_zone')].map((item, index) => {
             const drop_zone = new DropZone(item);
 
-            // Remove button
-            const btn = item.querySelector('button');
-            btn.addEventListener('click', () => {
-                if (index > 0) {
-                    this.#items[this.#limit].input.disabled = true;
-                    this.#limit--;
+            drop_zone
+                .on('clear', () => {
+                    console.log('clear');
+                    if (index > 0) {
+                        this.#items[this.#limit].input.disabled = true;
+                        this.#limit--;
+                    }
 
-                }
+                    // drop_zone.clear();
+                    this.#update(index, true);
 
-                // drop_zone.clear();
-                this.#update(index, true);
-
-                // // Create timeout for CSS animation
-                // setTimeout(() => {
-                //     Object.assign(drop_zone.image, {
-                //         src: '',
-                //         draggable: false
-                //     });
-                // }, 250);
-            });
+                    // // Create timeout for CSS animation
+                    // setTimeout(() => {
+                    //     Object.assign(drop_zone.image, {
+                    //         src: '',
+                    //         draggable: false
+                    //     });
+                    // }, 250);
+                })
+                .on('change', (drop_zone, image) => {
+                    console.log('dropzone change event');
+                    // console.log(drop_zone, image);
+                    this.#fire('select', [image, drop_zone]);
+                    // Make available next dropzone
+                    this.#limit++;
+                    this.#items[this.#limit].input.removeAttribute('disabled');
+                });
             
             // Input handling
-            drop_zone.input.addEventListener('change', () => {
-                const reader = new FileReader();
+            // drop_zone.input.addEventListener('change', () => {
+            //     const reader = new FileReader();
 
-                reader.onload = e => {
-                    this.#fire('select', [e.target.result, drop_zone]);
-                    this.#limit++;
-                    this.#items[this.#limit].input.disabled = false;
-                }
+            //     reader.onload = e => {
+            //         this.#fire('select', [e.target.result, drop_zone]);
+            //         this.#limit++;
+            //         this.#items[this.#limit].input.removeAttribute('disabled');
+            //     }
 
-                reader.readAsDataURL(drop_zone.input.files[0]);
-            });
+            //     reader.readAsDataURL(drop_zone.input.files[0]);
+            // });
 
             // Events initialization
             drop_zone.container.addEventListener('dragstart', e => this.#dragged_element = e.target, false);
@@ -164,7 +187,6 @@ export default class AssetsGrid {
                         prev.container.classList.add(is_filled_class);
                         item.clear();
                     }
-                    
                 }
 
                 if (index === 0) {
@@ -191,9 +213,15 @@ export default class AssetsGrid {
     }
 
     clear() {
-        this.#items.forEach(item => {
+        this.#items.forEach((item, index) => {
             item.clear();
+
+            if (index > 0) {
+                item.input.setAttribute('disabled', true);
+            }
         });
+
+        this.#limit = 0;
     }
 
     get value() {
@@ -202,10 +230,7 @@ export default class AssetsGrid {
         this
             .#items
             .filter(item => item.image.getAttribute('src'))
-            .forEach(item => value.push(item.blob))
-        // this.#items.forEach(item => {
-        //     value.push(item.image.getAttribute);
-        // });
+            .forEach(item => value.push(item.blob));
 
         return value;
     }

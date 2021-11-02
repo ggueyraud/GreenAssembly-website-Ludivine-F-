@@ -14,6 +14,7 @@ import AssetsGrid from '@js/components/assets_grid';
 let categories_container = null;
 let projects_container = null;
 let sortable_categories = null;
+let project_fv = null;
 
 const swal_error = () => Swal.fire({
     title: 'Une erreur est survenue',
@@ -64,12 +65,11 @@ const add_category = (id, name) => {
         }
     });
 
-    // TODO : change onto button
-    const delete_btn = document.createElement('a');
-    delete_btn.href = 'javascript:;';
+    const delete_btn = document.createElement('button');
     delete_btn.innerHTML = `<svg class="icon" height="20px">
         <use xlink:href="/dashboard_icons.svg#delete"></use>
     </svg>`;
+    delete_btn.classList.add('text_error');
     delete_btn.addEventListener('click', () => {
         Swal.fire({
             title: 'Suppression',
@@ -98,7 +98,7 @@ const add_category = (id, name) => {
     categories_container.appendChild(category);
 }
 
-const add_project = (id, name, content, date, after = true) => {
+const add_project = ({id, name, content, date}, after = true) => {
     const project = document.createElement('div');
     project.classList.add('projects__item');
 
@@ -115,21 +115,24 @@ const add_project = (id, name, content, date, after = true) => {
     const project_actions = document.createElement('div');
     project_actions.classList.add('projects__item__actions');
 
-    // TODO : replace with button
-    const update_btn = document.createElement('a');
-    update_btn.href = 'javascript:;';
+    const update_btn = document.createElement('button');
+    update_btn.classList.add('text_blue');
     update_btn.innerHTML = `<svg class="icon" height="20px">
         <use xlink:href="/dashboard_icons.svg#edit"></use>
     </svg>`;
-    const delete_btn = document.createElement('a');
-    delete_btn.href = 'javascript:;';
+    update_btn.addEventListener('click', () => {
+        project_fv.set_field_value('name', name);
+        project_fv.set_field_value('content', content);
+
+        add_project_modal.open();
+    });
+
+    const delete_btn = document.createElement('button');
     delete_btn.classList.add('text_error');
     delete_btn.innerHTML = `<svg class="icon" height="20px">
         <use xlink:href="/dashboard_icons.svg#delete"></use>
     </svg>`;
-    delete_btn.addEventListener('click', e => {
-        e.preventDefault();
-
+    delete_btn.addEventListener('click', () => {
         Swal.fire({
             title: 'Suppression',
             text: 'Êtes-vous certain.e de vouloir supprimer ce projet ?',
@@ -178,7 +181,8 @@ const on_mount = () => {
     const new_category_input = document.querySelector('[name=new_category_name]');
 
     categories.forEach(category => add_category(category.id, category.name));
-    projects.forEach(project => add_project(project.id, project.name, project.content, project.date));
+    // projects.reverse().forEach(project => add_project(project));
+    projects.forEach(project => add_project(project));
 
     sortable_categories = new Sortable(categories_container, {
         animation: 150,
@@ -217,6 +221,69 @@ const on_mount = () => {
         });
 
     // Projects
+    const project_form = document.querySelector('[name=create_project]');
+    const project_form_submit = project_form.querySelector('button[type=submit]');
+    const reset_submit_btn = (submit_value) => {
+        project_form_submit.removeAttribute('disabled');
+        project_form_submit.innerHTML = submit_value;
+    }
+
+    project_fv = new Form(project_form, {
+        fields: {
+            name: {
+                validators: [new Required(), new StringLength(1, 120)]
+            },
+            description: {
+                validators: [new StringLength(0, 320)]
+            },
+            content: {
+                validators: [new Required(), new StringLength(30, 1000)]
+            },
+            'categories[]': {}
+        }
+    })
+        .on('valid', () => console.log('valid'))
+        .on('send', e => {
+            const submit_value = project_form_submit.innerHTML;
+            project_form_submit.setAttribute('disabled', true);
+            project_form_submit.innerHTML = `<svg class="icon icon--rotate icon--sm mr_2" height="18px">
+                <use xlink:href="/dashboard_icons.svg#redo"></use>
+            </svg> Envoi en cours..`;
+
+            const form_data = new FormData();
+
+            for (const [key, value] of Object.entries(e.detail)) {
+                if (Array.isArray(value)) {
+                    for (const item of value) {
+                        form_data.append(`${key}[]`, item);
+                    }
+                } else {
+                    form_data.append(key, value);
+                }
+            }
+
+            assets_grid.value.forEach(img => form_data.append('files[]', img));
+
+            post('/portfolio/projects', {
+                body: form_data
+            })
+                .then(async res => {
+                    const id = await res.json();
+                    const { name, content } = e.detail;
+
+                    reset_submit_btn(submit_value);
+
+                    add_project_modal.close();
+
+                    add_project({ id, name, content, date: new Date() }, false);
+                })
+                .catch(e => {
+                    console.error(e)
+                    reset_submit_btn(submit_value);
+                    swal_error();
+                })
+        });
+
     const editor = new Quill('#content_editor', {
         modules: {
             toolbar: [
@@ -230,7 +297,11 @@ const on_mount = () => {
     editor.on('text-change', () => {
         const value = editor.getText().length === 1 ? '' : editor.root.innerHTML;
         const content = document.querySelector('[name=content]');
-        content.value = value;
+
+        content.value = DOMPurify.sanitize(value, {
+            ALLOWED_TAGS: ['p', 'b', 'h2', 'h3', 'ul', 'ol', 'li', 'a']
+        });
+
         content.dispatchEvent(new Event('input'));
     })
 
@@ -240,6 +311,8 @@ const on_mount = () => {
     });
     add_project_modal.on('close', () => {
         assets_grid.clear();
+        project_fv.clear();
+        editor.setContents([]);
     });
 
     const cropper_el = document.querySelector('#cropper');
@@ -251,41 +324,64 @@ const on_mount = () => {
 
         if (cropper) {
             cropper.replace(image);
-        } else {
+        }
+
+        asset_editor_modal.open();
+    });
+    
+    const rotate_selector = document.querySelector('#rotate');
+    const rotate_input = rotate_selector.nextElementSibling;
+    rotate_input.addEventListener('input', e => {
+        let value = parseInt(e.target.value);
+        
+        if (value > 360) {
+            value = 360;
+        } else if (value < 0) {
+            value = 0;
+        }
+
+        rotate_input.value = value;
+        cropper.rotateTo(value);
+    });
+
+    const asset_editor_modal = new Modal(document.querySelector('#asset_editor_modal'));
+    asset_editor_modal.on('open', () => {
+        if (!cropper) {
             cropper = new Cropper(cropper_el, {
                 minCropBoxWidth: 320,
                 zoom(e) {
                     if (e.detail.ratio <= 0.5 || e.detail.ratio >= 2.5) {
                         e.preventDefault()
                     }
-                    console.log(e)
                 }
             });
         }
-        asset_editor_modal.open();
     });
-    
-    const asset_editor_modal = new Modal(document.querySelector('#asset_editor_modal'));
-    document.querySelector('#rotate').addEventListener('input', e => {
+    asset_editor_modal.on('close', () => {
+        rotate_selector.value = 0;
+        rotate_input.value = 0;
+    });
+
+    rotate_selector.addEventListener('input', e => {
         const value = parseInt(e.target.value);
 
-        e.target.nextElementSibling.innerText = `${value}%`;
+        rotate_input.value = value;
         cropper.rotateTo(value);
     });
 
-    document.querySelector('#valid_crop').addEventListener('click', () => {
-        cropper.getCroppedCanvas().toBlob(blob => {
-            // const { image, blob } = window.img2change;
-            // console.log(blob, window.img2change);
-            window.img2change.blob = blob;
-            window.img2change.image.src = URL.createObjectURL(blob);
-            window.img2change.image.classList.remove('hidden');
-            window.img2change.image.parentElement.classList.add('assets__item--is-filled')
-            window.img2change.image.setAttribute('draggable', true);
-        });
+    document
+        .querySelector('#valid_crop')
+        .addEventListener('click', () => {
+            cropper.getCroppedCanvas().toBlob(blob => {
+                window.img2change.blob = blob;
+                window.img2change.image.src = URL.createObjectURL(blob);
+                window.img2change.image.classList.remove('hidden');
+                window.img2change.image.parentElement.classList.add('drop_zone--is-filled');
+                window.img2change.image.setAttribute('draggable', true);
+            });
 
-        asset_editor_modal.close();
-    });
+            asset_editor_modal.close();
+        });
     document.querySelector('#create_project').addEventListener('click', () => add_project_modal.open());
 
     // Quill auto-height
@@ -293,48 +389,6 @@ const on_mount = () => {
         e.target.style.height = '5px';
         e.target.style.height = `${e.target.scrollHeight}px`;
     });
-
-    // Form validation
-    new Form(document.querySelector('[name=create_project]'), {
-        fields: {
-            name: {
-                validators: [new Required(), new StringLength(1, 120)]
-            },
-            description: {
-                validators: [new StringLength(0, 320)]
-            },
-            content: {
-                validators: [new Required(), new StringLength(30, 1000)]
-            }
-        }
-    })
-        .on('valid', () => console.log('valid'))
-        .on('send', e => {
-            const form_data = new FormData();
-
-            for (const [key, value] of Object.entries(e.detail)) {
-                form_data.append(key, value);
-            }
-
-            assets_grid.value.forEach(img => form_data.append('files[]', img));
-            // form_data.append('files', assets_grid.value[0])
-
-            post('/portfolio/projects', {
-                // headers: {
-                //     'Content-Type': 'multipart/form-data'
-                // },
-                // body: new URLSearchParams(e.detail)
-                body: form_data
-            })
-                .then(async res => {
-                    const id = await res.json();
-
-                    add_project_modal.close();
-
-                    add_project(id, e.detail.name, e.detail.content, new Date(), false)
-                })
-                .catch(swal_error)
-        });
 }
 
 const on_destroy = () => {

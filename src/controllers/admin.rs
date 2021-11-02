@@ -47,6 +47,26 @@ pub async fn portfolio(id: Identity, pool: web::Data<PgPool>) -> Result<HttpResp
     Ok(HttpResponse::Found().header("location", "/admin").finish())
 }
 
+#[get("/parametres")]
+pub async fn settings(id: Identity, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
+    if let Some(id) = id.identity() {
+        #[derive(Template)]
+        #[template(path = "pages/admin/settings.html")]
+        struct Setting {
+            // categories: Vec<services::projects::Category>,
+            // projects: Vec<services::projects::Project>,
+        }
+
+        return Setting {
+            // categories,
+            // projects,
+        }
+        .into_response();
+    }
+
+    Ok(HttpResponse::Found().header("location", "/admin").finish())
+}
+
 #[cfg(test)]
 mod tests {
     use crate::create_pool;

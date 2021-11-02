@@ -104,22 +104,22 @@ pub async fn get_spe<
     Ok(res)
 }
 
-#[derive(Deserialize, Debug)]
-pub struct ProjectInformations {
-    pub name: String,
-    pub description: Option<String>,
-    pub content: String,
-}
+// #[derive(Deserialize, Debug)]
+// pub struct ProjectInformations {
+//     pub name: String,
+//     pub description: Option<String>,
+//     pub content: String,
+// }
 
-pub async fn insert(pool: &PgPool, project: &ProjectInformations) -> Result<i16, Error> {
+pub async fn insert(pool: &PgPool, name: &str, description: Option<&str>, content: &str) -> Result<i16, Error> {
     let res = sqlx::query!(
         "INSERT INTO projects
             (name, description, content)
         VALUES ($1, $2, $3)
         RETURNING id",
-        project.name,
-        project.description,
-        project.content
+        name,
+        description,
+        content
     )
     .fetch_one(pool)
     .await?;
@@ -127,16 +127,16 @@ pub async fn insert(pool: &PgPool, project: &ProjectInformations) -> Result<i16,
     Ok(res.id)
 }
 
-pub async fn update(pool: &PgPool, id: i16, project: &ProjectInformations) -> Result<bool, Error> {
+pub async fn update(pool: &PgPool, id: i16, name: &str, description: Option<&str>, content: &str) -> Result<bool, Error> {
     let res = sqlx::query!(
         r#"UPDATE projects SET
             name = $1,
             description = $2,
             content = $3
         WHERE id = $4"#,
-        project.name,
-        project.description,
-        project.content,
+        name,
+        description,
+        content,
         id
     )
     .execute(pool)
@@ -147,6 +147,30 @@ pub async fn update(pool: &PgPool, id: i16, project: &ProjectInformations) -> Re
 
 pub async fn delete(pool: &PgPool, id: i16) -> bool {
     let rows = sqlx::query!("DELETE FROM projects WHERE id = $1", id)
+        .execute(pool)
+        .await
+        .unwrap()
+        .rows_affected();
+
+    rows == 1
+}
+
+pub async fn link_to_category(pool: &PgPool, project_id: i16, category_id: i16) -> Result<(), Error> {
+    sqlx::query!(
+        "INSERT INTO projects_categories
+            (project_id, category_id)
+        VALUES ($1, $2)",
+        project_id,
+        category_id
+    )
+    .execute(pool)
+    .await?;
+
+    Ok(())
+}
+
+pub async fn unlink_from_category(pool: &PgPool, project_id: i16, category_id: i16) -> bool {
+    let rows = sqlx::query!("DELETE FROM projects_categories WHERE project_id = $1 AND category_id = $2", project_id, category_id)
         .execute(pool)
         .await
         .unwrap()

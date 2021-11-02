@@ -117,7 +117,6 @@ CREATE TABLE page_chunks (
 
 DROP TABLE IF EXISTS website CASCADE;
 CREATE TABLE website (
-    name VARCHAR(120) NOT NULL,
     logo VARCHAR(255) NOT NULL,
     dark_mode_active BOOLEAN DEFAULT FALSE,
     background_color VARCHAR(6),

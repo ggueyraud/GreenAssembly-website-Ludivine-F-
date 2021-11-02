@@ -1,6 +1,6 @@
 use sqlx::{Error, PgPool};
 
-pub async fn insert(pool: &PgPool, name: Option<&str>, path: Option<&str>) -> Result<i32, Error> {
+pub async fn insert(pool: &PgPool, name: Option<&str>, path: &str) -> Result<i32, Error> {
     let res = sqlx::query!(
         r#"INSERT INTO files (name, path) VALUES ($1, $2) RETURNING id"#,
         name,

@@ -3,7 +3,7 @@
 {% block title %}Portfolio{% endblock %}
 
 {% block head %}
-    <script src="/js/dashboard/portfolio.js" async></script>
+    <script src="/js/admin/portfolio.js" async></script>
     <link rel="stylesheet" href="/css/pages/admin/portfolio.css" />
 {% endblock %}
 
@@ -17,7 +17,7 @@
         <div class="modal__dialog">
             <div class="modal__dialog__header">Ajouter un projet</div>
 
-            <form action="" name="create_project" class="modal__dialog__body">
+            <form name="create_project" class="modal__dialog__body">
                 <label for="name">Nom <span class="text_error">*</span></label>
                 <input type="text" id="name" name="name" />
 
@@ -25,16 +25,28 @@
                 <textarea name="description" id="description" maxlength="320"></textarea>
 
                 <label for="content" class="mt_2">Contenu <span class="text_error">*</span></label>
+                <div id="content_editor2"></div>
+
                 <div id="content_editor"></div>
                 <input type="hidden" name="content" />
 
                 <div>
                     <label for="categories" class="mt_2">Catégories</label>
+
+                    <div class="grid sm_grid_cols_2 col_gap_2 row_gap_2">
+                        {% for category in categories %}
+                            <label class="checkbox mb_0">
+                                <input type="checkbox" value="{{ category.id }}" name="categories" />
+                                <span></span>
+                                {{ category.name }}
+                            </label>
+                        {% endfor %}
+                    </div>
                 </div>
 
-                <label>Photos</label>
-                <div class="assets mt_2">
-                    <div class="assets__item col_span_2 row_span_2">
+                <label class="mt_2">Photos</label>
+                <div class="assets">
+                    <div class="drop_zone col_span_2 row_span_2">
                         <input type="file" accept="image/png, image/jpeg" />
 
                         <img src="" />
@@ -45,7 +57,7 @@
                             </svg>
                         </button>
                     </div>
-                    <div class="assets__item">
+                    <div class="drop_zone">
                         <input type="file" accept="image/png, image/jpeg" disabled />
 
                         <img src="" />
@@ -56,7 +68,7 @@
                             </svg>
                         </button>
                     </div>
-                    <div class="assets__item">
+                    <div class="drop_zone">
                         <input type="file" accept="image/png, image/jpeg" disabled />
 
                         <img src="" />
@@ -67,7 +79,7 @@
                             </svg>
                         </button>
                     </div>
-                    <div class="assets__item col_span_2">
+                    <div class="drop_zone col_span_2">
                         <input type="file" accept="image/png, image/jpeg" disabled />
 
                         <img src="" />
@@ -78,7 +90,7 @@
                             </svg>
                         </button>
                     </div>
-                    <div class="assets__item">
+                    <div class="drop_zone">
                         <input type="file" accept="image/png, image/jpeg" disabled />
 
                         <img src="" />
@@ -98,33 +110,7 @@
         </div>
     </div>
 
-    <div class="modal" id="asset_editor_modal">
-        <div class="modal__dialog">
-            <div class="modal__dialog__header">Édition d'image</div>
-            
-            <div class="modal__dialog__body pb_2">
-                <div>
-                    <img id="cropper" />
-                </div>
-                <small class="text_center my_2 block">Le double clique sur la zone permet de changer de mode entre déplaçable et sélection</small>
-
-                <input
-                    type="range"
-                    id="rotate"
-                    step="1"
-                    value="0"
-                    min="0"
-                    max="360"
-                    class="pb_1 m_0"
-                />
-                <span class="block text_center">0%</span>
-            </div>
-
-            <div class="modal__dialog__footer pt_2">
-                <button id="valid_crop" type="button" class="btn btn__green">Valider</button>
-            </div>
-        </div>
-    </div>
+    {% include "includes/asset_edit_modal.html" %}
 
     <div class="card">
         <div class="card__header">

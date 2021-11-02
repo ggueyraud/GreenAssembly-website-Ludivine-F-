@@ -10,9 +10,9 @@ pub async fn exists(pool: &PgPool, id: i16) -> bool {
 pub async fn get_all(pool: &PgPool, project_id: Option<i16>) -> Vec<super::Category> {
     let mut query = String::from(
         "SELECT
-        pc.id, pc.name
-    FROM project_categories pc
-    LEFT JOIN projects_categories pcs ON pcs.category_id = pc.id",
+            pc.id, pc.name
+        FROM project_categories pc
+        LEFT JOIN projects_categories pcs ON pcs.category_id = pc.id",
     );
 
     if project_id.is_some() {

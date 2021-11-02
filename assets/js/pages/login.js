@@ -1,5 +1,5 @@
 import Form, { Required, Regex } from 'formvalidation';
-import { post } from './utils/http';
+import { post } from '../utils/http';
 
 const on_mount = () => {
     const required_validator = new Required();

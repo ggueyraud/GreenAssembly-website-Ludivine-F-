@@ -76,7 +76,7 @@ async fn save_image(pool: &PgPool, image: &File, path: &str) -> Result<i32, Http
     let name = image.name().strip_suffix(extension);
     let path = format!("{}{}", path, image.name());
     // If bdd insertion failed, we delete the file
-    match services::files::insert(pool, name, Some(path.as_str())).await {
+    match services::files::insert(pool, name, path.as_str()).await {
         Ok(f_id) => Ok(f_id),
         Err(_) => {
             delete_image_file(image.name(), IMG_PATH);
@@ -98,37 +98,37 @@ async fn patch_image(
     id: web::Path<i16>,
     payload: actix_multipart::Multipart,
 ) -> Result<HttpResponse, Error> {
-    if session.identity().is_none() {
-        return Ok(HttpResponse::Unauthorized().finish());
-    }
+    // if session.identity().is_none() {
+    //     return Ok(HttpResponse::Unauthorized().finish());
+    // }
 
-    let id = id.into_inner();
+    // let id = id.into_inner();
 
-    let form_data = match extract_multipart::<PatchImage>(payload).await {
-        Ok(data) => data,
-        Err(_) => {
-            return Ok(HttpResponse::BadRequest()
-                .json("The data received does not correspond to those expected"))
-        }
-    };
+    // let form_data = match extract_multipart::<PatchImage>(payload).await {
+    //     Ok(data) => data,
+    //     Err(_) => {
+    //         return Ok(HttpResponse::BadRequest()
+    //             .json("The data received does not correspond to those expected"))
+    //     }
+    // };
 
-    let image_file = form_data.image;
-    let mut file_id = form_data.file_id;
+    // let image_file = form_data.image;
+    // let mut file_id = form_data.file_id;
 
-    if (image_file.is_none() && file_id.is_none()) || (image_file.is_some() && file_id.is_some()) {
-        return Ok(HttpResponse::BadRequest().json("You must send an image or the file id"));
-    }
+    // if (image_file.is_none() && file_id.is_none()) || (image_file.is_some() && file_id.is_some()) {
+    //     return Ok(HttpResponse::BadRequest().json("You must send an image or the file id"));
+    // }
 
-    if let Some(img_data) = image_file {
-        file_id = match save_image(&pool, &img_data, IMG_PATH).await {
-            Ok(f_id) => Some(f_id),
-            Err(e) => return Ok(e),
-        };
-    }
+    // if let Some(img_data) = image_file {
+    //     file_id = match save_image(&pool, &img_data, IMG_PATH).await {
+    //         Ok(f_id) => Some(f_id),
+    //         Err(e) => return Ok(e),
+    //     };
+    // }
 
-    if !services::my_little_plus::patch_image(&pool, id, file_id.unwrap()).await {
-        return Ok(HttpResponse::InternalServerError().json("Image update failed"));
-    }
+    // if !services::my_little_plus::patch_image(&pool, id, file_id.unwrap()).await {
+    //     return Ok(HttpResponse::InternalServerError().json("Image update failed"));
+    // }
 
     Ok(HttpResponse::Ok().finish())
 }
