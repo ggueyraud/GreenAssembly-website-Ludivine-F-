@@ -1,21 +1,16 @@
-use actix_files::NamedFile;
 use actix_identity::{CookieIdentityPolicy, IdentityService};
 use actix_web::{
-    get,
-    http::{
-        header::{CACHE_CONTROL, EXPIRES},
-        HeaderValue,
-    },
     middleware::{Compress, Logger},
-    web, App, Error, HttpRequest, HttpResponse, HttpServer, Result,
+    App, HttpServer, Result,
 };
 use rustls::{
     internal::pemfile::{certs, pkcs8_private_keys},
     NoClientAuth, ServerConfig,
 };
-use std::{fs::File, io::BufReader, path::Path};
+use std::{fs::File, io::BufReader};
 
 mod controllers;
+mod routes;
 mod services;
 mod utils;
 
@@ -25,60 +20,6 @@ async fn create_pool() -> Result<sqlx::PgPool, sqlx::Error> {
         .await?;
 
     Ok(pool)
-}
-
-fn serve_file(req: &HttpRequest, path: &Path, cache_duration: i64) -> Result<HttpResponse, Error> {
-    match NamedFile::open(path) {
-        Ok(file) => {
-            use chrono::{Duration, Local};
-
-            let mut response = file.into_response(&req)?;
-            let now = Local::now() + Duration::days(cache_duration);
-            let headers = response.headers_mut();
-            headers.append(EXPIRES, HeaderValue::from_str(&now.to_rfc2822()).unwrap());
-            headers.append(CACHE_CONTROL, HeaderValue::from_static("public"));
-
-            Ok(response)
-        }
-        Err(_) => {
-            use askama::Template;
-
-            #[derive(Template)]
-            #[template(path = "pages/404.html")]
-            struct NotFound;
-
-            Ok(HttpResponse::NotFound()
-                .content_type("text/html")
-                .body(NotFound.render().unwrap()))
-        }
-    }
-}
-
-#[get("/{filename:.*}")]
-async fn serve_public_file(req: HttpRequest) -> Result<HttpResponse, Error> {
-    let mut file_path = format!("./public/{}", req.path());
-    let path = if cfg!(debug_assertions) {
-        let mut path = Path::new(&file_path);
-
-        if !path.exists() {
-            file_path = format!("./.build/development{}", req.path());
-            path = Path::new(&file_path);
-        }
-
-        path
-    } else {
-        file_path = format!(".{}", req.path());
-        Path::new(&file_path)
-    };
-
-    serve_file(&req, &path, 30)
-}
-
-#[get("/uploads/{filename:.*}")]
-async fn serve_upload_file(req: HttpRequest) -> Result<HttpResponse, Error> {
-    let file_path = format!(".{}", req.path());
-    let path = Path::new(&file_path);
-    serve_file(&req, &path, 30)
 }
 
 #[actix_web::main]
@@ -138,44 +79,12 @@ async fn main() -> std::io::Result<()> {
                     .name("auth-cookie")
                     .secure(true),
             ))
-            .service(controllers::index)
-            .service(
-                web::scope("/portfolio")
-                    .service(controllers::portfolio::index)
-                    .service(controllers::portfolio::get_project) // .service(controllers::portfolio::update_project)
-                    .service(controllers::portfolio::insert_project)
-                    .service(controllers::portfolio::delete_project)
-                    .service(controllers::portfolio::insert_asset)
-                    .service(controllers::portfolio::create_category)
-                    .service(controllers::portfolio::update_category)
-                    .service(controllers::portfolio::delete_category),
-            )
-            .service(controllers::my_little_plus::index)
-            .service(controllers::motion_design)
-            .service(controllers::contact::index)
-            .service(controllers::contact::post)
-            .service(
-                web::scope("/user")
-                    .service(controllers::user::login)
-                    .service(controllers::user::logout)
-                    .service(controllers::user::lost_password)
-                    .service(controllers::user::password_recovery),
-            )
-            .service(
-                web::scope("/blog")
-                    .service(controllers::blog::index)
-                    .service(controllers::blog::show_category)
-                    .service(controllers::blog::show_article),
-            )
-            .service(
-                web::scope("/admin")
-                    .service(controllers::admin::index)
-                    .service(controllers::admin::portfolio)
-                    .service(controllers::admin::settings)
-            )
-            .service(controllers::metrics::log)
-            .service(serve_upload_file)
-            .service(serve_public_file)
+            .configure(routes::config)
+            .configure(routes::api::config)
+            .configure(routes::portfolio::config)
+            .configure(routes::blog::config)
+            .configure(routes::user::config)
+            .configure(routes::admin::config)
     })
     .bind_rustls(&format!("{}:{}", server_addr, HTTPS_PORT), config)
     .expect("Cannot bind openssl")
