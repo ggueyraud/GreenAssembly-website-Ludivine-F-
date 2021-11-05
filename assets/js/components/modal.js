@@ -4,7 +4,7 @@ export default class Modal {
 
     constructor(element) {
         this.modal = element;
-        this.modal.addEventListener('click', e => {
+        this.modal.addEventListener('mousedown', e => {
             if (this.is_open && e.target === this.modal) {
                 this.close();
             }
