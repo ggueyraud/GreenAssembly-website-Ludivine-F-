@@ -118,7 +118,21 @@
         </div>
 
         <div class="card__body">
-            <ul class="categories"></ul>
+            <ul class="categories">
+                {% for category in categories %}
+                    <li data-id="{{ category.id }}" class="categories__item">
+                        <span>{{ category.name }}</span>
+
+                        <input type="text" maxlength="30" value="{{ category.name }}" />
+
+                        <button type="button" class="text_error">
+                            <svg class="icon" height="20px">
+                                <use xlink:href="/dashboard_icons.svg#delete"></use>
+                            </svg>
+                        </button>
+                    </li>
+                {% endfor %}
+            </ul>
         </div>
 
         <div class="card__footer">
@@ -139,7 +153,32 @@
         </div>
 
         <div class="card__body">
-            <div class="projects"></div>
+            <ul class="projects">
+                {% for project in projects %}
+                    <li class="projects__item">
+                        <span>{{ project.name }}</span>
+
+                        <div class="projects__item__content">{{ project.content|safe }}</div>
+
+                        <div class="projects__item__actions">
+                            <button type="button" class="text_blue">
+                                <svg class="icon" height="20px">
+                                    <use xlink:href="/dashboard_icons.svg#edit"></use>
+                                </svg>
+                            </button>
+
+                            <button type="button" class="text_error">
+                                <svg class="icon" height="20px">
+                                    <use xlink:href="/dashboard_icons.svg#delete"></use>
+                                </svg>
+                            </button>
+                        </div>
+
+                        {# The javascript will fill this tag #}
+                        <time datetime="{{ project.date|rfc3339 }}"></time>
+                    </li>
+                {% endfor %}
+            </ul>
         </div>
     </div>
 {% endblock %}

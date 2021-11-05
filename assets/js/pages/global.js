@@ -1,8 +1,17 @@
-import Router from 'router';
+import 'router';
+
+// window.addEventListener('router:mount', () => console.log('router:mount'));
+// window.addEventListener('router:destroy', () => console.log('router:destroy'));
+// window.addEventListener('router:loading', () => console.log('router:loading'));
+// window.addEventListener('router:change', () => console.log('router:change'));
+// window.router = new Router();
 
 document.addEventListener('readystatechange', e => {
-    if (e.target.readyState === 'complete') {
-        window.router = new Router();
+    if (e.target.readyState === 'interactive') {
+        console.log(document.body)
+
+    } else if (e.target.readyState === 'complete') {
+        // console.log(Router)
 
         const navbar = document.querySelector('#topbar nav');
         const open_menu_btn = document.querySelector('#open_mobile_menu');
@@ -39,7 +48,6 @@ document.addEventListener('readystatechange', e => {
 });
 
 document.addEventListener('visibilitychange', () => {
-    console.log('visibilitychance', document.visibilityState)
     if (!navigator.sendBeacon) return;
 
     if (document.visibilityState === 'hidden') {

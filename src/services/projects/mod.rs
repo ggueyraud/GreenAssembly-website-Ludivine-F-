@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use sqlx::{Error, FromRow, PgPool};
 
 pub mod assets;
@@ -15,6 +15,7 @@ pub struct Category {
 pub struct Project {
     pub id: i16,
     pub name: String,
+    pub description: Option<String>,
     pub content: String,
     pub date: DateTime<Utc>,
 }
@@ -26,9 +27,9 @@ pub struct Asset {
 }
 
 pub async fn get_all(pool: &PgPool, category_id: Option<i16>) -> Vec<Project> {
-    let mut query = String::from(
+    let query = String::from(
         "SELECT
-            id, name, content, date
+            id, name, description, content, date
         FROM projects
         ORDER BY date DESC",
     );
@@ -111,7 +112,12 @@ pub async fn get_spe<
 //     pub content: String,
 // }
 
-pub async fn insert(pool: &PgPool, name: &str, description: Option<&str>, content: &str) -> Result<i16, Error> {
+pub async fn insert(
+    pool: &PgPool,
+    name: &str,
+    description: Option<&str>,
+    content: &str,
+) -> Result<i16, Error> {
     let res = sqlx::query!(
         "INSERT INTO projects
             (name, description, content)
@@ -127,7 +133,13 @@ pub async fn insert(pool: &PgPool, name: &str, description: Option<&str>, conten
     Ok(res.id)
 }
 
-pub async fn update(pool: &PgPool, id: i16, name: &str, description: Option<&str>, content: &str) -> Result<bool, Error> {
+pub async fn update(
+    pool: &PgPool,
+    id: i16,
+    name: &str,
+    description: Option<&str>,
+    content: &str,
+) -> Result<bool, Error> {
     let res = sqlx::query!(
         r#"UPDATE projects SET
             name = $1,
@@ -155,7 +167,11 @@ pub async fn delete(pool: &PgPool, id: i16) -> bool {
     rows == 1
 }
 
-pub async fn link_to_category(pool: &PgPool, project_id: i16, category_id: i16) -> Result<(), Error> {
+pub async fn link_to_category(
+    pool: &PgPool,
+    project_id: i16,
+    category_id: i16,
+) -> Result<(), Error> {
     sqlx::query!(
         "INSERT INTO projects_categories
             (project_id, category_id)
@@ -170,11 +186,15 @@ pub async fn link_to_category(pool: &PgPool, project_id: i16, category_id: i16) 
 }
 
 pub async fn unlink_from_category(pool: &PgPool, project_id: i16, category_id: i16) -> bool {
-    let rows = sqlx::query!("DELETE FROM projects_categories WHERE project_id = $1 AND category_id = $2", project_id, category_id)
-        .execute(pool)
-        .await
-        .unwrap()
-        .rows_affected();
+    let rows = sqlx::query!(
+        "DELETE FROM projects_categories WHERE project_id = $1 AND category_id = $2",
+        project_id,
+        category_id
+    )
+    .execute(pool)
+    .await
+    .unwrap()
+    .rows_affected();
 
     rows == 1
 }

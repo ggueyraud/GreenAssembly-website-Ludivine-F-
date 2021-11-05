@@ -4,9 +4,9 @@ use askama_actix::{Template, TemplateIntoResponse};
 use chrono::Datelike;
 use sqlx::PgPool;
 
+pub mod admin;
 pub mod blog;
 pub mod contact;
-pub mod admin;
 pub mod metrics;
 pub mod my_little_plus;
 pub mod portfolio;

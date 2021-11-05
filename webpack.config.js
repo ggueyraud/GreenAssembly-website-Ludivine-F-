@@ -20,7 +20,7 @@ module.exports = {
         contact: `${entry_path}/contact.js`,
         project: `${entry_path}/project.js`,
         portfolio: `${entry_path}/portfolio.js`,
-        login: `${entry_path}/login.js`,
+        'admin/login': `${entry_path}/admin/login.js`,
         'admin/portfolio': `${entry_path}/admin/portfolio.js`,
         'admin/settings': `${entry_path}/admin/settings.js`
     },

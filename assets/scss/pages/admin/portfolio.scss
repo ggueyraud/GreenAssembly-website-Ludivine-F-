@@ -29,7 +29,7 @@
         padding: utilities.space(2) 0;
         column-gap: utilities.space(2);
 
-        &__name {
+        span {
             width: 100%;
             cursor: pointer;
             padding: utilities.space(3) 0;
@@ -47,7 +47,7 @@
         }
 
         &--edition {
-            #{$item}__name {
+            span {
                 display: none
             }
 
@@ -59,9 +59,9 @@
 }
 
 .projects {
-    display: flex;
-    gap: 1rem;
-    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
 
     &__item {
         display: grid;
@@ -74,7 +74,7 @@
         background-color: #f5f8fa;
         padding: 2rem 2.25rem;
         
-        &__title {
+        span {
             grid-area: title;
             font-size: 1.075rem !important;
             color: #181c32;
@@ -101,17 +101,68 @@
             color: #a1a5b7 !important
         }
 
-        &__footer {
+        time {
             margin-top: .5rem;
             grid-area: footer;
             column-span: all;
         }
-
-        &__categories {
-
-        }
     }
 }
+
+// .projects {
+//     display: flex;
+//     gap: 1rem;
+//     flex-direction: column;
+
+//     &__item {
+//         display: grid;
+//         grid-template-columns: 1fr auto;
+//         align-items: center;
+//         grid-template-areas:    'title actions'
+//                                 'content actions'
+//                                 'footer actions';
+//         border-radius: .65rem;
+//         background-color: #f5f8fa;
+//         padding: 2rem 2.25rem;
+        
+//         &__title {
+//             grid-area: title;
+//             font-size: 1.075rem !important;
+//             color: #181c32;
+//             font-weight: 600 !important;
+//             margin-bottom: .25rem;
+//         }
+        
+//         &__actions {
+//             display: flex;
+//             flex-direction: column;
+//             grid-area: actions;
+//             row-gap: .5rem;
+
+//             button {
+//                 appearance: none;
+//                 border: none;
+//                 background-color: transparent;
+//                 cursor: pointer;
+//             }
+//         }
+
+//         &__content {
+//             grid-area: content;
+//             color: #a1a5b7 !important
+//         }
+
+//         &__footer {
+//             margin-top: .5rem;
+//             grid-area: footer;
+//             column-span: all;
+//         }
+
+//         &__categories {
+
+//         }
+//     }
+// }
 
 .assets {
     display: grid;

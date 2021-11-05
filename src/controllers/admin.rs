@@ -24,7 +24,7 @@ pub async fn index(id: Identity) -> Result<HttpResponse, Error> {
 
 #[get("/portfolio")]
 pub async fn portfolio(id: Identity, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
-    if let Some(id) = id.identity() {
+    if let Some(_) = id.identity() {
         let (categories, projects) = futures::join!(
             services::projects::categories::get_all(&pool, None),
             services::projects::get_all(&pool, None)
@@ -35,6 +35,12 @@ pub async fn portfolio(id: Identity, pool: web::Data<PgPool>) -> Result<HttpResp
         struct Portfolio {
             categories: Vec<services::projects::Category>,
             projects: Vec<services::projects::Project>,
+        }
+
+        mod filters {
+            pub fn rfc3339(date: &chrono::DateTime<chrono::Utc>) -> ::askama::Result<String> {
+                Ok(date.to_rfc3339())
+            }
         }
 
         return Portfolio {
@@ -54,7 +60,7 @@ pub async fn settings(id: Identity, pool: web::Data<PgPool>) -> Result<HttpRespo
         #[template(path = "pages/admin/settings.html")]
         struct Setting {
             // categories: Vec<services::projects::Category>,
-            // projects: Vec<services::projects::Project>,
+        // projects: Vec<services::projects::Project>,
         }
 
         return Setting {

@@ -1,4 +1,7 @@
-const on_mount = () => {
+import 'router';
+
+window.router.on('mount', () => {
+    console.log('mount')
     document
         .querySelectorAll('.input')
         .forEach(input_container => {
@@ -20,10 +23,4 @@ const on_mount = () => {
                     }
                 })
         })
-}
-
-const on_destroy = () => {
-    window.removeEventListener('onMount', on_mount)
-}
-
-window.addEventListener('onMount', on_mount)
+});

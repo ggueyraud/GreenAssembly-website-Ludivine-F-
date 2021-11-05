@@ -1,7 +1,8 @@
 import Form, { Required, Regex } from 'formvalidation';
-import { post } from '../utils/http';
+import { post } from '../../utils/http';
+import 'router';
 
-const on_mount = () => {
+window.router.on('mount', () => {
     const required_validator = new Required();
     const email_validator = new Regex(
         /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
@@ -30,10 +31,7 @@ const on_mount = () => {
                 validate_status: status => status === 200,
                 body: new URLSearchParams(e.detail)
             })
-                .then(e => {
-                    console.log(e)
-                    window.router.handle_url('/admin')
-                })
+                .then(() => window.router.push('admin', false))
                 .catch(() => {
                     document.querySelector('#login_error').classList.remove('hidden');
                 })
@@ -105,6 +103,4 @@ const on_mount = () => {
                 }
             })
         })
-}
-
-window.addEventListener('onMount', on_mount)
+});

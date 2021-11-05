@@ -34,7 +34,9 @@
         <time datetime="{{ international_date }}">{{ date }}</time>
     </div>
 
-    <p class="order_3 md_row_span_1">{{ content }}</p>
+    <div class="order_3 md_row_span_1">
+        {{ content|safe }}
+    </div>
 
     {% match asset_1 %}
         {% when Some with (asset) %}
