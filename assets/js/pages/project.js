@@ -1,7 +1,8 @@
 import Carousel, { CarouselPagination, CarouselTouch } from 'carousel';
 import lightbox, { init } from '@js/components/lightbox';
+import 'router';
 
-const on_mount = () => {
+window.router.on('mount', () => {
     lightbox('img')
     const carousel = new Carousel(document.querySelector('.carousel'), {
         breakpoints: {
@@ -14,12 +15,4 @@ const on_mount = () => {
         }
     });
     carousel.use([CarouselTouch, CarouselPagination]);
-}
-
-const on_destroy = () => {
-    window.removeEventListener('onMount', on_mount)
-    window.removeEventListener('onDestroy', on_destroy)
-}
-
-window.addEventListener('onMount', on_mount)
-window.addEventListener('onDestroy', on_destroy)
+});

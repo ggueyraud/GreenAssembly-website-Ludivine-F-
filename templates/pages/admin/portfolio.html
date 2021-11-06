@@ -155,7 +155,7 @@
         <div class="card__body">
             <ul class="projects">
                 {% for project in projects %}
-                    <li class="projects__item">
+                    <li class="projects__item" data-id="{{ project.id }}">
                         <span>{{ project.name }}</span>
 
                         <div class="projects__item__content">{{ project.content|safe }}</div>

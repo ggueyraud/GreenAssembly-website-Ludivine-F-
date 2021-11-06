@@ -1,5 +1,5 @@
 use super::metrics;
-use crate::services;
+use crate::services::{self, projects::Asset};
 use actix_extract_multipart::*;
 use actix_identity::Identity;
 use actix_web::{delete, get, patch, post, put, web, Error, HttpRequest, HttpResponse};
@@ -359,6 +359,40 @@ async fn delete_category(
     }
 
     HttpResponse::Unauthorized().finish()
+}
+
+#[get("/projects/{id}")]
+pub async fn get_project(pool: web::Data<PgPool>, session: Identity, web::Path(id): web::Path<i16>) -> HttpResponse {
+    // if session.identity().is_none() {
+    //     return HttpResponse::Unauthorized().finish()
+    // }
+
+    if !services::projects::exists(&pool, id).await {
+        return HttpResponse::NotFound().finish()
+    }
+
+    let (project, assets) = futures::join!(
+        services::projects::get(&pool, id),
+        services::projects::assets::get_all(&pool, id)
+    );
+    let project = project.unwrap();
+
+    HttpResponse::Ok().json(serde_json::json!({
+        "name": project.name,
+        "description": project.name,
+        "content": project.content,
+        "assets": Vec::from(
+            assets
+            .iter()
+            .map(|asset| {
+                serde_json::json!({
+                    "id": asset.id,
+                    "path": asset.path
+                })
+            })
+            .collect::<Vec<_>>()
+        )
+    }))
 }
 
 #[derive(Deserialize, Debug)]

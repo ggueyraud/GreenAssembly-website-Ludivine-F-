@@ -9,7 +9,8 @@ pub fn config(cfg: &mut web::ServiceConfig) {
                 .service(controllers::portfolio::delete_project)
                 .service(controllers::portfolio::create_category)
                 .service(controllers::portfolio::update_category)
-                .service(controllers::portfolio::delete_category),
+                .service(controllers::portfolio::delete_category)
+                .service(controllers::portfolio::get_project)
         ),
     );
 }

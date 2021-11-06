@@ -161,13 +161,17 @@ window.router.on('mount', () => {
     document
         .querySelectorAll('.projects__item')
         .forEach(item => {
-            const content = item.querySelector('.projects__item__content');
-            content.innerHTML = DOMPurify.sanitize(content.innerHTML, {
+            const { description, name, content } = projects.find(project => project.id == item.dataset.id);
+
+            const content_el = item.querySelector('.projects__item__content');
+            content_el.innerHTML = DOMPurify.sanitize(content_el.innerHTML, {
                 ALLOWED_TAGS: []
             });
 
             // Update button
-            item.querySelector('.projects__item__actions .text_blue').addEventListener('click', () => update_project());
+            item
+                .querySelector('.projects__item__actions .text_blue')
+                .addEventListener('click', () => update_project(description, name, content));
 
             // Delete button
             item.querySelector('.projects__item__actions .text_error').addEventListener('click', () => delete_project());

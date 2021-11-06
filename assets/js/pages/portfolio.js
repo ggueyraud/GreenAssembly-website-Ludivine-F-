@@ -1,24 +1,6 @@
+import 'router';
+
 let all_projects;
-
-const on_mount = () => {
-    all_projects = [...document.querySelectorAll('.project')];
-
-    document
-        .querySelectorAll('#projects nav button')
-        .forEach(btn => {
-            
-            btn.addEventListener('click', e => {
-                const active_btn_filter = document.querySelector('#projects nav button.active');
-                
-                if (e.target != active_btn_filter) {
-                    active_btn_filter.classList.remove('active');
-                    btn.classList.add('active');
-
-                    sort(e.target.dataset.id)
-                }
-            })
-        })
-}
 
 const sort = id => {
     const container = document.querySelector('#aaa');
@@ -70,10 +52,22 @@ const sort = id => {
     }, 250)
 }
 
-const on_destroy = () => {
-    window.removeEventListener('onMount', on_mount)
-    window.removeEventListener('onDestroy', on_destroy)
-}
-
-window.addEventListener('onMount', on_mount)
-window.addEventListener('onDestroy', on_destroy)
+window.router.on('mount', () => {
+    all_projects = [...document.querySelectorAll('.project')];
+    
+    document
+        .querySelectorAll('#projects nav button')
+        .forEach(btn => {
+            
+            btn.addEventListener('click', e => {
+                const active_btn_filter = document.querySelector('#projects nav button.active');
+                
+                if (e.target != active_btn_filter) {
+                    active_btn_filter.classList.remove('active');
+                    btn.classList.add('active');
+    
+                    sort(e.target.dataset.id)
+                }
+            })
+        })
+});
