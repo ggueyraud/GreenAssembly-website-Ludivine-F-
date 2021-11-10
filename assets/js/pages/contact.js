@@ -1,4 +1,5 @@
 import 'router';
+import Form, { Required, Regex } from 'formvalidation';
 
 window.router.on('mount', () => {
     console.log('mount')

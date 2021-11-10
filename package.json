@@ -15,7 +15,7 @@
     "cropperjs": "^1.5.12",
     "date-fns": "^2.25.0",
     "dompurify": "^2.3.3",
-    "formvalidation": "../FormValidation",
+    "formvalidation": "github:GreenAssembly/FormValidation",
     "quill": "^1.3.7",
     "router": "../Router",
     "sanitize-html": "^2.5.1",

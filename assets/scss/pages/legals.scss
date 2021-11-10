@@ -1,0 +1,8 @@
+@import '../custom.scss';
+@import 'style-box/abstracts/functions/utilities';
+@import 'style-box/base/text';
+@import 'style-box/base/margin';
+
+section a {
+    color: color(blue)
+}

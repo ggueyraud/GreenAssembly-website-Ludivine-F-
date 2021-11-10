@@ -85,6 +85,19 @@ async fn motion_design(req: HttpRequest, pool: web::Data<PgPool>) -> Result<Http
     Ok(HttpResponse::InternalServerError().finish())
 }
 
+#[get("/mentions-legales")]
+async fn legals(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
+    #[derive(Template)]
+    #[template(path = "pages/legals.html")]
+    struct Legals {
+        year: i32,
+    }
+
+    return Legals {
+        year: chrono::Utc::now().year()
+    }.into_response();
+}
+
 #[cfg(test)]
 mod tests {
     use crate::create_pool;
