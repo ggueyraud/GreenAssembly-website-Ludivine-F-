@@ -32,7 +32,7 @@ body {
     &__body {
         scrollbar-width: thin;
         scrollbar-color: #eff2f5 transparent;
-        overflow: scroll;
+        overflow: auto;
         padding-left: utilities.space(6);
         padding-right: utilities.space(6);
     }

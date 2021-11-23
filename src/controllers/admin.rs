@@ -53,6 +53,23 @@ pub async fn portfolio(id: Identity, pool: web::Data<PgPool>) -> Result<HttpResp
     Ok(HttpResponse::Found().header("location", "/admin").finish())
 }
 
+#[get("/my_little_plus")]
+pub async fn my_little_plus(id: Identity) -> Result<HttpResponse, Error> {
+    if let Some(id) = id.identity() {
+        #[derive(Template)]
+        #[template(path = "pages/admin/my_little_plus.html")]
+        struct Dashboard;
+
+        return Dashboard {}.into_response();
+    }
+
+    #[derive(Template)]
+    #[template(path = "pages/admin/login.html")]
+    struct Login;
+
+    Login {}.into_response()
+}
+
 #[get("/parametres")]
 pub async fn settings(id: Identity, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
     if let Some(id) = id.identity() {
