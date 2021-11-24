@@ -17,8 +17,7 @@ document.addEventListener('readystatechange', e => {
         //     }
         // });
     
-        navbar
-            .querySelectorAll('nav a:not(.socials a)')
+        navbar?.querySelectorAll('nav a:not(.socials a)')
             .forEach(link => link.addEventListener('click', () => {
                 if (navbar.classList.contains('show')) {
                     close_mobile_menu();
@@ -26,7 +25,7 @@ document.addEventListener('readystatechange', e => {
             }));
 
         open_menu_btn
-            .addEventListener('click', e => {
+            ?.addEventListener('click', e => {
                 e.preventDefault();
                 
                 if (navbar.classList.contains('show')) {
