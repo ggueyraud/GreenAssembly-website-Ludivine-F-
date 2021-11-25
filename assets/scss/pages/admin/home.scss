@@ -17,3 +17,53 @@
 input[type="file"] {
     display: none
 }
+
+.success_message,
+.error_message
+{
+    height: 1.5rem;
+    line-height: 1.5rem;
+}
+
+.success_message,
+.error_message {
+    display: none;
+    padding: 0rem 2rem 1rem 2rem;
+}
+
+.success_message {
+    color: forestgreen;
+}
+.error_message {
+    color: crimson;
+}
+.show_message {
+    display: block;
+}
+
+.loader {
+    display: none;
+    width: 80%;
+    height:5px;
+    margin: auto;
+
+    overflow: hidden;
+    
+    &__bar {
+        height: 100%;
+        background-color: deepskyblue;
+        animation: 500ms linear inline-loader infinite;
+    }
+    &--shown {
+        display: block
+    }
+}
+
+@keyframes inline-loader {
+    from {
+        transform: translateX(-100%)
+    }
+    to {
+        transform: translateX(100%)
+    }
+}

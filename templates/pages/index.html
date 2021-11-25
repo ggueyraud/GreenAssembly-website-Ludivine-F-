@@ -9,6 +9,7 @@
         {% when None %}
     {% endmatch %}
 
+    <script src="/js/index.js" async></script>
     <link rel="stylesheet" href="/css/pages/index.css" />
     {% match metric_token %}
         {% when Some with (token) %}
@@ -29,7 +30,7 @@
             </div>
         </div>
         <div class="ludivine-bg">
-            <div class="ludivine" style="background-image: url(/img/{{banner}});">
+            <div class="ludivine">
                 <div class="gradiant"></div>
             </div>
         </div>

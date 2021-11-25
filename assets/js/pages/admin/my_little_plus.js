@@ -41,6 +41,7 @@ const validate_form = () => {
         }
 
         success_message.classList.add('show_message');
+        error_message.classList.remove('show_message');
     })
     .catch(() => {
         success_message.classList.remove('show_message');

@@ -16,6 +16,7 @@ module.exports = {
         }
     },
     entry: {
+        index: `${entry_path}/index.js`,
         global: `${entry_path}/global.js`,
         contact: `${entry_path}/contact.js`,
         project: `${entry_path}/project.js`,
