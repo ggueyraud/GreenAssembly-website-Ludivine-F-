@@ -62,7 +62,7 @@ window.addEventListener('unload', () => {
 // Check webp support
 (() => {
     const img = new Image();
-    img.onload = () => document.documentElement.classList.add('webp_supportted');
+    img.onload = () => document.documentElement.classList.add('webp_supported');
     img.onerror = () => document.documentElement.classList.add('no_webp');
 
     img.src = 'data:image/webp;base64,UklGRjoAAABXRUJQVlA4IC4AAACyAgCdASoCAAIALmk0mk0iIiIiIgBoSygABc6WWgAA/veff/0PP8bA//LwYAAA';
