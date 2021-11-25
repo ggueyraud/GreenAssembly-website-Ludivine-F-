@@ -1,0 +1,37 @@
+{% extends "back_office.html" %}
+
+{% block title %}Page d'accueil{% endblock %}
+
+{% block head %}
+    <script src="/js/admin/home.js" async></script>
+    <link rel="stylesheet" href="/css/pages/admin/home.css" />
+{% endblock %}
+
+{% block content %}
+    <form class="card home_form" id="home_form" name="home_form">
+        <div class="card__header">
+            Image d'accueil
+        </div>
+
+        <div class="card__body">
+            <p>Choisir la nouvelle image de la page d'accueil</p>
+            <label for="image" id="image_input_label" class="home_image_label">Choisir une image</label>
+            <input type="file" id="image" name="image" accept=".png, .jpg, .jpeg, .webp">
+        </div>
+
+        <div id="loader" class="loader">
+            <div class="loader__bar"></div>
+        </div>
+
+        <div id="success_message" class="success_message">
+            L'image a été modifié avec succès
+        </div>
+        <div id="error_message" class="error_message">
+            Une erreur est survenue
+        </div>
+
+        <div class="card__footer flex justify_end">
+            <button type="submit" class="btn" id="image_edit_button" disabled>Enregistrer</button>
+        </div>
+    </form>
+{% endblock %}

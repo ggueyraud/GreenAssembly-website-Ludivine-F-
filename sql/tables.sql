@@ -34,12 +34,10 @@ CREATE TABLE files (
     path VARCHAR(255) NOT NULL
 );
 
--- id define the drawing order of the images
--- Don't forget to insert the rows in the inserts.sql file
-DROP TABLE IF EXISTS my_little_plus_images CASCADE;
-CREATE TABLE my_little_plus_images (
-    id SMALLINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    file_id INT REFERENCES files(id)
+DROP TABLE IF EXISTS my_little_plus_links CASCADE;
+CREATE TABLE my_little_plus_links (
+    creations VARCHAR(128),
+    shootings VARCHAR(128)
 );
 
 -- TODO : implement a trigger when delete to recalculate order
