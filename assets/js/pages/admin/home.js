@@ -32,7 +32,7 @@ const update_form = () => {
     const files_count = image_input.files.length;
 
     if(files_count > 0) {
-        image_input_label.innerText = 'Images sélectionnés: ' + files_count;
+        image_input_label.innerText = 'Images sélectionnées: ' + files_count;
         image_edit_button.disabled = false;
     } else {
         image_input_label.innerText = 'Choisir une image';
