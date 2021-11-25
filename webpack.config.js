@@ -21,7 +21,9 @@ module.exports = {
         project: `${entry_path}/project.js`,
         portfolio: `${entry_path}/portfolio.js`,
         'admin/login': `${entry_path}/admin/login.js`,
+        'admin/home': `${entry_path}/admin/home.js`,
         'admin/portfolio': `${entry_path}/admin/portfolio.js`,
+        'admin/my_little_plus': `${entry_path}/admin/my_little_plus.js`,
         'admin/settings': `${entry_path}/admin/settings.js`
     },
     watch: process.env.NODE_ENV === 'development',

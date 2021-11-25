@@ -3,6 +3,8 @@ use actix_web::{get, web, Error, HttpResponse};
 use askama_actix::{Template, TemplateIntoResponse};
 use sqlx::PgPool;
 
+pub mod my_little_plus;
+pub mod home;
 use crate::services;
 
 #[get("")]
@@ -17,6 +19,23 @@ pub async fn index(id: Identity) -> Result<HttpResponse, Error> {
 
     #[derive(Template)]
     #[template(path = "pages/admin/login.html")]
+    struct Login;
+
+    Login {}.into_response()
+}
+
+#[get("/home")]
+pub async fn home_page(id: Identity) -> Result<HttpResponse, Error> {
+    if let Some(_) = id.identity() {
+        #[derive(Template)]
+        #[template(path = "pages/admin/home.html")]
+        struct Home;
+
+        return Home {}.into_response();
+    }
+
+    #[derive(Template)]
+    #[template(path = "pages/admin/home.html")]
     struct Login;
 
     Login {}.into_response()
@@ -54,13 +73,13 @@ pub async fn portfolio(id: Identity, pool: web::Data<PgPool>) -> Result<HttpResp
 }
 
 #[get("/my_little_plus")]
-pub async fn my_little_plus(id: Identity) -> Result<HttpResponse, Error> {
-    if let Some(id) = id.identity() {
+pub async fn my_little_plus_page(id: Identity) -> Result<HttpResponse, Error> {
+    if let Some(_) = id.identity() {
         #[derive(Template)]
         #[template(path = "pages/admin/my_little_plus.html")]
-        struct Dashboard;
+        struct MyLittlePlus;
 
-        return Dashboard {}.into_response();
+        return MyLittlePlus {}.into_response();
     }
 
     #[derive(Template)]

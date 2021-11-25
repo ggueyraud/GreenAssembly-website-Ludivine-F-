@@ -68,16 +68,20 @@
             </p>
             <p>Pour mieux marquer les esprits et faire que l’on reconnaîtra votre marque au premier coup d’œil.</p>
             <div class="links">
-                <a href="/portfolio" class="special">
-                    Découvrir mes créations
-                </a>
+                {% match creations_link %}
+                    {% when Some with (link) %}
+                        <a href="{{ link }}" class="special">
+                            Découvrir mes créations
+                        </a>
+                    {% when None %}
+                {% endmatch %}
             </div>
         </section>
         <section class="images-left">
-            <img src="{{images[0]}}">
-            <img src="{{images[1]}}">
-            <img src="{{images[2]}}">
-            <img src="{{images[3]}}" class="col_span_3">
+            <img src="/img/Peinture_1.jpg">
+            <img src="/img/Peinture_2.jpg">
+            <img src="/img/Peinture_3.jpg">
+            <img src="/img/OISEAU_1.jpg" class="col_span_3">
         </section>
         <section class="photo">
             <h2>La photographie au cœur de vos design</h2>
@@ -99,15 +103,19 @@
                 uniques en leur genre. Comme vous.
             </p>
             <div class="links">
-                <a href="/portfolio" class="special">
-                    Découvrir mes shooting
-                </a>
+                {% match shootings_link %}
+                    {% when Some with (link) %}
+                        <a href="{{ link }}" class="special">
+                            Découvrir mes shooting
+                        </a>
+                    {% when None %}
+                {% endmatch %}
             </div>
         </section>
         <section class="images-right">
-            <img src="{{images[4]}}" class="col_span_3">
-            <img src="{{images[5]}}">
-            <img src="{{images[6]}}" class="col_span_2">
+            <img src="/img/PHOTO_01.jpg" class="col_span_3">
+            <img src="/img/PHOTO_3.jpg">
+            <img src="/img/PHOTO_02.jpg" class="col_span_2">
         </section>    
     </div>
 {% endblock %}
