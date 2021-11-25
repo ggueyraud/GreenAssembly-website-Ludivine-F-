@@ -15,9 +15,7 @@ export class DropZone {
         });
 
         const remove_btn = this.container.querySelector('button');
-        remove_btn.addEventListener('click', () => {
-            this.#fire('clear');
-        });
+        remove_btn.addEventListener('click', () => this.#fire('clear'));
 
         this.input.addEventListener('change', () => {
             const reader = new FileReader();
@@ -35,7 +33,7 @@ export class DropZone {
     }
 
     clear() {
-        this.input.value = '';
+        //this.input.value = '';
 
         this.container.classList.remove(is_filled_class);
 
@@ -75,13 +73,10 @@ export default class AssetsGrid {
 
             drop_zone
                 .on('clear', () => {
-                    console.log('clear');
-                    if (index > 0) {
-                        this.#items[this.#limit].input.disabled = true;
-                        this.#limit--;
-                    }
+                    console.log('clear', this.#limit);
+                    this.#items[this.#limit].input.setAttribute('disabled', true);
+                    this.#limit--;
 
-                    // drop_zone.clear();
                     this.#update(index, true);
 
                     // // Create timeout for CSS animation
@@ -93,8 +88,6 @@ export default class AssetsGrid {
                     // }, 250);
                 })
                 .on('change', (drop_zone, image) => {
-                    console.log('dropzone change event');
-                    // console.log(drop_zone, image);
                     this.#fire('select', [image, drop_zone]);
                     // Make available next dropzone
                     this.#limit++;
@@ -176,9 +169,13 @@ export default class AssetsGrid {
         });
     }
 
+    /////// HERE
     #update(updated_index, recalculate_each_position = false) {
         if (recalculate_each_position) {
             this.#items.forEach((item, index) => {
+                console.log(item, index, updated_index, item.is_filled);
+                console.log(index >= updated_index && item.is_filled);
+
                 if (index >= updated_index && item.is_filled) {
                     const prev = this.#items[index - 1];
 
