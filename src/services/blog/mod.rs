@@ -1,3 +1,4 @@
+use sqlx::PgPool;
 use chrono::{DateTime, Utc};
 
 pub mod articles;
@@ -21,3 +22,4 @@ pub struct Article {
     pub is_published: bool,
     pub is_seo: bool,
 }
+// TODO : update_uri

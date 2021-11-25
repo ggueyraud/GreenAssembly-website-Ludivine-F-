@@ -1,9 +1,11 @@
 use super::metrics;
 use crate::services;
-use actix_web::{get, web, Error, HttpRequest, HttpResponse};
+use actix_web::{get, web, Error, HttpRequest, HttpResponse, post, delete};
 use askama_actix::{Template, TemplateIntoResponse};
 use chrono::Datelike;
 use sqlx::PgPool;
+use actix_identity::Identity;
+use serde::Deserialize;
 
 #[derive(sqlx::FromRow)]
 struct Article {
@@ -263,11 +265,153 @@ async fn show_article(
     Ok(HttpResponse::InternalServerError().finish())
 }
 
+#[derive(Deserialize)]
+pub struct NewCategoryForm {
+    name: String,
+    description: Option<String>,
+    is_visible: Option<bool>,
+    is_seo: Option<bool>
+}
+
+#[post("/categories")]
+async fn insert_category(pool: web::Data<PgPool>, session: Identity, mut form: web::Form<NewCategoryForm>) -> HttpResponse {
+    use slugmin::slugify;
+
+    if let None = session.identity() {
+        return HttpResponse::Unauthorized().finish()
+    }
+
+    form.name = form.name.trim().to_string();
+    form.description = form.description.as_ref().and_then(|description| Some(description.trim().to_string()));
+
+    if let Ok(id) = services::blog::categories::insert(
+        &pool,
+        &form.name,
+        form.description.as_deref(),
+        form.is_visible,
+        form.is_seo
+    ).await {
+        if let Ok(_) = services::blog::categories::update_uri(&pool, id, &slugify(&format!("{}-{}", form.name, id))).await {
+            return HttpResponse::Created().json(id)
+        }
+    }
+
+    HttpResponse::InternalServerError().finish()
+}
+
+// TODO : update category
+
+#[delete("/categories/{id}")]
+async fn delete_category(pool: web::Data<PgPool>, session: Identity, web::Path(id): web::Path<i16>) -> HttpResponse {
+    if let None = session.identity() {
+        return HttpResponse::Unauthorized().finish()
+    }
+
+    if services::blog::categories::exists(&pool, id).await {
+        services::blog::categories::delete(&pool, id).await;
+
+        return HttpResponse::Ok().finish()
+    }
+
+    HttpResponse::NotFound().finish()
+}
+
+#[derive(Deserialize)]
+pub struct ArticleBlock {
+    title: Option<String>,
+    content: Option<String>,
+    left_column: bool,
+    order: i16,
+    pictures: Option<Vec<actix_extract_multipart::File>>
+}
+
+#[derive(Deserialize)]
+pub struct NewArticleForm {
+    cover: Option<actix_extract_multipart::File>,
+    category_id: Option<i16>,
+    title: String,
+    description: Option<String>,
+    is_published: bool,
+    is_seo: bool,
+    blocks: Vec<ArticleBlock>
+}
+
+#[post("/articles")]
+async fn insert_article(
+    pool: web::Data<PgPool>,
+    session: Identity,
+    mut form: actix_extract_multipart::Multipart<NewArticleForm>
+) -> HttpResponse {
+    use std::ops::DerefMut;
+
+    if let None = session.identity() {
+        return HttpResponse::Unauthorized().finish()
+    }
+
+    form.title = form.title.trim().to_string();
+    form.description = form.description.as_ref().and_then(|description| Some(description.trim().to_string()));
+
+    let mut transaction = pool.begin().await.unwrap();
+
+    let cover_id: Option<i32> = None;
+    // TODO : handle cover
+
+    if let Ok(id) = services::blog::articles::insert(
+        transaction.deref_mut(),
+        // pool.get_ref(),
+        form.category_id,
+        cover_id,
+        &form.title,
+        form.description.as_deref(),
+        form.is_published,
+        form.is_seo
+    ).await {
+        for block in &form.blocks {
+            if let Some(pictures) = &block.pictures {
+
+            }
+
+            services::blog::articles::blocks::insert(
+                transaction.deref_mut(),
+                id,
+                block.title.as_deref(),
+                block.content.as_deref(),
+                block.left_column, block.order
+            ).await;
+            
+        }
+
+            transaction.commit().await.unwrap();
+
+        return HttpResponse::Created().json(id)
+    }
+
+    HttpResponse::InternalServerError().finish()
+}
+
+#[delete("/articles/{id}")]
+async fn delete_article(pool: web::Data<PgPool>, session: Identity, web::Path(id): web::Path<i16>) -> HttpResponse {
+    if let None = session.identity() {
+        return HttpResponse::Unauthorized().finish()
+    }
+
+    if services::blog::articles::exists(&pool, id).await {
+        services::blog::articles::delete(&pool, id).await;
+
+        return HttpResponse::Ok().finish()
+    }
+
+    HttpResponse::NotFound().finish()
+}
+
 #[cfg(test)]
 mod tests {
+    use crate::CookieIdentityPolicy;
+    use crate::IdentityService;
     use crate::controllers;
+    use std::str::FromStr;
     use crate::create_pool;
-    use actix_web::{http::StatusCode, test, web, App};
+    use actix_web::{http::StatusCode, test, web, App, http, cookie::Cookie};
     use dotenv::dotenv;
 
     #[actix_rt::test]
@@ -401,5 +545,186 @@ mod tests {
             .await;
 
         assert!(res.status().is_success());
+    }
+
+    #[actix_rt::test]
+    async fn test_insert_category() {
+        dotenv().ok();
+
+        let pool = create_pool().await.unwrap();
+        let mut app = test::init_service(
+            App::new()
+                .wrap(IdentityService::new(
+                    CookieIdentityPolicy::new(&[0; 32])
+                        .name("auth-cookie")
+                        .secure(true)
+                ))
+                .data(pool.clone())
+                .service(web::scope("/api/blog").service(controllers::blog::insert_category))
+                .service(web::scope("/user").service(crate::controllers::user::login))
+        )
+        .await;
+
+        let res = test::TestRequest::post()
+            .uri("/user/login")
+            .set_form(&serde_json::json!({
+                "email": "hello@ludivinefarat.fr",
+                "password": "root"
+            }))
+            .send_request(&mut app)
+            .await;
+        let cookie = res.headers().get(http::header::SET_COOKIE);
+
+        assert!(cookie.is_some());
+        assert!(res.status().is_success());
+
+        let res = test::TestRequest::post()
+            .uri("/api/blog/categories")
+            .cookie(Cookie::from_str(&cookie.unwrap().to_str().unwrap()).unwrap())
+            .set_form(&serde_json::json!({
+                "name": "Category 1",
+                "is_visible": false,
+                "is_seo": false
+            }))
+            .send_request(&mut app)
+            .await;
+
+        assert!(res.status().is_success());
+    }
+
+    #[actix_rt::test]
+    async fn test_insert_category_not_logged() {
+        dotenv().ok();
+
+        let pool = create_pool().await.unwrap();
+        let mut app = test::init_service(
+            App::new()
+                .data(pool.clone())
+                .service(web::scope("/api/blog").service(controllers::blog::insert_category))
+        )
+        .await;
+
+        let res = test::TestRequest::post()
+            .uri("/api/blog/categories")
+            .set_form(&serde_json::json!({
+                "name": "Category 1",
+                "is_visible": false,
+                "is_seo": false
+            }))
+            .send_request(&mut app)
+            .await;
+
+        assert_eq!(res.status(), http::StatusCode::UNAUTHORIZED);
+    }
+
+    #[actix_rt::test]
+    async fn test_delete_category() {
+        dotenv().ok();
+
+        let pool = create_pool().await.unwrap();
+        let mut app = test::init_service(
+            App::new()
+                .wrap(IdentityService::new(
+                    CookieIdentityPolicy::new(&[0; 32])
+                        .name("auth-cookie")
+                        .secure(true)
+                ))
+                .data(pool.clone())
+                .service(
+                    web::scope("/api/blog")
+                        .service(controllers::blog::insert_category)
+                        .service(controllers::blog::delete_category)
+                )
+                .service(web::scope("/user").service(crate::controllers::user::login))
+        )
+        .await;
+
+        let res = test::TestRequest::post()
+            .uri("/user/login")
+            .set_form(&serde_json::json!({
+                "email": "hello@ludivinefarat.fr",
+                "password": "root"
+            }))
+            .send_request(&mut app)
+            .await;
+        let cookie = res.headers().get(http::header::SET_COOKIE);
+
+        assert!(cookie.is_some());
+        assert!(res.status().is_success());
+
+        let res = test::TestRequest::post()
+            .uri("/api/blog/categories")
+            .cookie(Cookie::from_str(&cookie.unwrap().to_str().unwrap()).unwrap())
+            .set_form(&serde_json::json!({
+                "name": "Category 1",
+                "is_visible": false,
+                "is_seo": false
+            }))
+            .send_request(&mut app)
+            .await;
+        let id: i16 = test::read_body_json(res).await;
+
+        let res = test::TestRequest::delete()
+            .uri(&format!("/api/blog/categories/{}", id))
+            .cookie(Cookie::from_str(&cookie.unwrap().to_str().unwrap()).unwrap())
+            .send_request(&mut app)
+            .await;
+
+        assert!(res.status().is_success());
+    }
+
+    #[actix_rt::test]
+    async fn test_delete_category_not_logged() {
+        dotenv().ok();
+
+        let pool = create_pool().await.unwrap();
+        let mut app = test::init_service(
+            App::new()
+                .wrap(IdentityService::new(
+                    CookieIdentityPolicy::new(&[0; 32])
+                        .name("auth-cookie")
+                        .secure(true)
+                ))
+                .data(pool.clone())
+                .service(
+                    web::scope("/api/blog")
+                        .service(controllers::blog::insert_category)
+                        .service(controllers::blog::delete_category)
+                )
+                .service(web::scope("/user").service(crate::controllers::user::login))
+        )
+        .await;
+
+        let res = test::TestRequest::post()
+            .uri("/user/login")
+            .set_form(&serde_json::json!({
+                "email": "hello@ludivinefarat.fr",
+                "password": "root"
+            }))
+            .send_request(&mut app)
+            .await;
+        let cookie = res.headers().get(http::header::SET_COOKIE);
+
+        assert!(cookie.is_some());
+        assert!(res.status().is_success());
+
+        let res = test::TestRequest::post()
+            .uri("/api/blog/categories")
+            .cookie(Cookie::from_str(&cookie.unwrap().to_str().unwrap()).unwrap())
+            .set_form(&serde_json::json!({
+                "name": "Category 1",
+                "is_visible": false,
+                "is_seo": false
+            }))
+            .send_request(&mut app)
+            .await;
+        let id: i16 = test::read_body_json(res).await;
+
+        let res = test::TestRequest::delete()
+            .uri(&format!("/api/blog/categories/{}", id))
+            .send_request(&mut app)
+            .await;
+
+        assert_eq!(res.status(), http::StatusCode::UNAUTHORIZED);
     }
 }

@@ -116,21 +116,33 @@ pub struct ArticleInformations {
     category_id: Option<i16>,
     cover_id: Option<i32>,
     title: String,
+    description: Option<String>,
     is_published: bool,
     is_seo: bool,
 }
 
-pub async fn insert(pool: &PgPool, article: &ArticleInformations) -> Result<i16, Error> {
+pub async fn insert(
+    // pool: &sqlx::Executor<Database = sqlx::Postgres>,
+    pool: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
+    // pool: &PgPool,
+    category_id: Option<i16>,
+    cover_id: Option<i32>,
+    title: &str,
+    description: Option<&str>,
+    is_published: bool,
+    is_seo: bool
+) -> Result<i16, Error>  {
     let res = sqlx::query!(
         "INSERT INTO blog_articles
-            (category_id, cover_id, title, is_published, is_seo)
-        VALUES ($1, $2, $3, $4, $5)
+            (category_id, cover_id, title, description, is_published, is_seo)
+        VALUES ($1, $2, $3, $4, $5, $6)
         RETURNING id",
-        article.category_id,
-        article.cover_id,
-        article.title,
-        article.is_published,
-        article.is_seo
+        category_id,
+        cover_id,
+        title,
+        description,
+        is_published,
+        is_seo
     )
     .fetch_one(pool)
     .await?;

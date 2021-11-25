@@ -2,7 +2,7 @@ DROP TABLE IF EXISTS project_categories CASCADE;
 CREATE TABLE project_categories (
     id SMALLINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     name VARCHAR(30) NOT NULL,
-    "order" SMALLINT NOT NULL
+    "order" SMALLINT NOT NULL DEFAULT 0
 );
 
 DROP TABLE IF EXISTS projects CASCADE;
@@ -146,7 +146,7 @@ DROP TABLE IF EXISTS blog_categories CASCADE;
 CREATE TABLE blog_categories (
     id SMALLINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     name VARCHAR(60) NOT NULL,
-    uri VARCHAR(70) NOT NULL,
+    uri VARCHAR(70),
     description VARCHAR(255),
     is_visible BOOLEAN,
     is_seo BOOLEAN,
@@ -178,8 +178,8 @@ CREATE TABLE blog_article_blocks (
         REFERENCES blog_articles (id)
         ON DELETE CASCADE,
     title VARCHAR(120),
-    content TEXT NOT NULL,
-    left_column BOOLEAN DEFAULT TRUE,
+    content TEXT,
+    left_column BOOLEAN NOT NULL DEFAULT TRUE,
     "order" SMALLINT NOT NULL,
     UNIQUE (article_id, left_column, "order")
 );

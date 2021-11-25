@@ -65,22 +65,46 @@ pub async fn get_all<
         .unwrap()
 }
 
-pub async fn insert(pool: &PgPool, category: &CategoryInformations) -> Result<i16, Error> {
+pub async fn insert(
+    pool: &PgPool,
+    name: &str,
+    description: Option<&str>,
+    is_visible: Option<bool>,
+    is_seo: Option<bool>
+) -> Result<i16, Error> {
     let res = sqlx::query!(
         r#"INSERT INTO blog_categories
             (name, description, is_visible, is_seo, "order")
-        VALUES ($1, $2, $3, $4, $5)
+        VALUES (
+            $1,
+            $2,
+            $3,
+            $4,
+            COALESCE((SELECT "order" FROM blog_categories ORDER BY "order" DESC LIMIT 1), 0) + 1
+        )
         RETURNING id"#,
-        category.name,
-        category.description,
-        category.is_visible,
-        category.is_seo,
-        category.order
+        name,
+        description,
+        is_visible,
+        is_seo,
+        // order
     )
     .fetch_one(pool)
     .await?;
 
     Ok(res.id)
+}
+
+pub async fn update_uri(pool: &PgPool, id: i16, uri: &str) -> Result<bool, Error> {
+    let res = sqlx::query!(
+        r#"UPDATE blog_categories SET uri = $1 WHERE id = $2"#,
+        uri,
+        id,
+    )
+    .execute(pool)
+    .await?;
+
+    Ok(res.rows_affected() == 1)
 }
 
 pub async fn update(
