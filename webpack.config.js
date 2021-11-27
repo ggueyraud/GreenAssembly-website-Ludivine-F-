@@ -36,13 +36,7 @@ module.exports = {
         path: path.resolve(__dirname, 'dist')
     },
     experiments: {
-        syncWebAssembly: true,
-        asset: true
+        syncWebAssembly: true
     },
-    // module: {
-    //     rules: [
-    //       { test: /\.js$/, exclude: /node_modules/, loader: "babel-loader" }
-    //     ]
-    // }
     plugins
 }
