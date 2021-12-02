@@ -1,5 +1,6 @@
 use serde::Deserialize;
 use sqlx::{Error, PgPool};
+use serde_json::Value;
 
 pub mod blocks;
 
@@ -126,11 +127,11 @@ pub async fn insert(
     pool: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
     // pool: &PgPool,
     category_id: Option<i16>,
-    cover_id: Option<i32>,
+    cover_id: i32,
     title: &str,
     description: Option<&str>,
-    is_published: bool,
-    is_seo: bool
+    is_published: Option<bool>,
+    is_seo: Option<bool>
 ) -> Result<i16, Error>  {
     let res = sqlx::query!(
         "INSERT INTO blog_articles
@@ -150,26 +151,48 @@ pub async fn insert(
     Ok(res.id)
 }
 
-pub async fn update(pool: &PgPool, id: i16, article: &ArticleInformations) -> Result<bool, Error> {
-    let res = sqlx::query!(
-        "UPDATE blog_articles SET
-            category_id = $1,
-            cover_id = $2,
-            title = $3,
-            is_published = $4,
-            is_seo = $5
-        WHERE id = $6",
-        article.category_id,
-        article.cover_id,
-        article.title,
-        article.is_published,
-        article.is_seo,
-        id
-    )
-    .execute(pool)
-    .await?;
+pub async fn partial_update(
+    pool: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
+    id: i16,
+    fields: std::collections::HashMap<String, serde_json::Value>
+) -> Result<bool, Error> {
+    if fields.len() > 0 {
+        let mut query = String::from("UPDATE blog_articles SET");
+        let mut i = 1;
 
-    Ok(res.rows_affected() == 1)
+        for (key, _) in fields.iter() {
+            if i > 1 {
+                query += ",";
+            }
+
+            query += &format!(r#""{}" = ${}"#, key, i);
+
+            i += 1;
+        }
+
+        query += &format!(" WHERE id = ${}", i);
+
+        let mut query = sqlx::query(&query);
+
+        for (_, value) in fields.iter() {
+            match value {
+                Value::Number(value) => {
+                    query = query.bind(value.as_i64());
+                }
+                Value::String(value) => {
+                    query = query.bind(value.as_str());
+                },
+                Value::Bool(value) => query = query.bind(value),
+                _ => ()
+            }
+        }
+
+        let res = query.bind(id).execute(pool).await?;
+
+        return Ok(res.rows_affected() == 1);
+    }
+
+    Ok(false)
 }
 
 pub async fn delete(pool: &PgPool, id: i16) -> bool {

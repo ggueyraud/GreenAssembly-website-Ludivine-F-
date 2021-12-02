@@ -68,7 +68,11 @@
                         {% when None %}
                     {% endmatch %}
     
-                    <p>{{ block.content }}</p>
+                    {% match block.content %}
+                        {% when Some with (content) %}
+                            <p>{{ content }}</p>
+                        {% when None %}
+                    {% endmatch %}
                 </div>
             {% endfor %}
         </div>
@@ -82,7 +86,11 @@
                         {% when None %}
                     {% endmatch %}
     
-                    <p>{{ block.content }}</p>
+                    {% match block.content %}
+                        {% when Some with (content) %}
+                            <p>{{ content }}</p>
+                        {% when None %}
+                    {% endmatch %}
                 </div>
             {% endfor %}
         </div>
