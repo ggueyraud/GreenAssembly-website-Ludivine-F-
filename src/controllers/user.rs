@@ -1,7 +1,6 @@
 use crate::services;
 use actix_identity::Identity;
-use actix_web::{get, http, post, web, Error, HttpRequest, HttpResponse};
-use askama_actix::{Template, TemplateIntoResponse};
+use actix_web::{get, post, web, HttpRequest, HttpResponse};
 use serde::Deserialize;
 use sqlx::PgPool;
 
