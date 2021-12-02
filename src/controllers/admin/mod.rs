@@ -3,8 +3,8 @@ use actix_web::{get, web, Error, HttpResponse};
 use askama_actix::{Template, TemplateIntoResponse};
 use sqlx::PgPool;
 
-pub mod my_little_plus;
 pub mod home;
+pub mod my_little_plus;
 use crate::services;
 
 #[get("")]

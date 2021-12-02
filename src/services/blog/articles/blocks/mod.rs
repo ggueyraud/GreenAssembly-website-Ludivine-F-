@@ -1,8 +1,8 @@
 pub mod images;
 
+use serde_json::Value;
 use sqlx::{Error, PgPool};
 use std::collections::HashMap;
-use serde_json::Value;
 
 pub async fn get_all<
     T: std::marker::Unpin + std::marker::Send + for<'c> sqlx::FromRow<'c, sqlx::postgres::PgRow>,
@@ -21,14 +21,13 @@ pub async fn get_all<
     .unwrap()
 }
 
-
 pub async fn insert(
     pool: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
     article_id: i16,
     title: Option<&str>,
     content: Option<&str>,
     left_column: bool,
-    order: i16
+    order: i16,
 ) -> Result<i16, Error> {
     let res = sqlx::query!(
         r#"INSERT INTO blog_article_blocks
@@ -41,8 +40,8 @@ pub async fn insert(
         left_column,
         order
     )
-        .fetch_one(pool)
-        .await?;
+    .fetch_one(pool)
+    .await?;
 
     Ok(res.id)
 }
@@ -50,7 +49,7 @@ pub async fn insert(
 pub async fn partial_update(
     pool: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
     id: i16,
-    fields: HashMap<String, serde_json::Value>
+    fields: HashMap<String, serde_json::Value>,
 ) -> Result<bool, Error> {
     if fields.len() > 0 {
         let mut query = String::from("UPDATE blog_article_blocks SET");
@@ -78,7 +77,7 @@ pub async fn partial_update(
                 Value::String(value) => {
                     query = query.bind(value.as_str());
                 }
-                _ => ()
+                _ => (),
             }
         }
 

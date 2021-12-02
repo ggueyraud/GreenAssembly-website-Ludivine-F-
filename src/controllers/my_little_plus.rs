@@ -31,8 +31,8 @@ async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse
                 } else {
                     None
                 }
-            },
-            None => None
+            }
+            None => None,
         };
         let shootings = match &links {
             Some(val) => {
@@ -45,8 +45,8 @@ async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse
                 } else {
                     None
                 }
-            },
-            None => None
+            }
+            None => None,
         };
 
         #[derive(Template)]

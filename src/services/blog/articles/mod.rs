@@ -1,6 +1,6 @@
 use serde::Deserialize;
-use sqlx::{Error, PgPool};
 use serde_json::Value;
+use sqlx::{Error, PgPool};
 
 pub mod blocks;
 
@@ -131,8 +131,8 @@ pub async fn insert(
     title: &str,
     description: Option<&str>,
     is_published: Option<bool>,
-    is_seo: Option<bool>
-) -> Result<i16, Error>  {
+    is_seo: Option<bool>,
+) -> Result<i16, Error> {
     let res = sqlx::query!(
         "INSERT INTO blog_articles
             (category_id, cover_id, title, description, is_published, is_seo)
@@ -154,7 +154,7 @@ pub async fn insert(
 pub async fn partial_update(
     pool: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
     id: i16,
-    fields: std::collections::HashMap<String, serde_json::Value>
+    fields: std::collections::HashMap<String, serde_json::Value>,
 ) -> Result<bool, Error> {
     if fields.len() > 0 {
         let mut query = String::from("UPDATE blog_articles SET");
@@ -181,9 +181,9 @@ pub async fn partial_update(
                 }
                 Value::String(value) => {
                     query = query.bind(value.as_str());
-                },
+                }
                 Value::Bool(value) => query = query.bind(value),
-                _ => ()
+                _ => (),
             }
         }
 

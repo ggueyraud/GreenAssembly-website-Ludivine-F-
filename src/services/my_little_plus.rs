@@ -1,5 +1,5 @@
+use serde::{Deserialize, Serialize};
 use sqlx::{Error, FromRow, PgPool};
-use serde::{Serialize, Deserialize};
 
 #[derive(Serialize, Deserialize, FromRow)]
 pub struct Links {
@@ -16,9 +16,10 @@ pub async fn get_links(pool: &PgPool) -> Option<Links> {
         FROM my_little_plus_links"
     )
     .fetch_one(pool)
-    .await {
+    .await
+    {
         Ok(val) => Some(val),
-        Err(_) => None
+        Err(_) => None,
     }
 }
 
@@ -34,8 +35,9 @@ pub async fn edit_links(pool: &PgPool, links: &Links) -> Result<(), Error> {
         links.shootings
     )
     .execute(pool)
-    .await {
+    .await
+    {
         Ok(_) => Ok(()),
-        Err(e) => Err(e)
+        Err(e) => Err(e),
     }
 }

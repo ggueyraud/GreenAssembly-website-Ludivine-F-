@@ -1,6 +1,6 @@
-use serde::{Deserialize, Serialize, de::Deserializer};
-use std::collections::HashMap;
+use serde::{de::Deserializer, Deserialize, Serialize};
 use serde_json::Value;
+use std::collections::HashMap;
 
 #[derive(Debug, std::cmp::PartialEq, Serialize)]
 pub enum Patch<T> {
@@ -38,7 +38,7 @@ where
 
 pub fn extract_fields(form: &impl Serialize) -> std::collections::HashMap<String, Value> {
     let mut need_updated_fields = HashMap::<String, Value>::new();
-    
+
     for (name, obj) in serde_json::json!(form).as_object().unwrap().iter() {
         match obj {
             Value::String(_) => {

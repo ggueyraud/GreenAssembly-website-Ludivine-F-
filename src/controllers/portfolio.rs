@@ -265,7 +265,12 @@ async fn update_category(
             return HttpResponse::BadRequest().finish();
         }
 
-        return match services::projects::categories::update_2(&pool, id, crate::utils::patch::extract_fields(&*form)).await
+        return match services::projects::categories::update_2(
+            &pool,
+            id,
+            crate::utils::patch::extract_fields(&*form),
+        )
+        .await
         {
             Ok(_) => return HttpResponse::Ok().finish(),
             Err(e) => {
@@ -298,13 +303,17 @@ async fn delete_category(
 }
 
 #[get("/projects/{id}")]
-pub async fn get_project(pool: web::Data<PgPool>, session: Identity, web::Path(id): web::Path<i16>) -> HttpResponse {
+pub async fn get_project(
+    pool: web::Data<PgPool>,
+    session: Identity,
+    web::Path(id): web::Path<i16>,
+) -> HttpResponse {
     // if session.identity().is_none() {
     //     return HttpResponse::Unauthorized().finish()
     // }
 
     if !services::projects::exists(&pool, id).await {
-        return HttpResponse::NotFound().finish()
+        return HttpResponse::NotFound().finish();
     }
 
     let (project, assets) = futures::join!(
@@ -451,7 +460,7 @@ pub async fn insert_project(
                     };
                     let image = match image::load_from_memory(file.data()) {
                         Ok(image) => image,
-                        Err(_) => return HttpResponse::BadRequest().finish()
+                        Err(_) => return HttpResponse::BadRequest().finish(),
                     };
 
                     if let Err(_) = crate::utils::image::create_images(
@@ -459,10 +468,10 @@ pub async fn insert_project(
                         &image,
                         &name,
                         Some((500, 500)),
-                        Some((700, 700))
+                        Some((700, 700)),
                     ) {
                         // TODO : rollback
-                        return HttpResponse::BadRequest().finish()
+                        return HttpResponse::BadRequest().finish();
                     }
 
                     let file_id = services::files::insert(

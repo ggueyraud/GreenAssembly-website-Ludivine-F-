@@ -92,8 +92,9 @@ async fn legals(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpRespons
     }
 
     return Legals {
-        year: chrono::Utc::now().year()
-    }.into_response();
+        year: chrono::Utc::now().year(),
+    }
+    .into_response();
 }
 
 #[cfg(test)]

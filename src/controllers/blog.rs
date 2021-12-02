@@ -1,12 +1,12 @@
 use super::metrics;
-use crate::{services, utils::patch::Patch, utils::image::Uploader};
-use actix_web::{get, web, Error, HttpRequest, HttpResponse, post, delete, patch};
+use crate::{services, utils::image::Uploader, utils::patch::Patch};
+use actix_identity::Identity;
+use actix_web::{delete, get, patch, post, web, Error, HttpRequest, HttpResponse};
 use askama_actix::{Template, TemplateIntoResponse};
 use chrono::Datelike;
-use sqlx::PgPool;
-use actix_identity::Identity;
-use std::ops::DerefMut;
 use serde::{Deserialize, Serialize};
+use sqlx::PgPool;
+use std::ops::DerefMut;
 
 #[derive(sqlx::FromRow)]
 struct Article {
@@ -239,12 +239,17 @@ async fn show_article(
 
         for block in &mut blocks {
             if let Some(content) = block.content.clone() {
-                for (i, image) in services::blog::articles::blocks::images::get_all(pool.as_ref(), block.id).await.iter().enumerate() {
+                for (i, image) in
+                    services::blog::articles::blocks::images::get_all(pool.as_ref(), block.id)
+                        .await
+                        .iter()
+                        .enumerate()
+                {
                     // TODO : replace by picture tag
                     block.content = Some(content.replacen(
                         &format!("{{{}}}", i),
                         &format!(r#"<img src="" />"#),
-                        i
+                        i,
                     ));
                 }
             }
@@ -284,29 +289,44 @@ pub struct NewCategoryForm {
     name: String,
     description: Option<String>,
     is_visible: Option<bool>,
-    is_seo: Option<bool>
+    is_seo: Option<bool>,
 }
 
 #[post("/categories")]
-async fn insert_category(pool: web::Data<PgPool>, session: Identity, mut form: web::Form<NewCategoryForm>) -> HttpResponse {
+async fn insert_category(
+    pool: web::Data<PgPool>,
+    session: Identity,
+    mut form: web::Form<NewCategoryForm>,
+) -> HttpResponse {
     use slugmin::slugify;
 
     if let None = session.identity() {
-        return HttpResponse::Unauthorized().finish()
+        return HttpResponse::Unauthorized().finish();
     }
 
     form.name = form.name.trim().to_string();
-    form.description = form.description.as_ref().and_then(|description| Some(description.trim().to_string()));
+    form.description = form
+        .description
+        .as_ref()
+        .and_then(|description| Some(description.trim().to_string()));
 
     if let Ok(id) = services::blog::categories::insert(
         &pool,
         &form.name,
         form.description.as_deref(),
         form.is_visible,
-        form.is_seo
-    ).await {
-        if let Ok(_) = services::blog::categories::update_uri(&pool, id, &slugify(&format!("{}-{}", form.name, id))).await {
-            return HttpResponse::Created().json(id)
+        form.is_seo,
+    )
+    .await
+    {
+        if let Ok(_) = services::blog::categories::update_uri(
+            &pool,
+            id,
+            &slugify(&format!("{}-{}", form.name, id)),
+        )
+        .await
+        {
+            return HttpResponse::Created().json(id);
         }
     }
 
@@ -316,15 +336,19 @@ async fn insert_category(pool: web::Data<PgPool>, session: Identity, mut form: w
 // TODO : update category
 
 #[delete("/categories/{id}")]
-async fn delete_category(pool: web::Data<PgPool>, session: Identity, web::Path(id): web::Path<i16>) -> HttpResponse {
+async fn delete_category(
+    pool: web::Data<PgPool>,
+    session: Identity,
+    web::Path(id): web::Path<i16>,
+) -> HttpResponse {
     if let None = session.identity() {
-        return HttpResponse::Unauthorized().finish()
+        return HttpResponse::Unauthorized().finish();
     }
 
     if services::blog::categories::exists(&pool, id).await {
         services::blog::categories::delete(&pool, id).await;
 
-        return HttpResponse::Ok().finish()
+        return HttpResponse::Ok().finish();
     }
 
     HttpResponse::NotFound().finish()
@@ -336,7 +360,7 @@ pub struct ArticleBlock {
     content: Option<String>,
     left_column: bool,
     order: i16,
-    pictures: Option<Vec<actix_extract_multipart::File>>
+    pictures: Option<Vec<actix_extract_multipart::File>>,
 }
 
 #[derive(Deserialize)]
@@ -347,24 +371,24 @@ pub struct NewArticleForm {
     description: Option<String>,
     is_published: Option<bool>,
     is_seo: Option<bool>,
-    blocks: Vec<String>
+    blocks: Vec<String>,
 }
 
 #[post("/articles")]
 async fn insert_article(
     pool: web::Data<PgPool>,
     session: Identity,
-    mut form: actix_extract_multipart::Multipart<NewArticleForm>
+    mut form: actix_extract_multipart::Multipart<NewArticleForm>,
 ) -> HttpResponse {
     if let None = session.identity() {
-        return HttpResponse::Unauthorized().finish()
+        return HttpResponse::Unauthorized().finish();
     }
 
     form.title = form.title.trim().to_string();
     let mut uploader = Uploader::new();
 
     if form.title.is_empty() || form.title.len() > 255 {
-        return HttpResponse::BadRequest().finish()
+        return HttpResponse::BadRequest().finish();
     }
     if let Some(description) = form.description.clone() {
         // sanitize html content
@@ -376,14 +400,14 @@ async fn insert_article(
             .to_string();
 
         if description.is_empty() || description.len() > 320 {
-            return HttpResponse::BadRequest().finish()
+            return HttpResponse::BadRequest().finish();
         }
 
         form.description = Some(description);
     }
     if let Some(category_id) = form.category_id {
         if !services::blog::categories::exists(&pool, category_id).await {
-            return HttpResponse::NotFound().finish()
+            return HttpResponse::NotFound().finish();
         }
     }
 
@@ -392,28 +416,29 @@ async fn insert_article(
         Ok(image) => {
             let name = format!("cover_{}", chrono::Utc::now().timestamp());
 
-            if let Err(_) = uploader.handle(
-                &image,
-                &name,
-                Some((500, 250)),
-                Some((700, 350)),
-            ) {                
-                return HttpResponse::BadRequest().finish()
+            if let Err(_) = uploader.handle(&image, &name, Some((500, 250)), Some((700, 350))) {
+                return HttpResponse::BadRequest().finish();
             }
-            
+
             let file_id = services::files::insert(
                 transaction.deref_mut(),
                 None,
                 &format!(
                     "{}.{}",
                     name,
-                    if image.color().has_alpha() { "png" } else { "jpg" }
-                )
-            ).await.unwrap();
+                    if image.color().has_alpha() {
+                        "png"
+                    } else {
+                        "jpg"
+                    }
+                ),
+            )
+            .await
+            .unwrap();
 
             file_id
-        },
-        Err(_) => return HttpResponse::BadRequest().finish()
+        }
+        Err(_) => return HttpResponse::BadRequest().finish(),
     };
 
     if let Ok(id) = services::blog::articles::insert(
@@ -423,8 +448,10 @@ async fn insert_article(
         &form.title,
         form.description.as_deref(),
         form.is_published,
-        form.is_seo
-    ).await {
+        form.is_seo,
+    )
+    .await
+    {
         for (i, block) in form.blocks.iter().enumerate() {
             match serde_json::from_str::<ArticleBlock>(block) {
                 Ok(mut block) => {
@@ -441,9 +468,9 @@ async fn insert_article(
 
                     if let Some(title) = &block.title {
                         let title = title.trim().to_string();
-                        
+
                         if title.is_empty() || title.len() > 120 {
-                            return HttpResponse::BadRequest().finish()
+                            return HttpResponse::BadRequest().finish();
                         }
 
                         block.title = Some(title);
@@ -457,10 +484,12 @@ async fn insert_article(
                         allowed_tags.insert("li");
                         allowed_tags.insert("a");
                         allowed_tags.insert("p");
-                        block.content = Some(ammonia::Builder::default()
-                            .tags(allowed_tags)
-                            .clean(content.trim())
-                            .to_string());
+                        block.content = Some(
+                            ammonia::Builder::default()
+                                .tags(allowed_tags)
+                                .clean(content.trim())
+                                .to_string(),
+                        );
                     }
 
                     let block_id = if let Ok(id) = services::blog::articles::blocks::insert(
@@ -468,34 +497,39 @@ async fn insert_article(
                         id,
                         block.title.as_deref(),
                         block.content.as_deref(),
-                        block.left_column, block.order
-                    ).await {
+                        block.left_column,
+                        block.order,
+                    )
+                    .await
+                    {
                         id
                     } else {
-                        return HttpResponse::InternalServerError().finish()
+                        return HttpResponse::InternalServerError().finish();
                     };
-            
+
                     if let Some(pictures) = &block.pictures {
                         for (i, image) in pictures.iter().enumerate() {
-                            if !&["image/png", "image/jpeg"].contains(&image.file_type().as_str()) || image.len() > 2000000 {
-                                return HttpResponse::BadRequest().finish()
+                            if !&["image/png", "image/jpeg"].contains(&image.file_type().as_str())
+                                || image.len() > 2000000
+                            {
+                                return HttpResponse::BadRequest().finish();
                             }
 
                             let image = match image::load_from_memory(image.data()) {
                                 Ok(image) => image,
-                                Err(_) => return HttpResponse::BadRequest().finish()
+                                Err(_) => return HttpResponse::BadRequest().finish(),
                             };
                             let name = format!("{}_{}", id, i);
 
                             if let Err(_) = uploader.handle(&image, &name, None, None) {
-                                return HttpResponse::BadRequest().finish()
+                                return HttpResponse::BadRequest().finish();
                             }
-            
+
                             if let Some(content) = &block.content {
                                 block.content = Some(content.replacen(
                                     &format!("{{{}}}", i),
                                     &format!(r#"<img src="" />"#),
-                                    1
+                                    1,
                                 ));
                             }
 
@@ -505,12 +539,18 @@ async fn insert_article(
                                 &format!(
                                     "{}.{}",
                                     name,
-                                    if image.color().has_alpha() { "png" } else { "jpg" }
-                                )
-                            ).await {
+                                    if image.color().has_alpha() {
+                                        "png"
+                                    } else {
+                                        "jpg"
+                                    }
+                                ),
+                            )
+                            .await
+                            {
                                 id
                             } else {
-                                return HttpResponse::InternalServerError().finish()
+                                return HttpResponse::InternalServerError().finish();
                             };
 
                             if let Err(_) = services::blog::articles::blocks::images::insert(
@@ -518,15 +558,16 @@ async fn insert_article(
                                 block_id,
                                 file_id,
                             )
-                            .await {
-                                return HttpResponse::InternalServerError().finish()
+                            .await
+                            {
+                                return HttpResponse::InternalServerError().finish();
                             }
                         }
                     }
-                },
+                }
                 Err(e) => {
                     println!("{:?}", e);
-                    return HttpResponse::BadRequest().finish()
+                    return HttpResponse::BadRequest().finish();
                 }
             }
         }
@@ -535,7 +576,7 @@ async fn insert_article(
 
         uploader.clear();
 
-        return HttpResponse::Created().json(id)
+        return HttpResponse::Created().json(id);
     }
 
     HttpResponse::InternalServerError().finish()
@@ -553,7 +594,7 @@ pub struct UpdateArticleBlock {
     #[serde(default)]
     order: Patch<i16>,
     #[serde(default, skip_serializing)]
-    pictures: Patch<Option<Vec<actix_extract_multipart::File>>>
+    pictures: Patch<Option<Vec<actix_extract_multipart::File>>>,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -571,7 +612,7 @@ pub struct UpdateArticleForm {
     #[serde(default)]
     is_seo: Patch<bool>,
     #[serde(default)]
-    blocks: Patch<Vec<String>>
+    blocks: Patch<Vec<String>>,
 }
 
 #[patch("/articles/{id}")]
@@ -582,32 +623,36 @@ async fn update_article(
     web::Path(id): web::Path<i16>,
 ) -> HttpResponse {
     if let None = session.identity() {
-        return HttpResponse::Unauthorized().finish()
+        return HttpResponse::Unauthorized().finish();
     }
 
     if !services::blog::articles::exists(&pool, id).await {
-        return HttpResponse::NotFound().finish()
+        return HttpResponse::NotFound().finish();
     }
 
     #[derive(sqlx::FromRow)]
     struct Article {
-        cover_id: i32
+        cover_id: i32,
     }
 
     let mut uploader = Uploader::new();
 
-    let Article { cover_id } = if let Ok(article) = services::blog::articles::get::<Article>(
-        &pool,
-        "cover_id",
-        id
-    ).await { article } else { return HttpResponse::NotFound().finish() };
+    let Article { cover_id } = if let Ok(article) =
+        services::blog::articles::get::<Article>(&pool, "cover_id", id).await
+    {
+        article
+    } else {
+        return HttpResponse::NotFound().finish();
+    };
 
     match &form.title {
         Patch::Null => return HttpResponse::BadRequest().finish(),
-        Patch::Value(title) => if title.is_empty() || title.len() > 255 {
-            return HttpResponse::BadRequest().finish()
-        },
-        _ => ()
+        Patch::Value(title) => {
+            if title.is_empty() || title.len() > 255 {
+                return HttpResponse::BadRequest().finish();
+            }
+        }
+        _ => (),
     }
 
     if let Patch::Value(Some(description)) = &form.description {
@@ -620,7 +665,7 @@ async fn update_article(
             .to_string();
 
         if description.is_empty() || description.len() > 320 {
-            return HttpResponse::BadRequest().finish()
+            return HttpResponse::BadRequest().finish();
         }
     }
 
@@ -636,7 +681,7 @@ async fn update_article(
                         let title = title.trim().to_string();
 
                         if title.is_empty() || title.len() > 120 {
-                            return HttpResponse::BadRequest().finish()
+                            return HttpResponse::BadRequest().finish();
                         }
 
                         block.title = Patch::Value(Some(title));
@@ -651,39 +696,43 @@ async fn update_article(
                         allowed_tags.insert("a");
                         allowed_tags.insert("p");
 
-                        block.content = Patch::Value(Some(ammonia::Builder::default()
-                            .tags(allowed_tags)
-                            .clean(content.trim())
-                            .to_string()));
+                        block.content = Patch::Value(Some(
+                            ammonia::Builder::default()
+                                .tags(allowed_tags)
+                                .clean(content.trim())
+                                .to_string(),
+                        ));
                     }
 
                     // TODO : handle pictures
                     if let Patch::Value(Some(pictures)) = &block.pictures {
-                        for path in services::blog::articles::blocks::images::get_all(pool.as_ref(), block.id).await {
-                            let filename = path
-                                .split(".")
-                                .collect::<Vec<_>>();
-                            let filename = filename.get(0)
-                                .unwrap();
+                        for path in services::blog::articles::blocks::images::get_all(
+                            pool.as_ref(),
+                            block.id,
+                        )
+                        .await
+                        {
+                            let filename = path.split(".").collect::<Vec<_>>();
+                            let filename = filename.get(0).unwrap();
 
-                            files_to_remove.append(&mut [
-                                format!("./uploads/mobile/{}", path),
-                                format!("./uploads/mobile/{}.webp", filename),
-                                format!("./uploads/{}", path),
-                                format!("./uploads/{}.webp", filename)
-                            ].to_vec());
+                            files_to_remove.append(
+                                &mut [
+                                    format!("./uploads/mobile/{}", path),
+                                    format!("./uploads/mobile/{}.webp", filename),
+                                    format!("./uploads/{}", path),
+                                    format!("./uploads/{}.webp", filename),
+                                ]
+                                .to_vec(),
+                            );
                         }
 
                         services::blog::articles::blocks::images::delete(
                             transaction.deref_mut(),
-                            block.id
+                            block.id,
                         )
                         .await;
 
-
                         // HERE
-
-
 
                         // for (i, image) in pictures.iter().enumerate() {
                         //     if !&["image/png", "image/jpeg"].contains(&image.file_type().as_str()) || image.len() > 2000000 {
@@ -695,13 +744,14 @@ async fn update_article(
                     if let Err(_) = services::blog::articles::blocks::partial_update(
                         transaction.deref_mut(),
                         block.id,
-                        crate::utils::patch::extract_fields(&block)
+                        crate::utils::patch::extract_fields(&block),
                     )
-                    .await {
-                        return HttpResponse::InternalServerError().finish()
+                    .await
+                    {
+                        return HttpResponse::InternalServerError().finish();
                     }
-                },
-                Err(_) => return HttpResponse::BadRequest().finish()
+                }
+                Err(_) => return HttpResponse::BadRequest().finish(),
             }
         }
     }
@@ -710,7 +760,7 @@ async fn update_article(
         let title = title.trim().to_string();
 
         if title.is_empty() || title.len() > 255 {
-            return HttpResponse::BadRequest().finish()
+            return HttpResponse::BadRequest().finish();
         }
     }
 
@@ -724,7 +774,7 @@ async fn update_article(
             .to_string();
 
         if description.is_empty() || description.len() > 320 {
-            return HttpResponse::BadRequest().finish()
+            return HttpResponse::BadRequest().finish();
         }
 
         form.description = Patch::Value(Some(description));
@@ -732,7 +782,7 @@ async fn update_article(
 
     if let Patch::Value(Some(category_id)) = form.category_id {
         if !services::blog::categories::exists(&pool, category_id).await {
-            return HttpResponse::NotFound().finish()
+            return HttpResponse::NotFound().finish();
         }
     }
 
@@ -743,15 +793,10 @@ async fn update_article(
             Ok(image) => {
                 let name = format!("cover_{}", chrono::Utc::now().timestamp());
 
-                if let Err(_) = uploader.handle(
-                    &image,
-                    &name,
-                    Some((500, 250)),
-                    Some((700, 350)),
-                ) {
-                    return HttpResponse::BadRequest().finish()
+                if let Err(_) = uploader.handle(&image, &name, Some((500, 250)), Some((700, 350))) {
+                    return HttpResponse::BadRequest().finish();
                 }
-                
+
                 let file_id = services::files::insert(
                     transaction.deref_mut(),
                     None,
@@ -763,58 +808,58 @@ async fn update_article(
                         } else {
                             "jpg"
                         }
-                    )
-                ).await.unwrap();
+                    ),
+                )
+                .await
+                .unwrap();
 
                 // Delete old cover from disk
                 #[derive(sqlx::FromRow)]
                 struct Cover {
-                    path: String
+                    path: String,
                 }
 
-                let path = if let Ok(cover) = services::files::get::<Cover>(
-                    &pool,
-                    cover_id,
-                    "path"
-                ).await {
+                let path = if let Ok(cover) =
+                    services::files::get::<Cover>(&pool, cover_id, "path").await
+                {
                     cover.path
                 } else {
-                    return HttpResponse::InternalServerError().finish()
+                    return HttpResponse::InternalServerError().finish();
                 };
 
-                let old_cover_name = path
-                    .split(".")
-                    .collect::<Vec<_>>();
-                let old_cover_name = old_cover_name.get(0)
-                    .unwrap();
+                let old_cover_name = path.split(".").collect::<Vec<_>>();
+                let old_cover_name = old_cover_name.get(0).unwrap();
 
-                files_to_remove.append(&mut [
-                    format!("./uploads/mobile/{}", path),
-                    format!("./uploads/mobile/{}.webp", old_cover_name),
-                    format!("./uploads/{}", path),
-                    format!("./uploads/{}.webp", old_cover_name)
-                ].to_vec());
-    
+                files_to_remove.append(
+                    &mut [
+                        format!("./uploads/mobile/{}", path),
+                        format!("./uploads/mobile/{}.webp", old_cover_name),
+                        format!("./uploads/{}", path),
+                        format!("./uploads/{}.webp", old_cover_name),
+                    ]
+                    .to_vec(),
+                );
+
                 // Delete cover form field of the fields to be update, set
                 // cover_id instead with new file id
                 fields_need_update.remove("cover");
-                fields_need_update.insert(String::from("cover_id"), serde_json::Value::from(file_id));
-            },
+                fields_need_update
+                    .insert(String::from("cover_id"), serde_json::Value::from(file_id));
+            }
             Err(_) => {
                 // TODO : remove cover
-                return HttpResponse::BadRequest().finish()
+                return HttpResponse::BadRequest().finish();
             }
         }
     }
-    
+
     fields_need_update.remove("blocks");
 
-    if let Err(_) = services::blog::articles::partial_update(
-        transaction.deref_mut(),
-        id,
-        fields_need_update
-    ).await {
-        return HttpResponse::InternalServerError().finish()
+    if let Err(_) =
+        services::blog::articles::partial_update(transaction.deref_mut(), id, fields_need_update)
+            .await
+    {
+        return HttpResponse::InternalServerError().finish();
     }
 
     services::files::delete(transaction.deref_mut(), cover_id).await;
@@ -829,9 +874,13 @@ async fn update_article(
 }
 
 #[delete("/articles/{id}")]
-async fn delete_article(pool: web::Data<PgPool>, session: Identity, web::Path(id): web::Path<i16>) -> HttpResponse {
+async fn delete_article(
+    pool: web::Data<PgPool>,
+    session: Identity,
+    web::Path(id): web::Path<i16>,
+) -> HttpResponse {
     if let None = session.identity() {
-        return HttpResponse::Unauthorized().finish()
+        return HttpResponse::Unauthorized().finish();
     }
 
     // TODO : remove images
@@ -839,7 +888,7 @@ async fn delete_article(pool: web::Data<PgPool>, session: Identity, web::Path(id
     if services::blog::articles::exists(&pool, id).await {
         services::blog::articles::delete(&pool, id).await;
 
-        return HttpResponse::Ok().finish()
+        return HttpResponse::Ok().finish();
     }
 
     HttpResponse::NotFound().finish()
@@ -847,14 +896,14 @@ async fn delete_article(pool: web::Data<PgPool>, session: Identity, web::Path(id
 
 #[cfg(test)]
 mod tests {
-    use actix_web::http::header;
+    use crate::controllers;
+    use crate::create_pool;
     use crate::CookieIdentityPolicy;
     use crate::IdentityService;
-    use crate::controllers;
-    use std::str::FromStr;
-    use crate::create_pool;
-    use actix_web::{http::StatusCode, test, web, App, http, cookie::Cookie};
+    use actix_web::http::header;
+    use actix_web::{cookie::Cookie, http, http::StatusCode, test, web, App};
     use dotenv::dotenv;
+    use std::str::FromStr;
 
     #[actix_rt::test]
     async fn test_index() {
@@ -999,11 +1048,11 @@ mod tests {
                 .wrap(IdentityService::new(
                     CookieIdentityPolicy::new(&[0; 32])
                         .name("auth-cookie")
-                        .secure(true)
+                        .secure(true),
                 ))
                 .data(pool.clone())
                 .service(web::scope("/api/blog").service(controllers::blog::insert_category))
-                .service(web::scope("/user").service(crate::controllers::user::login))
+                .service(web::scope("/user").service(crate::controllers::user::login)),
         )
         .await;
 
@@ -1042,7 +1091,7 @@ mod tests {
         let mut app = test::init_service(
             App::new()
                 .data(pool.clone())
-                .service(web::scope("/api/blog").service(controllers::blog::insert_category))
+                .service(web::scope("/api/blog").service(controllers::blog::insert_category)),
         )
         .await;
 
@@ -1069,15 +1118,15 @@ mod tests {
                 .wrap(IdentityService::new(
                     CookieIdentityPolicy::new(&[0; 32])
                         .name("auth-cookie")
-                        .secure(true)
+                        .secure(true),
                 ))
                 .data(pool.clone())
                 .service(
                     web::scope("/api/blog")
                         .service(controllers::blog::insert_category)
-                        .service(controllers::blog::delete_category)
+                        .service(controllers::blog::delete_category),
                 )
-                .service(web::scope("/user").service(crate::controllers::user::login))
+                .service(web::scope("/user").service(crate::controllers::user::login)),
         )
         .await;
 
@@ -1125,15 +1174,15 @@ mod tests {
                 .wrap(IdentityService::new(
                     CookieIdentityPolicy::new(&[0; 32])
                         .name("auth-cookie")
-                        .secure(true)
+                        .secure(true),
                 ))
                 .data(pool.clone())
                 .service(
                     web::scope("/api/blog")
                         .service(controllers::blog::insert_category)
-                        .service(controllers::blog::delete_category)
+                        .service(controllers::blog::delete_category),
                 )
-                .service(web::scope("/user").service(crate::controllers::user::login))
+                .service(web::scope("/user").service(crate::controllers::user::login)),
         )
         .await;
 
@@ -1172,23 +1221,23 @@ mod tests {
 
     #[actix_rt::test]
     async fn test_insert_article() {
-        use std::io::Write;
         use std::io::Read;
+        use std::io::Write;
 
         dotenv().ok();
-        
+
         let pool = create_pool().await.unwrap();
-        
+
         let mut app = test::init_service(
             App::new()
                 .wrap(IdentityService::new(
                     CookieIdentityPolicy::new(&[0; 32])
                         .name("auth-cookie")
-                        .secure(true)
+                        .secure(true),
                 ))
                 .data(pool.clone())
                 .service(web::scope("/api/blog").service(controllers::blog::insert_article))
-                .service(web::scope("/user").service(crate::controllers::user::login))
+                .service(web::scope("/user").service(crate::controllers::user::login)),
         )
         .await;
 
@@ -1201,7 +1250,7 @@ mod tests {
             .send_request(&mut app)
             .await;
         let cookie = res.headers().get(http::header::SET_COOKIE);
-        
+
         assert!(cookie.is_some());
         assert!(res.status().is_success());
 
@@ -1212,7 +1261,11 @@ mod tests {
         f.read_to_end(&mut data).unwrap();
         write!(data, "\r\n").unwrap();
         write!(data, "-----011000010111000001101001\r\nContent-Disposition: form-data; name=\"blocks[]\"\r\n\r\n");
-        write!(data, "{{\"title\":\"Lorem\",\"left_column\":true,\"order\":1}}\r\n").unwrap();
+        write!(
+            data,
+            "{{\"title\":\"Lorem\",\"left_column\":true,\"order\":1}}\r\n"
+        )
+        .unwrap();
         write!(data, "-----011000010111000001101001--").unwrap();
 
         let cookie = Cookie::from_str(&cookie.unwrap().to_str().unwrap()).unwrap();
@@ -1224,7 +1277,7 @@ mod tests {
                 header::CONTENT_TYPE,
                 header::HeaderValue::from_static(
                     "multipart/form-data; boundary=---011000010111000001101001",
-                )
+                ),
             )
             .send_request(&mut app)
             .await;
@@ -1235,22 +1288,22 @@ mod tests {
     // TODO : inser article without cookie connexion
     #[actix_rt::test]
     async fn test_insert_article_not_logged() {
-        use std::io::Write;
         use std::io::Read;
+        use std::io::Write;
 
         dotenv().ok();
-        
+
         let pool = create_pool().await.unwrap();
-        
+
         let mut app = test::init_service(
             App::new()
                 .wrap(IdentityService::new(
                     CookieIdentityPolicy::new(&[0; 32])
                         .name("auth-cookie")
-                        .secure(true)
+                        .secure(true),
                 ))
                 .data(pool.clone())
-                .service(web::scope("/api/blog").service(controllers::blog::insert_article))
+                .service(web::scope("/api/blog").service(controllers::blog::insert_article)),
         )
         .await;
 
@@ -1261,7 +1314,11 @@ mod tests {
         f.read_to_end(&mut data).unwrap();
         write!(data, "\r\n").unwrap();
         write!(data, "-----011000010111000001101001\r\nContent-Disposition: form-data; name=\"blocks[]\"\r\n\r\n");
-        write!(data, "{{\"title\":\"Lorem\",\"left_column\":true,\"order\":1}}\r\n").unwrap();
+        write!(
+            data,
+            "{{\"title\":\"Lorem\",\"left_column\":true,\"order\":1}}\r\n"
+        )
+        .unwrap();
         write!(data, "-----011000010111000001101001--").unwrap();
 
         let res = test::TestRequest::post()
@@ -1271,12 +1328,11 @@ mod tests {
                 header::CONTENT_TYPE,
                 header::HeaderValue::from_static(
                     "multipart/form-data; boundary=---011000010111000001101001",
-                )
+                ),
             )
             .send_request(&mut app)
             .await;
 
         assert_eq!(res.status(), http::StatusCode::UNAUTHORIZED);
     }
-
 }

@@ -1,9 +1,6 @@
-use sqlx::{Postgres, Executor, Error};
+use sqlx::{Error, Executor, Postgres};
 
-pub async fn get_all(
-    pool: impl Executor<'_, Database = Postgres>,
-    block_id: i16
-) -> Vec<String> {
+pub async fn get_all(pool: impl Executor<'_, Database = Postgres>, block_id: i16) -> Vec<String> {
     sqlx::query!(
         "SELECT
             f.path
@@ -12,18 +9,18 @@ pub async fn get_all(
         WHERE block_id = $1",
         block_id
     )
-        .fetch_all(pool)
-        .await
-        .unwrap()
-        .iter()
-        .map(|row| row.path.clone())
-        .collect::<Vec<String>>()
+    .fetch_all(pool)
+    .await
+    .unwrap()
+    .iter()
+    .map(|row| row.path.clone())
+    .collect::<Vec<String>>()
 }
 
 pub async fn insert(
     pool: impl Executor<'_, Database = Postgres>,
     block_id: i16,
-    file_id: i32
+    file_id: i32,
 ) -> Result<(), Error> {
     sqlx::query!(
         "INSERT INTO blog_article_block_images
@@ -32,20 +29,20 @@ pub async fn insert(
         block_id,
         file_id
     )
-        .execute(pool)
-        .await?;
+    .execute(pool)
+    .await?;
 
     Ok(())
 }
 
-pub async fn delete(
-    pool: impl Executor<'_, Database = Postgres>,
-    block_id: i16
-) -> bool {
-    sqlx::query!("DELETE FROM blog_article_block_images WHERE block_id = $1", block_id)
-        .execute(pool)
-        .await
-        .unwrap()
-        .rows_affected()
+pub async fn delete(pool: impl Executor<'_, Database = Postgres>, block_id: i16) -> bool {
+    sqlx::query!(
+        "DELETE FROM blog_article_block_images WHERE block_id = $1",
+        block_id
+    )
+    .execute(pool)
+    .await
+    .unwrap()
+    .rows_affected()
         == 1
 }

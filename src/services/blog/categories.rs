@@ -70,7 +70,7 @@ pub async fn insert(
     name: &str,
     description: Option<&str>,
     is_visible: Option<bool>,
-    is_seo: Option<bool>
+    is_seo: Option<bool>,
 ) -> Result<i16, Error> {
     let res = sqlx::query!(
         r#"INSERT INTO blog_categories

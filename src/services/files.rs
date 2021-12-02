@@ -3,7 +3,7 @@ use sqlx::{Error, PgPool};
 pub async fn insert(
     pool: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
     name: Option<&str>,
-    path: &str
+    path: &str,
 ) -> Result<i32, Error> {
     let res = sqlx::query!(
         r#"INSERT INTO files (name, path) VALUES ($1, $2) RETURNING id"#,
@@ -21,7 +21,7 @@ pub async fn get<
 >(
     pool: &PgPool,
     id: i32,
-    fields: &str
+    fields: &str,
 ) -> Result<T, Error> {
     sqlx::query_as::<_, T>(&format!(
         "SELECT
@@ -43,10 +43,7 @@ pub async fn update(pool: &PgPool, id: i32, name: Option<&str>) -> Result<bool, 
     Ok(res.rows_affected() == 1)
 }
 
-pub async fn delete(
-    pool: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
-    id: i32
-) -> bool {
+pub async fn delete(pool: impl sqlx::Executor<'_, Database = sqlx::Postgres>, id: i32) -> bool {
     let rows = sqlx::query!("DELETE FROM files WHERE id = $1", id)
         .execute(pool)
         .await
