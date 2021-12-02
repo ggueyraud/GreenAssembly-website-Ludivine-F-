@@ -1,5 +1,5 @@
 use super::metrics;
-use crate::services::{self, projects::Asset};
+use crate::{services, utils::patch::Patch};
 use actix_extract_multipart::*;
 use actix_identity::Identity;
 use actix_web::{delete, get, patch, post, put, web, Error, HttpRequest, HttpResponse};
@@ -8,8 +8,7 @@ use askama_actix::{Template, TemplateIntoResponse};
 use chrono::Datelike;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
-use std::{collections::HashSet, io::Write, path::Path};
-use webp::Encoder;
+use std::{collections::HashSet, path::Path};
 
 #[get("")]
 async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
@@ -222,42 +221,6 @@ async fn create_category(
     HttpResponse::Unauthorized().finish()
 }
 
-use serde::de::Deserializer;
-
-#[derive(Debug, std::cmp::PartialEq, Serialize)]
-enum Patch<T> {
-    Undefined,
-    Null,
-    Value(T),
-}
-
-impl<T> Default for Patch<T> {
-    fn default() -> Self {
-        Patch::Undefined
-    }
-}
-
-impl<T> From<Option<T>> for Patch<T> {
-    fn from(opt: Option<T>) -> Patch<T> {
-        match opt {
-            Some(v) => Patch::Value(v),
-            None => Patch::Null,
-        }
-    }
-}
-
-impl<'de, T> Deserialize<'de> for Patch<T>
-where
-    T: Deserialize<'de>,
-{
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        Option::deserialize(deserializer).map(Into::into)
-    }
-}
-
 #[derive(Deserialize, Debug, Serialize)]
 pub struct UpdateCategoryForm {
     #[serde(default)]
@@ -302,37 +265,10 @@ async fn update_category(
             return HttpResponse::BadRequest().finish();
         }
 
-        use serde_json::Value;
-        use std::collections::HashMap;
-
-        type PatchForm = HashMap<String, Value>;
-
-        let mut need_updated_fields: PatchForm = HashMap::new();
-
-        for (name, obj) in serde_json::json!(*form).as_object().unwrap().iter() {
-            println!("{:?}", obj);
-
-            match obj {
-                Value::String(_) => {
-                    if obj.as_str().unwrap() != "Undefined" {
-                        need_updated_fields.insert(name.to_string(), obj.clone());
-                    }
-                }
-                Value::Object(map) => {
-                    if let Some(value) = map.get("Value") {
-                        need_updated_fields.insert(name.to_string(), value.clone());
-                    }
-                }
-                _ => {}
-            }
-        }
-
-        println!("{:?}", need_updated_fields);
-
-        return match services::projects::categories::update_2(&pool, id, need_updated_fields).await
+        return match services::projects::categories::update_2(&pool, id, crate::utils::patch::extract_fields(&*form)).await
         {
             Ok(_) => return HttpResponse::Ok().finish(),
-            e => {
+            Err(e) => {
                 eprintln!("{:?}", e);
                 HttpResponse::InternalServerError().finish()
             }
@@ -442,16 +378,13 @@ pub struct ProjectAddForm {
 impl ProjectAddForm {
     async fn is_valid(&mut self) -> bool {
         if !self.infos.is_valid() {
-            println!("Pas ok");
             return false;
         }
 
         for file in &self.files {
-            println!("{} | {}", file.file_type(), file.len());
             if !&["image/png", "image/jpeg", "image/webp"].contains(&file.file_type().as_str())
                 || file.len() >= 2000000
             {
-                println!("Pas ok");
                 return false;
             }
         }
@@ -467,7 +400,6 @@ pub async fn insert_project(
     session: Identity,
 ) -> HttpResponse {
     if let Some(_) = session.identity() {
-        println!("Ok");
         if !form.is_valid().await {
             return HttpResponse::BadRequest().finish();
         }
@@ -508,7 +440,6 @@ pub async fn insert_project(
                 // Handle assets
                 let mut i = 1;
                 for file in &form.files {
-                    let image = image::load_from_memory(&file.data()).unwrap();
                     let name = {
                         use slugmin::slugify;
 
@@ -518,71 +449,24 @@ pub async fn insert_project(
                             chrono::Utc::now().timestamp()
                         ))
                     };
+                    let image = match image::load_from_memory(file.data()) {
+                        Ok(image) => image,
+                        Err(_) => return HttpResponse::BadRequest().finish()
+                    };
 
-                    const MAX_MOBILE: (u32, u32) = (500, 500);
-                    const MAX_DESKTOP: (u32, u32) = (700, 700);
-
-                    // Create thumbnail
-                    if image.color().has_alpha() {
-                        image
-                            .thumbnail(MAX_MOBILE.0, MAX_MOBILE.1)
-                            .save_with_format(
-                                format!("./uploads/mobile/{}.png", name.clone()),
-                                image::ImageFormat::Png,
-                            )
-                            .unwrap();
-
-                        image
-                            .thumbnail(MAX_DESKTOP.0, MAX_DESKTOP.1)
-                            .save_with_format(
-                                format!("./uploads/{}.png", name.clone()),
-                                image::ImageFormat::Png,
-                            )
-                            .unwrap();
-                    } else {
-                        image
-                            .thumbnail(MAX_MOBILE.0, MAX_MOBILE.1)
-                            .save_with_format(
-                                format!("./uploads/mobile/{}.jpg", name.clone()),
-                                image::ImageFormat::Jpeg,
-                            )
-                            .unwrap();
-
-                        image
-                            .thumbnail(MAX_DESKTOP.0, MAX_DESKTOP.1)
-                            .save_with_format(
-                                format!("./uploads/{}.jpg", name.clone()),
-                                image::ImageFormat::Png,
-                            )
-                            .unwrap();
+                    if let Err(_) = crate::utils::image::create_images(
+                        // file.data(),
+                        &image,
+                        &name,
+                        Some((500, 500)),
+                        Some((700, 700))
+                    ) {
+                        // TODO : rollback
+                        return HttpResponse::BadRequest().finish()
                     }
 
-                    // Create webp format
-                    let image_webp = Encoder::from_image(&image.resize(
-                        MAX_MOBILE.0,
-                        MAX_MOBILE.1,
-                        image::imageops::CatmullRom,
-                    ))
-                    .encode(100.0);
-                    let v = image_webp.iter().map(|a| *a).collect::<Vec<u8>>();
-                    let mut webp_file =
-                        std::fs::File::create(format!("./uploads/mobile/{}.webp", name)).unwrap();
-                    webp_file.write_all(&v).unwrap();
-
-                    let image_webp = Encoder::from_image(&image.resize(
-                        MAX_DESKTOP.0,
-                        MAX_DESKTOP.1,
-                        image::imageops::CatmullRom,
-                    ))
-                    .encode(100.0);
-                    let v = image_webp.iter().map(|a| *a).collect::<Vec<u8>>();
-                    let mut webp_file =
-                        std::fs::File::create(format!("./uploads/{}.webp", name)).unwrap();
-                    webp_file.write_all(&v).unwrap();
-
-                    // files_fut.push(services::files::insert(&pool, None, None));
                     let file_id = services::files::insert(
-                        &pool,
+                        pool.get_ref(),
                         Some(file.name()),
                         &format!(
                             "{}.{}",
@@ -602,8 +486,6 @@ pub async fn insert_project(
 
                     i += 1;
                 }
-
-                // futures::future::join_all(files_fut).await;
 
                 HttpResponse::Created().json(id)
             }
