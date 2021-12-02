@@ -65,8 +65,6 @@ pub async fn update_2(
     fields: HashMap<String, serde_json::Value>,
 ) -> Result<bool, Error> {
     if fields.len() > 0 {
-        println!("{:?}", fields);
-
         let mut query = String::from("UPDATE project_categories SET ");
         let mut i = 1;
 
@@ -86,11 +84,9 @@ pub async fn update_2(
         for (_, value) in fields.iter() {
             match value {
                 Value::Number(value) => {
-                    println!("1");
                     query = query.bind(value.as_i64());
                 }
                 Value::String(value) => {
-                    println!("2");
                     query = query.bind(value.as_str());
                 }
                 _ => {

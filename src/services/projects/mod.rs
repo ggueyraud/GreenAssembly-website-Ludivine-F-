@@ -133,30 +133,6 @@ pub async fn insert(
     Ok(res.id)
 }
 
-pub async fn update(
-    pool: &PgPool,
-    id: i16,
-    name: &str,
-    description: Option<&str>,
-    content: &str,
-) -> Result<bool, Error> {
-    let res = sqlx::query!(
-        r#"UPDATE projects SET
-            name = $1,
-            description = $2,
-            content = $3
-        WHERE id = $4"#,
-        name,
-        description,
-        content,
-        id
-    )
-    .execute(pool)
-    .await?;
-
-    Ok(res.rows_affected() == 1)
-}
-
 pub async fn delete(pool: &PgPool, id: i16) -> bool {
     let rows = sqlx::query!("DELETE FROM projects WHERE id = $1", id)
         .execute(pool)
@@ -183,18 +159,4 @@ pub async fn link_to_category(
     .await?;
 
     Ok(())
-}
-
-pub async fn unlink_from_category(pool: &PgPool, project_id: i16, category_id: i16) -> bool {
-    let rows = sqlx::query!(
-        "DELETE FROM projects_categories WHERE project_id = $1 AND category_id = $2",
-        project_id,
-        category_id
-    )
-    .execute(pool)
-    .await
-    .unwrap()
-    .rows_affected();
-
-    rows == 1
 }
