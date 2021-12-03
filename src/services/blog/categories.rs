@@ -50,10 +50,13 @@ pub async fn get_all<
     is_visible: Option<bool>,
     is_seo: Option<bool>,
 ) -> Vec<T> {
-    let is_visible = is_visible.unwrap_or(true);
-    let is_seo = is_seo.unwrap_or(true);
     let query = format!(
-        r#"SELECT {} FROM blog_categories WHERE is_visible = $1 AND is_seo = $2 ORDER BY "order""#,
+        r#"SELECT
+            {}
+        FROM blog_categories
+        WHERE (($1 IS NOT NULL AND is_visible = $1) OR $1 IS NULL)
+        AND (($2 IS NOT NULL AND is_seo = $2) OR $2 IS NULL)
+        ORDER BY "order""#,
         fields
     );
 

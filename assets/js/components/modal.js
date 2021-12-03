@@ -30,6 +30,8 @@ export default class Modal {
             close_btn.addEventListener('click', () => this.close());
             header.insertAdjacentElement('beforeend', close_btn);
         }
+
+        return this;
     }
 
     get is_open() {

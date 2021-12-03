@@ -2,6 +2,7 @@ use actix_identity::Identity;
 use actix_web::{get, web, Error, HttpResponse};
 use askama_actix::{Template, TemplateIntoResponse};
 use sqlx::PgPool;
+use serde::Serialize;
 
 pub mod home;
 pub mod my_little_plus;
@@ -87,6 +88,59 @@ pub async fn my_little_plus_page(id: Identity) -> Result<HttpResponse, Error> {
     struct Login;
 
     Login {}.into_response()
+}
+
+#[get("/blog")]
+async fn blog(id: Identity, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
+    if let Some(_) = id.identity() {
+        #[derive(sqlx::FromRow, Serialize)]
+        struct Category {
+            id: i16,
+            name: String,
+            description: Option<String>,
+            is_visible: Option<bool>,
+            is_seo: Option<bool>
+        }
+
+        #[derive(sqlx::FromRow, Serialize)]
+        struct Article {
+            id: i16,
+            category_id: i16,
+            title: String,
+            // date
+        }
+
+        #[derive(Template)]
+        #[template(path = "pages/admin/blog.html")]
+        struct Blog {
+            categories: Vec<Category>,
+            articles: Vec<Article>
+        }
+
+        let (categories, articles) = futures::join!(
+            services::blog::categories::get_all::<Category>(
+                &pool,
+                "id, name, description, is_visible, is_seo",
+                None,
+                None
+            ),
+            // TODO : refactor function to prevent test none
+            services::blog::articles::get_all1::<Article>(
+                &pool,
+                "ba.id, category_id, title",
+                None,
+                None,
+                None
+            )
+        );
+
+        return Blog {
+            categories,
+            articles
+        }.into_response()
+    }
+
+    Ok(HttpResponse::Found().header("location", "/admin").finish())
 }
 
 #[get("/parametres")]

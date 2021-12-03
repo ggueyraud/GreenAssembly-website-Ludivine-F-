@@ -1,0 +1,92 @@
+{% extends "back_office.html" %}
+
+{% block title %}Blog{% endblock %}
+
+{% block head %}
+    <script src="/js/admin/blog.js" async></script>
+    <link rel="stylesheet" href="/css/pages/admin/blog.css" />
+
+    <script>
+        const categories = {{ categories|json }};
+        const articles = {{ articles|json }};
+    </script>
+{% endblock %}
+
+{% block content %}
+    <div class="modal" id="category_modal">
+        <div class="modal__dialog">
+            <div class="modal__dialog__header"></div>
+
+            <form name="" class="modal__dialog__body">
+                <label for="name">Nom <span class="text_error">*</span></label>
+                <input type="text" id="name" name="name" maxlength="60" />
+
+                <label for="description">Description</label>
+                <textarea id="description" name="description" maxlength="255"></textarea>
+
+                <div>
+                    <label for="is_published">Visible sur le site ?</label>
+                    <input type="checkbox" id="is_published" name="is_published" />
+                </div>
+
+                <div>
+                    <label for="is_seo">Référençable par les moteurs de recherche ?</label>
+                    <input type="checkbox" id="is_seo" name="is_seo" />
+                </div>
+
+                <div class="flex justify_end">
+                    <button type="submit" class="btn btn__green btn--sm"></button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card__header flex justify_between">
+            Catégories
+
+            <button
+                type="button"
+                class="btn btn__green btn--sm"
+                id="btn_add_category"
+            >
+                <svg class="icon" height="20px">
+                    <use xlink:href="/dashboard_icons.svg#plus"></use>
+                </svg>
+            </button>
+        </div>
+
+        <div class="card__body">
+            <ul class="categories">
+                {% for category in categories %}
+                    <li data-id="{{ category.id }}" class="categories__item">
+                        <span>{{ category.name }}</span>
+
+                        <div>
+                            <button type="button" class="text_blue btn_edit_category">
+                                <svg class="icon" height="20px">
+                                    <use xlink:href="/dashboard_icons.svg#edit"></use>
+                                </svg>
+                            </button>
+                            <button type="button" class="text_error btn_delete_category">
+                                <svg class="icon" height="20px">
+                                    <use xlink:href="/dashboard_icons.svg#delete"></use>
+                                </svg>
+                            </button>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card__header flex justify_between">Articles</div>
+
+        <div class="card__body">
+            {% for articles in articles %}
+
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}

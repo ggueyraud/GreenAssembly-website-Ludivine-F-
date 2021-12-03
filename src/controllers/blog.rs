@@ -519,18 +519,16 @@ async fn insert_article(
                                 Ok(image) => image,
                                 Err(_) => return HttpResponse::BadRequest().finish(),
                             };
-                            let name = format!("{}_{}", id, i);
+                            let name = format!(
+                                "{}_{}_{}_{}",
+                                id,
+                                block_id,
+                                i,
+                                chrono::Utc::now().timestamp()
+                            );
 
                             if let Err(_) = uploader.handle(&image, &name, None, None) {
                                 return HttpResponse::BadRequest().finish();
-                            }
-
-                            if let Some(content) = &block.content {
-                                block.content = Some(content.replacen(
-                                    &format!("{{{}}}", i),
-                                    &format!(r#"<img src="" />"#),
-                                    1,
-                                ));
                             }
 
                             let file_id = if let Ok(id) = services::files::insert(
@@ -732,13 +730,57 @@ async fn update_article(
                         )
                         .await;
 
-                        // HERE
+                        for (i, image) in pictures.iter().enumerate() {
+                            if !&["image/png", "image/jpeg"].contains(&image.file_type().as_str()) || image.len() > 2000000 {
+                                return HttpResponse::BadRequest().finish()
+                            }
 
-                        // for (i, image) in pictures.iter().enumerate() {
-                        //     if !&["image/png", "image/jpeg"].contains(&image.file_type().as_str()) || image.len() > 2000000 {
-                        //         return HttpResponse::BadRequest().finish()
-                        //     }
-                        // }
+                            let image = match image::load_from_memory(image.data()) {
+                                Ok(image) => image,
+                                Err(_) => return HttpResponse::BadRequest().finish()  
+                            };
+                            let name = format!(
+                                "{}_{}_{}_{}",
+                                id,
+                                block.id,
+                                i,
+                                chrono::Utc::now().timestamp()
+                            );
+
+                            if let Err(_) = uploader.handle(&image, &name, None, None) {
+                                return HttpResponse::BadRequest().finish();
+                            }
+
+                            let file_id = if let Ok(id) = services::files::insert(
+                                transaction.deref_mut(),
+                                None,
+                                &format!(
+                                    "{}.{}",
+                                    name,
+                                    if image.color().has_alpha() {
+                                        "png"
+                                    } else {
+                                        "jpg"
+                                    }
+                                ),
+                            )
+                            .await
+                            {
+                                id
+                            } else {
+                                return HttpResponse::InternalServerError().finish();
+                            };
+
+                            if let Err(_) = services::blog::articles::blocks::images::insert(
+                                transaction.deref_mut(),
+                                block.id,
+                                file_id,
+                            )
+                            .await
+                            {
+                                return HttpResponse::InternalServerError().finish();
+                            }
+                        }
                     }
 
                     if let Err(_) = services::blog::articles::blocks::partial_update(
