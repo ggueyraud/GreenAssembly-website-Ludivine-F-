@@ -296,7 +296,7 @@ pub struct NewCategoryForm {
 async fn insert_category(
     pool: web::Data<PgPool>,
     session: Identity,
-    mut form: web::Form<NewCategoryForm>,
+    mut form: web::Json<NewCategoryForm>,
 ) -> HttpResponse {
     use slugmin::slugify;
 
@@ -333,7 +333,73 @@ async fn insert_category(
     HttpResponse::InternalServerError().finish()
 }
 
-// TODO : update category
+#[derive(Deserialize, Serialize)]
+pub struct UpdateCategoryForm {
+    #[serde(default)]
+    name: Patch<String>,
+    #[serde(default)]
+    description: Patch<Option<String>>,
+    #[serde(default)]
+    is_visible: Patch<Option<bool>>,
+    #[serde(default)]
+    is_seo: Patch<Option<bool>>,
+    #[serde(default)]
+    order: Patch<i16>
+}
+
+#[patch("/categories/{id}")]
+async fn update_category(
+    pool: web::Data<PgPool>,
+    session: Identity,
+    web::Path(id): web::Path<i16>,
+    mut form: web::Json<UpdateCategoryForm>
+) -> HttpResponse {
+    if let None = session.identity() {
+        return HttpResponse::Unauthorized().finish()
+    }
+
+    if !services::blog::categories::exists(&pool, id).await {
+        return HttpResponse::NotFound().finish()
+    }
+
+    match &form.name {
+        Patch::Null => return HttpResponse::BadRequest().finish(),
+        Patch::Value(name) => {
+            let name = name.trim().to_string();
+
+            if name.is_empty() || name.len() > 60 {
+                return HttpResponse::BadRequest().finish()
+            }
+
+            form.name = Patch::Value(name);
+        },
+        _ => ()
+    }
+
+    if let Patch::Value(Some(description)) = &form.description {
+        // sanitize html content
+        let mut allowed_tags = std::collections::HashSet::<&str>::new();
+        allowed_tags.insert("b");
+        let description = ammonia::Builder::default()
+            .tags(allowed_tags)
+            .clean(description.trim())
+            .to_string();
+
+        if description.len() > 320 {
+            return HttpResponse::BadRequest().finish();
+        }
+
+        form.description = Patch::Value(Some(description));
+    }
+
+    println!("Fields to update : {:?}", crate::utils::patch::extract_fields(&*form));
+    if let Err(e) = services::blog::categories::partial_update(pool.get_ref(), id, crate::utils::patch::extract_fields(&*form)).await {
+        eprintln!("{:?}", e);
+        return HttpResponse::InternalServerError().finish()
+    }
+
+    HttpResponse::Ok().finish()
+}
 
 #[delete("/categories/{id}")]
 async fn delete_category(
@@ -665,6 +731,8 @@ async fn update_article(
         if description.is_empty() || description.len() > 320 {
             return HttpResponse::BadRequest().finish();
         }
+
+        form.description = Patch::Value(Some(description));
     }
 
     let mut transaction = pool.begin().await.unwrap();

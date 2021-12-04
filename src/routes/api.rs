@@ -16,6 +16,7 @@ pub fn config(cfg: &mut web::ServiceConfig) {
             .service(
                 web::scope("/blog")
                     .service(controllers::blog::insert_category)
+                    .service(controllers::blog::update_category)
                     .service(controllers::blog::delete_category)
                     .service(controllers::blog::insert_article)
                     .service(controllers::blog::update_article),

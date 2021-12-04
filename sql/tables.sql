@@ -148,8 +148,7 @@ CREATE TABLE blog_categories (
     description VARCHAR(255),
     is_visible BOOLEAN,
     is_seo BOOLEAN,
-    "order" SMALLINT NOT NULL,
-    UNIQUE ("order")
+    "order" SMALLINT NOT NULL
 );
 
 DROP TABLE IF EXISTS blog_articles CASCADE;

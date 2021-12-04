@@ -1,13 +1,23 @@
 import 'router';
 import Modal from '@js/components/modal';
 import Form, { Required, StringLength } from 'formvalidation';
-import { post, del } from '@js/utils/http';
+import { post, patch, del } from '@js/utils/http';
 import Swal from 'sweetalert2';
+import Sortable from 'sortablejs';
 
 const { router } = window;
 
+const swal_error = () => Swal.fire({
+    title: 'Une erreur est survenue',
+    text: 'Si le problème persiste veuillez contacter la personne en charge de la maintenance de votre site-web.',
+    icon: 'error',
+    footer: `<a href="https://greenassembly.fr/contact" target="_blank">Contacter l'agence GreenAssembly</a>`
+});
+
 router.on('mount', () => {
     let category_modal_container = document.querySelector('#category_modal');
+    let categories_container = document.querySelector('.categories');
+    let category_to_modify = null;
     const category_form = new Form(category_modal_container.querySelector('form'), {
         fields: {
             name: {
@@ -20,25 +30,38 @@ router.on('mount', () => {
             // is_seo: {}
         }
     })
-        .on('send', e => {
+        .on('send', async e => {
             e.preventDefault();
-
-            post('/api/blog/categories', {
+            
+            const endpoint = `/api/blog/categories${category_to_modify ? `/${category_to_modify.id}` : ''}`;
+            const options = {
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                    'Content-Type': 'application/json',
                 },
-                body: new URLSearchParams(e.detail)
-            })
-                .then(res => res.json())
-                .then(id => {
+                body: e.detail
+            };
+
+            try {
+                if (category_to_modify) {
+                    await patch(endpoint, options);
+
+                    document.querySelector(`[data-id="${category_to_modify.id}"] span`).innerText = e.detail.name;
+                    Object.assign(category_to_modify, e.detail);
+                } else {
+                    const res = await post(endpoint, options);
+                    const id = await res.json();
+
                     const new_category = Object.assign({}, e.detail);
                     new_category.id = id;
                     categories.push(new_category);
 
                     add_category(new_category);
+                }
 
-                    category_modal.close();
-                })
+                category_modal.close();
+            } catch(e) {
+                swal_error()
+            }
         });
     let category_modal = new Modal(category_modal_container)
         .on('open', () => {
@@ -59,18 +82,19 @@ router.on('mount', () => {
             category_to_modify = null;
             category_form.clear();
         });
-    let category_to_modify = null;
 
     const add_category = (category) => {
         const category_container = document.createElement('li');
-        category_container.dataset.id = category_container.id;
+        category_container.dataset.id = category.id;
         category_container.classList.add('categories__item');
 
         const category_name = document.createElement('span');
         category_name.innerText = category.name;
 
         const edit_btn = document.createElement('button');
-        edit_btn.innerHTML = ``;
+        edit_btn.innerHTML = `<svg class="icon" height="20px">
+            <use xlink:href="/dashboard_icons.svg#edit"></use>
+        </svg>`;
         edit_btn.classList.add('text_blue');
         edit_btn.addEventListener('click', () => edit_category(category));
 
@@ -84,6 +108,8 @@ router.on('mount', () => {
         category_container.appendChild(category_name);
         category_container.appendChild(edit_btn);
         category_container.appendChild(delete_btn);
+
+        categories_container.appendChild(category_container);
     }
 
     const edit_category = category => {
@@ -121,6 +147,21 @@ router.on('mount', () => {
             }
         }
     }
+
+    new Sortable(categories_container, {
+        animation: 150,
+        onEnd: e => {
+            if (e.newIndex !== e.oldIndex) {
+                patch(`/api/blog/categories/${e.item.dataset.id}`, {
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: { order: parseInt(e.newIndex + 1) }
+                })
+                    .catch(swal_error)
+            }
+        }
+    });
 
     document
         .querySelector('#btn_add_category')

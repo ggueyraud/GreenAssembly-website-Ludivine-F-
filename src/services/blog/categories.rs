@@ -1,5 +1,6 @@
 use serde::Deserialize;
 use sqlx::{Error, PgPool};
+use serde_json::Value;
 
 #[derive(Deserialize, Debug)]
 pub struct CategoryInformations {
@@ -83,7 +84,7 @@ pub async fn insert(
             $2,
             $3,
             $4,
-            COALESCE((SELECT "order" FROM blog_categories ORDER BY "order" DESC LIMIT 1), 0) + 1
+            (SELECT COUNT(id) FROM blog_categories) + 1
         )
         RETURNING id"#,
         name,
@@ -108,6 +109,54 @@ pub async fn update_uri(pool: &PgPool, id: i16, uri: &str) -> Result<bool, Error
     .await?;
 
     Ok(res.rows_affected() == 1)
+}
+
+pub async fn partial_update(
+    pool: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
+    id: i16,
+    fields: std::collections::HashMap<String, Value>
+) -> Result<bool, Error> {
+    if fields.len() > 0 {
+        let mut query = String::from("UPDATE blog_categories SET");
+        let mut i = 1;
+
+        for (key, _) in fields.iter() {
+            if i > 1 {
+                query += ",";
+            }
+
+            query += &format!(r#""{}" = ${}"#, key, i);
+
+            i += 1;
+        }
+
+        query += &format!(" WHERE id = ${}", i);
+
+        let mut query = sqlx::query(&query);
+
+        for (_, value) in fields.iter() {
+            match value {
+                Value::String(value) => {
+                    if value == "Null" {
+                        query = query.bind(Option::<String>::None);
+                    } else {
+                        query = query.bind(value.as_str());
+                    }
+                }
+                Value::Number(value) => {
+                    query = query.bind(value.as_i64());
+                }
+                Value::Bool(value) => query = query.bind(value),
+                _ => (),
+            }
+        }
+
+        let res = query.bind(id).execute(pool).await?;
+
+        return Ok(res.rows_affected() == 1);
+    }
+
+    Ok(false)
 }
 
 pub async fn update(
