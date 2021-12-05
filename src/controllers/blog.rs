@@ -5,9 +5,9 @@ use actix_web::{delete, get, patch, post, web, Error, HttpRequest, HttpResponse}
 use askama_actix::{Template, TemplateIntoResponse};
 use chrono::Datelike;
 use serde::{Deserialize, Serialize};
+use slugmin::slugify;
 use sqlx::PgPool;
 use std::ops::DerefMut;
-use slugmin::slugify;
 
 #[derive(sqlx::FromRow)]
 struct Article {
@@ -343,7 +343,7 @@ pub struct UpdateCategoryForm {
     #[serde(default)]
     is_seo: Patch<Option<bool>>,
     #[serde(default)]
-    order: Patch<i16>
+    order: Patch<i16>,
 }
 
 #[patch("/categories/{id}")]
@@ -351,14 +351,14 @@ async fn update_category(
     pool: web::Data<PgPool>,
     session: Identity,
     web::Path(id): web::Path<i16>,
-    mut form: web::Json<UpdateCategoryForm>
+    mut form: web::Json<UpdateCategoryForm>,
 ) -> HttpResponse {
     if let None = session.identity() {
-        return HttpResponse::Unauthorized().finish()
+        return HttpResponse::Unauthorized().finish();
     }
 
     if !services::blog::categories::exists(&pool, id).await {
-        return HttpResponse::NotFound().finish()
+        return HttpResponse::NotFound().finish();
     }
 
     match &form.name {
@@ -367,12 +367,12 @@ async fn update_category(
             let name = name.trim().to_string();
 
             if name.is_empty() || name.len() > 60 {
-                return HttpResponse::BadRequest().finish()
+                return HttpResponse::BadRequest().finish();
             }
 
             form.name = Patch::Value(name);
-        },
-        _ => ()
+        }
+        _ => (),
     }
 
     if let Patch::Value(Some(description)) = &form.description {
@@ -394,11 +394,16 @@ async fn update_category(
     let mut fields_to_update = crate::utils::patch::extract_fields(&*form);
 
     if let Patch::Value(name) = &form.name {
-        fields_to_update.insert(String::from("uri"), serde_json::json!(slugify(&format!("{}-{}", name, id))));
+        fields_to_update.insert(
+            String::from("uri"),
+            serde_json::json!(slugify(&format!("{}-{}", name, id))),
+        );
     }
 
-    if let Err(_) = services::blog::categories::partial_update(pool.get_ref(), id, fields_to_update).await {
-        return HttpResponse::InternalServerError().finish()
+    if let Err(_) =
+        services::blog::categories::partial_update(pool.get_ref(), id, fields_to_update).await
+    {
+        return HttpResponse::InternalServerError().finish();
     }
 
     HttpResponse::Ok().finish()
@@ -802,13 +807,15 @@ async fn update_article(
                         .await;
 
                         for (i, image) in pictures.iter().enumerate() {
-                            if !&["image/png", "image/jpeg"].contains(&image.file_type().as_str()) || image.len() > 2000000 {
-                                return HttpResponse::BadRequest().finish()
+                            if !&["image/png", "image/jpeg"].contains(&image.file_type().as_str())
+                                || image.len() > 2000000
+                            {
+                                return HttpResponse::BadRequest().finish();
                             }
 
                             let image = match image::load_from_memory(image.data()) {
                                 Ok(image) => image,
-                                Err(_) => return HttpResponse::BadRequest().finish()  
+                                Err(_) => return HttpResponse::BadRequest().finish(),
                             };
                             let name = format!(
                                 "{}_{}_{}_{}",

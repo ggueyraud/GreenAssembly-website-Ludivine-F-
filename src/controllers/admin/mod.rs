@@ -1,8 +1,8 @@
 use actix_identity::Identity;
 use actix_web::{get, web, Error, HttpResponse};
 use askama_actix::{Template, TemplateIntoResponse};
-use sqlx::PgPool;
 use serde::Serialize;
+use sqlx::PgPool;
 
 pub mod home;
 pub mod my_little_plus;
@@ -99,7 +99,7 @@ async fn blog(id: Identity, pool: web::Data<PgPool>) -> Result<HttpResponse, Err
             name: String,
             description: Option<String>,
             is_visible: Option<bool>,
-            is_seo: Option<bool>
+            is_seo: Option<bool>,
         }
 
         #[derive(sqlx::FromRow, Serialize)]
@@ -114,7 +114,7 @@ async fn blog(id: Identity, pool: web::Data<PgPool>) -> Result<HttpResponse, Err
         #[template(path = "pages/admin/blog.html")]
         struct Blog {
             categories: Vec<Category>,
-            articles: Vec<Article>
+            articles: Vec<Article>,
         }
 
         let (categories, articles) = futures::join!(
@@ -136,8 +136,9 @@ async fn blog(id: Identity, pool: web::Data<PgPool>) -> Result<HttpResponse, Err
 
         return Blog {
             categories,
-            articles
-        }.into_response()
+            articles,
+        }
+        .into_response();
     }
 
     Ok(HttpResponse::Found().header("location", "/admin").finish())

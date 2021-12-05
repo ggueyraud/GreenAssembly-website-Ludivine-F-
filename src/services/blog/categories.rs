@@ -1,6 +1,6 @@
 use serde::Deserialize;
-use sqlx::{Error, PgPool};
 use serde_json::Value;
+use sqlx::{Error, PgPool};
 
 #[derive(Deserialize, Debug)]
 pub struct CategoryInformations {
@@ -114,7 +114,7 @@ pub async fn update_uri(pool: &PgPool, id: i16, uri: &str) -> Result<bool, Error
 pub async fn partial_update(
     pool: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
     id: i16,
-    fields: std::collections::HashMap<String, Value>
+    fields: std::collections::HashMap<String, Value>,
 ) -> Result<bool, Error> {
     if fields.len() > 0 {
         let mut query = String::from("UPDATE blog_categories SET");
