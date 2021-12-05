@@ -1003,12 +1003,66 @@ async fn delete_article(
         return HttpResponse::Unauthorized().finish();
     }
 
-    // TODO : remove images
+    #[derive(sqlx::FromRow)]
+    struct Article {
+        cover_id: i32
+    }
+
+    #[derive(sqlx::FromRow)]
+    struct Block {
+        id: i16
+    }
+
+    #[derive(sqlx::FromRow)]
+    struct File {
+        path: String
+    }
 
     if services::blog::articles::exists(&pool, id).await {
-        services::blog::articles::delete(&pool, id).await;
+        let (article, blocks) = futures::join!(
+            services::blog::articles::get::<Article>(&pool, "cover_id", id),
+            services::blog::articles::blocks::get_all::<Block>(&pool, "id", id)
+        );
+        let mut blocks_images_fut = vec![];
+        let mut images_to_delete = vec![];
 
-        return HttpResponse::Ok().finish();
+        if let Ok(article) = article {
+            if let Ok(file) = services::files::get::<File>(&pool, article.cover_id, "path").await {
+                let cover_file_name = file.path.split(".").collect::<Vec<_>>();
+                let cover_file_name = cover_file_name.get(0).unwrap();
+
+                images_to_delete.append(&mut [
+                    format!("./uploads/mobile/{}", file.path),
+                    format!("./uploads/mobile/{}.webp", cover_file_name),
+                    format!("./uploads/{}", file.path),
+                    format!("./uploads/{}.webp", cover_file_name),
+                ].to_vec());
+
+                for block in &blocks {
+                    blocks_images_fut.push(services::blog::articles::blocks::images::get_all(pool.get_ref(), block.id));
+                }
+        
+                for block_images in &futures::future::join_all(blocks_images_fut).await {
+                    for path in block_images {
+                        let file_name = path.split(".").collect::<Vec<_>>();
+                        let file_name = file_name.get(0).unwrap();
+
+                        images_to_delete.append(&mut [
+                            format!("./uploads/mobile/{}", path),
+                            format!("./uploads/mobile/{}.webp", file_name),
+                            format!("./uploads/{}", path),
+                            format!("./uploads/{}.webp", file_name),
+                        ].to_vec());
+                    }
+                }
+        
+                services::blog::articles::delete(&pool, id).await;
+
+                crate::utils::image::remove_files(&images_to_delete);
+        
+                return HttpResponse::Ok().finish();
+            }
+        }
     }
 
     HttpResponse::NotFound().finish()

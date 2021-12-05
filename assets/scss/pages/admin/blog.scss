@@ -1,0 +1,116 @@
+@use 'style-box/abstracts/variables' with (
+    $colors: (
+        'green': #20d489,
+        'error': #f1416c,
+        'blue': #00b2ff
+    )
+);
+@use 'style-box/abstracts/functions/utilities';
+
+@import 'style-box/base/grid';
+@import 'style-box/base/space';
+
+.blocks {
+    display: grid;
+    gap: .5rem;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:    'label label'
+                            'left_col right_col'
+                            'button button';
+
+    label {
+        grid-area: label;
+    }
+
+    #left {
+        grid-area: left_col;
+    }
+
+    #right {
+        grid-area: right_col;
+    }
+
+    #add_block {
+        display: flex;
+        justify-content: center;
+        grid-area: button
+    }
+
+    &__item {
+        border-radius: .65rem;
+        background-color: #f5f8fa;
+        padding: 2rem 2.25rem;
+    }
+}
+
+.articles {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    &__item {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        grid-template-areas:    'title actions'
+                                'content actions'
+                                'footer actions';
+        border-radius: .65rem;
+        background-color: #f5f8fa;
+        padding: 2rem 2.25rem;
+        
+        span {
+            grid-area: title;
+            font-size: 1.075rem !important;
+            color: #181c32;
+            font-weight: 600 !important;
+            margin-bottom: .25rem;
+        }
+        
+        &__actions {
+            display: flex;
+            flex-direction: column;
+            grid-area: actions;
+            row-gap: .5rem;
+
+            button {
+                appearance: none;
+                border: none;
+                background-color: transparent;
+                cursor: pointer;
+            }
+        }
+
+        &__content {
+            grid-area: content;
+            color: #a1a5b7 !important
+        }
+
+        time {
+            margin-top: .5rem;
+            grid-area: footer;
+            column-span: all;
+        }
+    }
+}
+
+.categories {        
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    &__item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: utilities.space(2) 0;
+        column-gap: utilities.space(2);
+
+        button {
+            appearance: none;
+            border: none;
+            background-color: transparent;
+            cursor: pointer;
+        }
+    }
+}

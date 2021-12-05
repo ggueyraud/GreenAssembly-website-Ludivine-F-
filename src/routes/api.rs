@@ -19,7 +19,8 @@ pub fn config(cfg: &mut web::ServiceConfig) {
                     .service(controllers::blog::update_category)
                     .service(controllers::blog::delete_category)
                     .service(controllers::blog::insert_article)
-                    .service(controllers::blog::update_article),
+                    .service(controllers::blog::update_article)
+                    .service(controllers::blog::delete_article),
             )
             .service(
                 web::scope("/my_little_plus")

@@ -49,13 +49,14 @@ pub async fn get_all1<
     is_seo: Option<bool>,
     category_id: Option<i16>,
 ) -> Vec<T> {
-    let is_published = is_published.unwrap_or(true);
-    let is_seo = is_seo.unwrap_or(true);
+    // let is_published = is_published.unwrap_or(true);
+    // let is_seo = is_seo.unwrap_or(true);
     let mut query = format!(
         "SELECT {}
         FROM blog_articles ba
         JOIN files f ON ba.cover_id = f.id
-        WHERE ba.is_published = $1 AND ba.is_seo = $2",
+        WHERE (($1 IS NOT NULL AND ba.is_published = $1) OR $1 IS NULL)
+        AND (($2 IS NOT NULL AND ba.is_seo = $2) OR $2 IS NULL)",
         fields
     );
 

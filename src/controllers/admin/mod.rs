@@ -102,10 +102,10 @@ async fn blog(id: Identity, pool: web::Data<PgPool>) -> Result<HttpResponse, Err
             is_seo: Option<bool>,
         }
 
-        #[derive(sqlx::FromRow, Serialize)]
+        #[derive(sqlx::FromRow, Serialize, Debug)]
         struct Article {
             id: i16,
-            category_id: i16,
+            category_id: Option<i16>,
             title: String,
             // date
         }
@@ -133,6 +133,8 @@ async fn blog(id: Identity, pool: web::Data<PgPool>) -> Result<HttpResponse, Err
                 None
             )
         );
+
+        println!("{:?}", articles);
 
         return Blog {
             categories,

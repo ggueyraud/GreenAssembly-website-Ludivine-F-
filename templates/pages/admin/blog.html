@@ -17,7 +17,7 @@
         <div class="modal__dialog">
             <div class="modal__dialog__header"></div>
 
-            <form name="" class="modal__dialog__body">
+            <form name="category_form" class="modal__dialog__body">
                 <label for="name">Nom <span class="text_error">*</span></label>
                 <input type="text" id="name" name="name" maxlength="60" />
 
@@ -36,6 +36,54 @@
 
                 <div class="flex justify_end">
                     <button type="submit" class="btn btn__green btn--sm"></button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal modal--full" id="article_modal">
+        <div class="modal__dialog">
+            <div class="modal__dialog__header"></div>
+
+            <form name="article_form" class="modal__dialog__body">
+                <label for="title">Titre <span class="text_error">*</span></label>
+                <input type="text" id="title" name="title" maxlength="255" />
+
+                <label for="description">Description</label>
+                <textarea id="description" name="description" maxlength="320"></textarea>
+
+                <!-- BLOCKS -->
+                <div class="blocks">
+                    <label>Contenu</label>
+
+                    <div id="left" class="space_y_2"></div>
+                    <div id="right" class="space_y_2"></div>
+
+                    <div id="add_block" class="flex justify_center w_100">
+                        <button
+                            type="button"
+                            class="btn btn__blue btn--sm"
+                        >
+                            Ajouter un block
+                            <svg class="icon ml_1">
+                                <use xlink:href="/dashboard_icons.svg#plus"></use>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="is_visible">Visible sur le site ?</label>
+                    <input type="checkbox" id="is_visible" name="is_visible" />
+                </div>
+
+                <div>
+                    <label for="is_seo">Référençable par les moteurs de recherche ?</label>
+                    <input type="checkbox" id="is_seo" name="is_seo" />
+                </div>
+
+                <div class="flex justify_end">
+                    <button type="submit" class="btn btn__green btn--sm">Créer</button>
                 </div>
             </form>
         </div>
@@ -84,13 +132,34 @@
         <div class="card__header flex justify_between">
             Articles
 
-            <button type="button" class="btn btn__green btn--sm" id="create_aticle">Créer un article</button>
+            <button type="button" class="btn btn__green btn--sm" id="btn_add_article">Créer un article</button>
         </div>
 
         <div class="card__body">
-            {% for articles in articles %}
-
-            {% endfor %}
+            <ul class="articles">
+                {% for article in articles %}
+                    <li data-id="{{ article.id }}" class="articles__item">
+                        <span>{{ article.title }}</span>
+    
+                        <div>
+                            <button type="button" class="text_blue">
+                                <svg class="icon">
+                                    <use xlink:href="/dashboard_icons.svg#edit"></use>
+                                </svg>
+                            </button>
+    
+                            <button type="button" class="text_error">
+                                <svg class="icon">
+                                    <use xlink:href="/dashboard_icons.svg#delete"></use>
+                                </svg>
+                            </button>
+                        </div>
+    
+                        {# The javascript will fill this tag #}
+                        {#<time datetime="{{ article.date|rfc3339 }}"></time>#}
+                    </li>
+                {% endfor %}
+            </ul>
         </div>
     </div>
 {% endblock %}
