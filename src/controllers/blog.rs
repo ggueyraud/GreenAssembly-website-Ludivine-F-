@@ -7,6 +7,7 @@ use chrono::Datelike;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use std::ops::DerefMut;
+use slugmin::slugify;
 
 #[derive(sqlx::FromRow)]
 struct Article {
@@ -298,8 +299,6 @@ async fn insert_category(
     session: Identity,
     mut form: web::Json<NewCategoryForm>,
 ) -> HttpResponse {
-    use slugmin::slugify;
-
     if let None = session.identity() {
         return HttpResponse::Unauthorized().finish();
     }
@@ -392,9 +391,13 @@ async fn update_category(
         form.description = Patch::Value(Some(description));
     }
 
-    println!("Fields to update : {:?}", crate::utils::patch::extract_fields(&*form));
-    if let Err(e) = services::blog::categories::partial_update(pool.get_ref(), id, crate::utils::patch::extract_fields(&*form)).await {
-        eprintln!("{:?}", e);
+    let mut fields_to_update = crate::utils::patch::extract_fields(&*form);
+
+    if let Patch::Value(name) = &form.name {
+        fields_to_update.insert(String::from("uri"), serde_json::json!(slugify(&format!("{}-{}", name, id))));
+    }
+
+    if let Err(_) = services::blog::categories::partial_update(pool.get_ref(), id, fields_to_update).await {
         return HttpResponse::InternalServerError().finish()
     }
 

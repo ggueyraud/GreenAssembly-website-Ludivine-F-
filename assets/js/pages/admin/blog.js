@@ -26,19 +26,31 @@ router.on('mount', () => {
             description: {
                 validators: [new StringLength(0, 255)]
             },
-            // is_published: {},
-            // is_seo: {}
+            is_visible: {},
+            is_seo: {}
         }
     })
         .on('send', async e => {
             e.preventDefault();
-            
+
+            let body = {};
+
+            if (category_to_modify) {
+                for (const [key, value] of Object.entries(e.detail)) {
+                    if (category_to_modify[key] !== value) {
+                        body[key] = value;
+                    }
+                }
+            } else {
+                body = e.detail
+            }
+
             const endpoint = `/api/blog/categories${category_to_modify ? `/${category_to_modify.id}` : ''}`;
             const options = {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: e.detail
+                body
             };
 
             try {

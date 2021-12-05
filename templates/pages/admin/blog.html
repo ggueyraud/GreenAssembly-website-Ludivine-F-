@@ -25,8 +25,8 @@
                 <textarea id="description" name="description" maxlength="255"></textarea>
 
                 <div>
-                    <label for="is_published">Visible sur le site ?</label>
-                    <input type="checkbox" id="is_published" name="is_published" />
+                    <label for="is_visible">Visible sur le site ?</label>
+                    <input type="checkbox" id="is_visible" name="is_visible" />
                 </div>
 
                 <div>
@@ -81,7 +81,11 @@
     </div>
 
     <div class="card">
-        <div class="card__header flex justify_between">Articles</div>
+        <div class="card__header flex justify_between">
+            Articles
+
+            <button type="button" class="btn btn__green btn--sm" id="create_aticle">Créer un article</button>
+        </div>
 
         <div class="card__body">
             {% for articles in articles %}
