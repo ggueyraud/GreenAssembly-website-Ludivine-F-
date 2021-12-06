@@ -130,7 +130,7 @@ textarea {
 }
 
 
-input:not([type=checkbox]), textarea {
+input:not([type=checkbox]), textarea, select {
     background-color: #f5f8fa;
     color: #5e6278;
     border-radius: .65rem;

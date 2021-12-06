@@ -454,6 +454,8 @@ async fn insert_article(
     session: Identity,
     mut form: actix_extract_multipart::Multipart<NewArticleForm>,
 ) -> HttpResponse {
+    println!("Ok");
+
     if let None = session.identity() {
         return HttpResponse::Unauthorized().finish();
     }
@@ -465,15 +467,9 @@ async fn insert_article(
         return HttpResponse::BadRequest().finish();
     }
     if let Some(description) = form.description.clone() {
-        // sanitize html content
-        let mut allowed_tags = std::collections::HashSet::<&str>::new();
-        allowed_tags.insert("b");
-        let description = ammonia::Builder::default()
-            .tags(allowed_tags)
-            .clean(description.trim())
-            .to_string();
+        let description = description.trim().to_string();
 
-        if description.is_empty() || description.len() > 320 {
+        if description.len() > 320 {
             return HttpResponse::BadRequest().finish();
         }
 
@@ -652,6 +648,8 @@ async fn insert_article(
     }
 
     HttpResponse::InternalServerError().finish()
+
+    // HttpResponse::Ok().finish()
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -728,15 +726,9 @@ async fn update_article(
     }
 
     if let Patch::Value(Some(description)) = &form.description {
-        // sanitize html content
-        let mut allowed_tags = std::collections::HashSet::<&str>::new();
-        allowed_tags.insert("b");
-        let description = ammonia::Builder::default()
-            .tags(allowed_tags)
-            .clean(description.trim())
-            .to_string();
+        let description = description.trim().to_string();
 
-        if description.is_empty() || description.len() > 320 {
+        if description.len() > 320 {
             return HttpResponse::BadRequest().finish();
         }
 
@@ -1459,7 +1451,6 @@ mod tests {
         assert!(res.status().is_success());
     }
 
-    // TODO : inser article without cookie connexion
     #[actix_rt::test]
     async fn test_insert_article_not_logged() {
         use std::io::Read;

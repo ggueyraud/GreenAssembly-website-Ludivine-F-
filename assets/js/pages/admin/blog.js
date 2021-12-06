@@ -10,6 +10,10 @@ import { fr } from 'date-fns/locale';
 
 const { router } = window;
 
+let category_to_modify = null;
+let article_to_modify = null;
+let blocks = [];
+
 const swal_error = () => Swal.fire({
     title: 'Une erreur est survenue',
     text: 'Si le problème persiste veuillez contacter la personne en charge de la maintenance de votre site-web.',
@@ -18,13 +22,13 @@ const swal_error = () => Swal.fire({
 });
 
 router.on('mount', () => {
+    console.log(blocks)
     let category_modal_container = document.querySelector('#category_modal');
     let category_modal_submit_btn = category_modal_container.querySelector('[type="submit"]');
-
     let article_modal_container = document.querySelector('#article_modal');
-    let categories_container = document.querySelector('.categories');
-    let category_to_modify = null;
-    let article_to_modify = null;
+    let categories_container = document.querySelector('.categories .card__body');
+    let articles_container = document.querySelector('.articles .card__body');
+    
     const category_form = new Form(document.querySelector('[name="category_form"]'), {
         fields: {
             name: {
@@ -39,6 +43,13 @@ router.on('mount', () => {
     })
         .on('send', async e => {
             e.preventDefault();
+
+            const submit_btn = e.target.querySelector('[type="submit"]');
+            const submit_btn_value_before_send = submit_btn.innerHTML;
+            submit_btn.setAttribute('disabled', true);
+            submit_btn.innerHTML = `<svg class="icon icon--rotate icon--sm mr_2">
+                <use xlink:href="/dashboard_icons.svg#redo"></use>
+            </svg> Envoi en cours..`;
 
             let body = {};
 
@@ -79,8 +90,11 @@ router.on('mount', () => {
 
                 category_modal.close();
             } catch {
+                submit_btn.innerHTML = submit_btn_value_before_send;
                 swal_error()
             }
+
+            submit_btn.removeAttribute('disabled');
         });
     const article_form = new Form(document.querySelector('[name="article_form"]'), {
         fields: {
@@ -91,6 +105,7 @@ router.on('mount', () => {
             title: {
                 validators: [new Required(), new StringLength(1, 255)]
             },
+            category_id: {},
             description: {
                 validators: [new StringLength(0, 320)]
             },
@@ -100,6 +115,14 @@ router.on('mount', () => {
     })
         .on('send', async e => {
             let body = new FormData();
+            const submit_btn = e.target.querySelector('[type="submit"]');
+            const submit_btn_value_before_send = submit_btn.innerHTML;
+            submit_btn.setAttribute('disabled', true);
+            submit_btn.innerHTML = `<svg class="icon icon--rotate icon--sm mr_2">
+                <use xlink:href="/dashboard_icons.svg#redo"></use>
+            </svg> Envoi en cours..`;
+
+            e.detail.cover = document.querySelector('[name="cover"]').files[0];
             
             for (const [key, value] of Object.entries(e.detail)) {
                 if (article_to_modify) {
@@ -112,13 +135,12 @@ router.on('mount', () => {
                 }
             }
 
-            // body.
+            for (const block of blocks) {
+                body.append('blocks[]', JSON.stringify(block));
+            }
 
             const endpoint = `/api/blog/articles${article_to_modify ? `/${article_to_modify.id}` : ''}`;
             const options = {
-                // headers: {
-                //     'Content-Type': 'application/json'
-                // },
                 body
             };
 
@@ -133,18 +155,26 @@ router.on('mount', () => {
 
                     const new_article = Object.assign({}, e.detail);
                     new_article.id = id;
+                    new_article.date = new Date();
                     articles.push(new_article);
+
+                    console.log(new_article)
 
                     add_article(new_article);
                 }
 
                 article_modal.close();
-            } catch {
+            } catch(e) {
+                submit_btn.innerHTML = submit_btn_value_before_send;
                 swal_error()
             }
+
+            submit_btn.removeAttribute('disabled');
         });
     let category_modal = new Modal(category_modal_container)
         .on('open', () => {
+            document.querySelector('[name="name"]').focus();
+
             category_modal_container
                 .querySelector('.modal__dialog__header')
                 .innerText = category_to_modify
@@ -165,6 +195,8 @@ router.on('mount', () => {
         });
     let article_modal = new Modal(article_modal_container)
         .on('open', () => {
+            document.querySelector('[name="title"]').focus();
+
             article_modal_container
                 .querySelector('.modal__dialog__header')
                 .innerText = article_to_modify
@@ -177,6 +209,11 @@ router.on('mount', () => {
         })
         .on('close', () => {
             article_to_modify = null;
+            blocks = [];
+
+            article_modal_container.querySelector('#left').innerHTML = '';
+            article_modal_container.querySelector('#right').innerHTML = '';
+
             article_form.clear();
         });
 
@@ -189,14 +226,14 @@ router.on('mount', () => {
         category_name.innerText = category.name;
 
         const edit_btn = document.createElement('button');
-        edit_btn.innerHTML = `<svg class="icon" height="20px">
+        edit_btn.innerHTML = `<svg class="icon icon--sm">
             <use xlink:href="/dashboard_icons.svg#edit"></use>
         </svg>`;
         edit_btn.classList.add('text_blue');
         edit_btn.addEventListener('click', () => edit_category(category));
 
         const delete_btn = document.createElement('button');
-        delete_btn.innerHTML = `<svg class="icon" height="20px">
+        delete_btn.innerHTML = `<svg class="icon icon--sm">
             <use xlink:href="/dashboard_icons.svg#delete"></use>
         </svg>`;
         delete_btn.classList.add('text_error');
@@ -243,6 +280,56 @@ router.on('mount', () => {
                 swal_error()
             }
         }
+    }
+
+    const add_article = ({ id, title, category_id, description, date }) => {
+        const container_el = document.createElement('li');
+        container_el.dataset.id = id;
+        
+        const header_el = document.createElement('header');
+        const title_id = document.createElement('h3');
+        title_id.innerText = title;
+        header_el.appendChild(title_id);
+        
+        if (category_id) {
+            const category = categories.find(category => category.id == category_id);
+
+            if (category) {
+                const category_el = document.createElement('span');
+                category_el.innerText = category.name;
+                category_el.classList.add('category');
+                header_el.appendChild(category_el);
+            }
+        }
+        container_el.appendChild(header_el);
+
+        if (description) {
+            const description_el = document.createElement('p');
+            description_el.innerText = description;
+            container_el.appendChild(description_el);
+        }
+
+        const actions_el = document.createElement('div');
+        const edit_btn = document.createElement('button');
+        edit_btn.classList.add('text_blue');
+        edit_btn.innerHTML = `<svg class="icon">
+            <use xlink:href="/dashboard_icons.svg#edit"></use>
+        </svg>`;
+        const delete_btn = document.createElement('button');
+        delete_btn.classList.add('text_error');
+        delete_btn.innerHTML = `<svg class="icon">
+            <use xlink:href="/dashboard_icons.svg#delete"></use>
+        </svg>`;
+        delete_btn.addEventListener('click', () => delete_article(container_el));
+        actions_el.appendChild(edit_btn);
+        actions_el.appendChild(delete_btn);
+        container_el.appendChild(actions_el);
+
+        const time = document.createElement('time');
+        time.innerText = formatDistance(new Date(date), new Date(), { addSuffix: true, locale: fr });
+        container_el.appendChild(time);
+
+        articles_container.prepend(container_el);
     }
 
     const delete_article = async (article_el, index = null) => {
@@ -308,6 +395,10 @@ router.on('mount', () => {
     document
         .querySelector('#add_block button')
         .addEventListener('click', () => {
+            const new_block_data = {
+                left_column: true,
+                order: 1
+            };
             const new_block = document.createElement('div');
             new_block.classList.add('blocks__item');
 
@@ -316,6 +407,9 @@ router.on('mount', () => {
 
             const input = document.createElement('input');
             input.type = 'text';
+            input.addEventListener('input', e => {
+                new_block_data.title = e.target.value;
+            });
 
             const content_label = document.createElement('label');
             content_label.innerText = 'Contenu';
@@ -327,18 +421,39 @@ router.on('mount', () => {
             new_block.appendChild(content_label);
             new_block.appendChild(content_editor);
 
+            blocks.push(new_block_data);
+
             document.querySelector('#left').appendChild(new_block);
 
-            new Quill(content_editor, {
+            const editor = new Quill(content_editor, {
                 modules: {
                     toolbar: [
                         [{ header: [2, 3, false] }],
                         [{ list: 'ordered' }, { list: 'bullet' }],
-                        ['bold', 'link', 'clean']
+                        ['bold', 'link', 'image', 'clean']
                     ]
                 },
                 theme: 'snow'
             });
+            // editor.on('text-change', () => {
+            //     let old_content = editor.getContents();
+            //     let content = Object.assign({}, old_content);
+            //     const images = [];
+
+            //     // console.log(content);
+            //     for (const ops of content.ops) {
+            //         console.log(ops);
+
+            //         if (ops.insert !== undefined && ops.insert.image !== undefined) {
+            //             images.push(ops.insert.image);
+            //             ops.insert = `[[${images.length - 1}]]`;
+            //         }
+            //     }
+
+            //     editor.setContents(content);
+            //     console.log(editor.root.innerHTML);
+            //     editor.setContents(old_content)
+            // });
         });
 
     document
@@ -355,12 +470,12 @@ router.on('mount', () => {
         });
 
     document
-        .querySelectorAll('.articles__item')
+        .querySelectorAll('.articles li')
         .forEach((item, index) => {
             const article = articles[index];
 
             item
-                .querySelector('.articles__item__actions > :last-child')
+                .querySelector('div > :last-child')
                 .addEventListener('click', () => delete_article(item, index));
 
             const time = item.querySelector('time');
@@ -375,8 +490,5 @@ router.on('mount', () => {
                         .innerText = category.name;
                 }
             }
-            // item
-            //     .querySelector('header > .category')
-            //     .innerText = categories[]
         });
 });

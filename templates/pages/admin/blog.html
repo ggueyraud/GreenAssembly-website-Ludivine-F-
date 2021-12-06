@@ -65,6 +65,14 @@
                 <label for="title">Titre <span class="text_error">*</span></label>
                 <input type="text" id="title" name="title" maxlength="255" />
 
+                <label for="category_id">Catégorie</label>
+                <select id="category_id" name="category_id">
+                    <option></option>
+                    {% for category in categories %}
+                        <option value="{{ category.id }}">{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+
                 <label for="description">Description</label>
                 <textarea id="description" name="description" maxlength="320"></textarea>
 
@@ -105,8 +113,8 @@
         </div>
     </div>
 
-    <div class="card">
-        <div class="card__header flex justify_between">
+    <div class="categories">
+        <div class="card__header">
             Catégories
 
             <button
@@ -114,82 +122,78 @@
                 class="btn btn__green btn--sm"
                 id="btn_add_category"
             >
-                <svg class="icon" height="20px">
+                <svg class="icon icon--sm">
                     <use xlink:href="/dashboard_icons.svg#plus"></use>
                 </svg>
             </button>
         </div>
 
-        <div class="card__body">
-            <ul class="categories">
-                {% for category in categories %}
-                    <li data-id="{{ category.id }}" class="categories__item">
-                        <span>{{ category.name }}</span>
+        <ul class="card__body">
+            {% for category in categories %}
+                <li data-id="{{ category.id }}" class="categories__item">
+                    <span>{{ category.name }}</span>
 
-                        <div>
-                            <button type="button" class="text_blue btn_edit_category">
-                                <svg class="icon" height="20px">
-                                    <use xlink:href="/dashboard_icons.svg#edit"></use>
-                                </svg>
-                            </button>
-                            <button type="button" class="text_error btn_delete_category">
-                                <svg class="icon" height="20px">
-                                    <use xlink:href="/dashboard_icons.svg#delete"></use>
-                                </svg>
-                            </button>
-                        </div>
-                    </li>
-                {% endfor %}
-            </ul>
-        </div>
+                    <div>
+                        <button type="button" class="text_blue btn_edit_category">
+                            <svg class="icon icon--sm">
+                                <use xlink:href="/dashboard_icons.svg#edit"></use>
+                            </svg>
+                        </button>
+                        <button type="button" class="text_error btn_delete_category">
+                            <svg class="icon icon--sm">
+                                <use xlink:href="/dashboard_icons.svg#delete"></use>
+                            </svg>
+                        </button>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
     </div>
 
-    <div class="card">
+    <div class="articles">
         <div class="card__header flex justify_between">
             Articles
 
             <button type="button" class="btn btn__green btn--sm" id="btn_add_article">Créer un article</button>
         </div>
 
-        <div class="card__body">
-            <ul class="articles space_y_2">
-                {% for article in articles %}
-                    <li data-id="{{ article.id }}" class="articles__item">
-                        <header>
-                            <h3 class="articles__item__title">{{ article.title }}</h3>
+        <ul class="card__body space_y_2">
+            {% for article in articles %}
+                <li data-id="{{ article.id }}">
+                    <header>
+                        <h3>{{ article.title }}</h3>
 
-                            {% match article.category_id %}
-                                {% when Some with (_) %}
-                                    <span class="category"></span>
-                                {% when None %}
-                            {% endmatch %}
-                        </header>
-
-                        {% match article.description %}
-                            {% when Some with (description) %}
-                                <p>{{ description }}</p>
+                        {% match article.category_id %}
+                            {% when Some with (_) %}
+                                <span class="category"></span>
                             {% when None %}
                         {% endmatch %}
-    
-                        <div class="articles__item__actions">
-                            <button type="button" class="text_blue">
-                                <svg class="icon">
-                                    <use xlink:href="/dashboard_icons.svg#edit"></use>
-                                </svg>
-                            </button>
-    
-                            <button type="button" class="text_error">
-                                <svg class="icon">
-                                    <use xlink:href="/dashboard_icons.svg#delete"></use>
-                                </svg>
-                            </button>
-                        </div>
-    
-                        {# The javascript will fill this tag #}
-                        <time datetime="{{ article.date|rfc3339 }}"></time>
-                    </li>
-                {% endfor %}
-            </ul>
-        </div>
+                    </header>
+
+                    {% match article.description %}
+                        {% when Some with (description) %}
+                            <p>{{ description }}</p>
+                        {% when None %}
+                    {% endmatch %}
+
+                    <div>
+                        <button type="button" class="text_blue">
+                            <svg class="icon">
+                                <use xlink:href="/dashboard_icons.svg#edit"></use>
+                            </svg>
+                        </button>
+
+                        <button type="button" class="text_error">
+                            <svg class="icon">
+                                <use xlink:href="/dashboard_icons.svg#delete"></use>
+                            </svg>
+                        </button>
+                    </div>
+
+                    {# The javascript will fill this tag #}
+                    <time datetime="{{ article.date|rfc3339 }}"></time>
+                </li>
+            {% endfor %}
+        </ul>
     </div>
 {% endblock %}

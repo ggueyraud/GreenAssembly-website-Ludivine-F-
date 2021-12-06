@@ -9,6 +9,10 @@ label {
     text-transform: uppercase
 }
 
+select {
+    background: red
+}
+
 input {
     border: 1px solid utilities.color(blue);
     outline: none;
