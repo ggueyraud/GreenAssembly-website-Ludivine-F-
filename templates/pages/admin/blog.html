@@ -46,6 +46,22 @@
             <div class="modal__dialog__header"></div>
 
             <form name="article_form" class="modal__dialog__body">
+                <label>Couverture</label>
+
+                <div id="cover_container">
+                    <div class="drop_zone">
+                        <input type="file" name="cover" accept="image/png, image/jpeg" />
+    
+                        <img src="" />
+    
+                        <button type="button">
+                            <svg class="icon icon--sm" height="24px">
+                                <use xlink:href="/icons.svg#close"></use>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
                 <label for="title">Titre <span class="text_error">*</span></label>
                 <input type="text" id="title" name="title" maxlength="255" />
 
@@ -136,12 +152,26 @@
         </div>
 
         <div class="card__body">
-            <ul class="articles">
+            <ul class="articles space_y_2">
                 {% for article in articles %}
                     <li data-id="{{ article.id }}" class="articles__item">
-                        <span>{{ article.title }}</span>
+                        <header>
+                            <h3 class="articles__item__title">{{ article.title }}</h3>
+
+                            {% match article.category_id %}
+                                {% when Some with (_) %}
+                                    <span class="category"></span>
+                                {% when None %}
+                            {% endmatch %}
+                        </header>
+
+                        {% match article.description %}
+                            {% when Some with (description) %}
+                                <p>{{ description }}</p>
+                            {% when None %}
+                        {% endmatch %}
     
-                        <div>
+                        <div class="articles__item__actions">
                             <button type="button" class="text_blue">
                                 <svg class="icon">
                                     <use xlink:href="/dashboard_icons.svg#edit"></use>
@@ -156,7 +186,7 @@
                         </div>
     
                         {# The javascript will fill this tag #}
-                        {#<time datetime="{{ article.date|rfc3339 }}"></time>#}
+                        <time datetime="{{ article.date|rfc3339 }}"></time>
                     </li>
                 {% endfor %}
             </ul>

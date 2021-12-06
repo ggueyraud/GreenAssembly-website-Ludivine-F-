@@ -5,6 +5,8 @@ import { post, patch, del } from '@js/utils/http';
 import Swal from 'sweetalert2';
 import Sortable from 'sortablejs';
 import Quill from 'quill';
+import { formatDistance } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 const { router } = window;
 
@@ -82,6 +84,10 @@ router.on('mount', () => {
         });
     const article_form = new Form(document.querySelector('[name="article_form"]'), {
         fields: {
+            cover: {
+                validators: [new Required()],
+                container: document.querySelector('#cover_container')
+            },
             title: {
                 validators: [new Required(), new StringLength(1, 255)]
             },
@@ -93,23 +99,26 @@ router.on('mount', () => {
         }
     })
         .on('send', async e => {
-            let body = {};
+            let body = new FormData();
             
-            if (article_to_modify) {
-                for (const [key, value] of Object.entries(e.detail)) {
+            for (const [key, value] of Object.entries(e.detail)) {
+                if (article_to_modify) {
                     if (article_to_modify[key] !== value) {
-                        body[key] = value;
+                        // body[key] = value;
+                        body.append(key, value);
                     }
+                } else {
+                    body.append(key, value);
                 }
-            } else {
-                body = e.detail;
             }
+
+            // body.
 
             const endpoint = `/api/blog/articles${article_to_modify ? `/${article_to_modify.id}` : ''}`;
             const options = {
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                // headers: {
+                //     'Content-Type': 'application/json'
+                // },
                 body
             };
 
@@ -267,20 +276,20 @@ router.on('mount', () => {
         }
     }
 
-    new Sortable(categories_container, {
-        animation: 150,
-        onEnd: e => {
-            if (e.newIndex !== e.oldIndex) {
-                patch(`/api/blog/categories/${e.item.dataset.id}`, {
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: { order: parseInt(e.newIndex + 1) }
-                })
-                    .catch(swal_error)
-            }
-        }
-    });
+    // new Sortable(categories_container, {
+    //     animation: 150,
+    //     onEnd: e => {
+    //         if (e.newIndex !== e.oldIndex) {
+    //             patch(`/api/blog/categories/${e.item.dataset.id}`, {
+    //                 headers: {
+    //                     'Content-Type': 'application/json'
+    //                 },
+    //                 body: { order: parseInt(e.newIndex + 1) }
+    //             })
+    //                 .catch(swal_error)
+    //         }
+    //     }
+    // });
     new Sortable(document.querySelector('#left'), {
         group: 'shared',
         animation: 150
@@ -351,7 +360,23 @@ router.on('mount', () => {
             const article = articles[index];
 
             item
-                .querySelector('div > :last-child')
+                .querySelector('.articles__item__actions > :last-child')
                 .addEventListener('click', () => delete_article(item, index));
+
+            const time = item.querySelector('time');
+            time.innerText = formatDistance(new Date(time.getAttribute('datetime')), new Date(), { addSuffix: true, locale: fr });
+
+            if (article.category_id) {
+                const category = categories.find(category => category.id === article.category_id);
+                
+                if (category) {
+                    item
+                        .querySelector('header > .category')
+                        .innerText = category.name;
+                }
+            }
+            // item
+            //     .querySelector('header > .category')
+            //     .innerText = categories[]
         });
 });

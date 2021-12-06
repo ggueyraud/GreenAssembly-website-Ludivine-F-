@@ -2,11 +2,18 @@ use actix_identity::Identity;
 use actix_web::{get, web, Error, HttpResponse};
 use askama_actix::{Template, TemplateIntoResponse};
 use serde::Serialize;
+use chrono::{DateTime, Utc};
 use sqlx::PgPool;
 
 pub mod home;
 pub mod my_little_plus;
 use crate::services;
+
+mod filters {
+    pub fn rfc3339(date: &chrono::DateTime<chrono::Utc>) -> ::askama::Result<String> {
+        Ok(date.to_rfc3339())
+    }
+}
 
 #[get("")]
 pub async fn index(id: Identity) -> Result<HttpResponse, Error> {
@@ -57,12 +64,6 @@ pub async fn portfolio(id: Identity, pool: web::Data<PgPool>) -> Result<HttpResp
             projects: Vec<services::projects::Project>,
         }
 
-        mod filters {
-            pub fn rfc3339(date: &chrono::DateTime<chrono::Utc>) -> ::askama::Result<String> {
-                Ok(date.to_rfc3339())
-            }
-        }
-
         return Portfolio {
             categories,
             projects,
@@ -107,7 +108,8 @@ async fn blog(id: Identity, pool: web::Data<PgPool>) -> Result<HttpResponse, Err
             id: i16,
             category_id: Option<i16>,
             title: String,
-            // date
+            description: Option<String>,
+            date: DateTime<Utc>
         }
 
         #[derive(Template)]
@@ -127,7 +129,7 @@ async fn blog(id: Identity, pool: web::Data<PgPool>) -> Result<HttpResponse, Err
             // TODO : refactor function to prevent test none
             services::blog::articles::get_all1::<Article>(
                 &pool,
-                "ba.id, category_id, title",
+                "ba.id, category_id, title, description, date",
                 None,
                 None,
                 None

@@ -9,6 +9,8 @@
 
 @import 'style-box/base/grid';
 @import 'style-box/base/space';
+@import '../../components/drop_zone';
+@import '../../components/card';
 
 .blocks {
     display: grid;
@@ -52,19 +54,41 @@
         display: grid;
         grid-template-columns: 1fr auto;
         align-items: center;
-        grid-template-areas:    'title actions'
-                                'content actions'
+        grid-template-areas:    'header actions'
+                                'description actions'
                                 'footer actions';
         border-radius: .65rem;
         background-color: #f5f8fa;
         padding: 2rem 2.25rem;
+
+        header {
+            grid-area: header;
+            display: flex;
+            column-gap: .5rem;
+            align-items: center;
+
+            h3 {
+                font-size: 1.075rem !important;
+                color: #181c32;
+                font-weight: 600 !important;
+                margin: 0
+            }
+
+            .category {
+                padding: .25rem .5rem;
+                background-color: utilities.color('blue');
+                color: #fff;
+                border-radius: .5rem
+            }
+        }
         
-        span {
-            grid-area: title;
-            font-size: 1.075rem !important;
-            color: #181c32;
-            font-weight: 600 !important;
-            margin-bottom: .25rem;
+        p {
+            grid-area: description;
+            color: #a1a5b7 !important
+        }
+
+        p, time {
+            margin-top: .5rem;
         }
         
         &__actions {
@@ -81,15 +105,8 @@
             }
         }
 
-        &__content {
-            grid-area: content;
-            color: #a1a5b7 !important
-        }
-
         time {
-            margin-top: .5rem;
-            grid-area: footer;
-            column-span: all;
+            grid-area: footer
         }
     }
 }
