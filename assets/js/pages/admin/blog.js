@@ -7,6 +7,8 @@ import Sortable from 'sortablejs';
 import Quill from 'quill';
 import { formatDistance } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { base64_to_blob } from '../../utils/base642blob';
+import { DropZone } from '../../components/assets_grid';
 
 const { router } = window;
 
@@ -22,12 +24,13 @@ const swal_error = () => Swal.fire({
 });
 
 router.on('mount', () => {
-    console.log(blocks)
     let category_modal_container = document.querySelector('#category_modal');
     let category_modal_submit_btn = category_modal_container.querySelector('[type="submit"]');
     let article_modal_container = document.querySelector('#article_modal');
+    let article_form_submit_btn = article_modal_container.querySelector('[type="submit"]');
     let categories_container = document.querySelector('.categories .card__body');
     let articles_container = document.querySelector('.articles .card__body');
+    const article_cover_dropzone = new DropZone(article_modal_container.querySelector('.drop_zone'));
     
     const category_form = new Form(document.querySelector('[name="category_form"]'), {
         fields: {
@@ -135,8 +138,38 @@ router.on('mount', () => {
                 }
             }
 
+            let i = 0;
+            const images = [];
+
             for (const block of blocks) {
+                let old_content = block.content.getContents();
+                let content = JSON.parse(JSON.stringify(old_content));
+                // const images = [];
+
+                for (const ops of content.ops) {
+                    if (ops.insert !== undefined && ops.insert.image !== undefined) {
+                        images.push(ops.insert.image);
+                        // ops.insert = `[[${images.length - 1}]]`;
+                        ops.insert = `[[${i}]]`;
+                        i += 1;
+                    }
+                }
+
+                block.content.setContents(content);
+                const formatted_content = block.content.root.innerHTML
+                block.content.setContents(old_content);
+                console.log(old_content, content)
+
+                block.content = formatted_content;
+                // block.pictures = images.map(image => base64_to_blob(image));
+                // block.pictures = images;
+                console.log(block, images)
+
                 body.append('blocks[]', JSON.stringify(block));
+            }
+
+            for (const image of images) {
+                body.append('pictures[]', base64_to_blob(image));
             }
 
             const endpoint = `/api/blog/articles${article_to_modify ? `/${article_to_modify.id}` : ''}`;
@@ -169,6 +202,7 @@ router.on('mount', () => {
                 swal_error()
             }
 
+            submit_btn.innerHTML = submit_btn_value_before_send;
             submit_btn.removeAttribute('disabled');
         });
     let category_modal = new Modal(category_modal_container)
@@ -176,7 +210,7 @@ router.on('mount', () => {
             document.querySelector('[name="name"]').focus();
 
             category_modal_container
-                .querySelector('.modal__dialog__header')
+                .querySelector('.modal__dialog__header__title')
                 .innerText = category_to_modify
                     ? `Modifier la catégorie : ${category_to_modify.name}`
                     : 'Créer une catégorie';
@@ -198,19 +232,24 @@ router.on('mount', () => {
             document.querySelector('[name="title"]').focus();
 
             article_modal_container
-                .querySelector('.modal__dialog__header')
+                .querySelector('.modal__dialog__header__title')
                 .innerText = article_to_modify
                     ? `Modifier l'article : ${article_to_modify.title}`
                     : 'Créer un article';
+
+            article_form_submit_btn.innerText = article_to_modify ? 'Modifier' : 'Créer';
+            article_form_submit_btn.classList.add(`btn__${article_to_modify ? 'blue' : 'green'}`);
 
             if (article_to_modify) {
                 article_form.fill(article_to_modify);
             }
         })
         .on('close', () => {
+            article_form_submit_btn.classList.remove(`btn__${article_to_modify ? 'blue' : 'green'}`);
             article_to_modify = null;
             blocks = [];
 
+            article_cover_dropzone.clear();
             article_modal_container.querySelector('#left').innerHTML = '';
             article_modal_container.querySelector('#right').innerHTML = '';
 
@@ -331,7 +370,10 @@ router.on('mount', () => {
 
         articles_container.prepend(container_el);
     }
-
+    const edit_article = article => {
+        article_to_modify = article;
+        article_modal.open();
+    }
     const delete_article = async (article_el, index = null) => {
         const id = article_el.dataset.id;
 
@@ -377,13 +419,55 @@ router.on('mount', () => {
     //         }
     //     }
     // });
+    const block_on_end = e => {
+        const block_data = blocks[parseInt(e.item.dataset.id)];
+
+        if ((e.from !== e.to || e.newIndex !== e.oldIndex) && block_data) {
+            if (e.from === e.to) {
+                const up = e.newIndex > e.oldIndex;
+    
+                blocks
+                    .filter(block => {
+                        return ((up && block.order <= e.newIndex && block.order > e.oldIndex) || (!up && block.order < e.oldIndex && block.order >= e.newIndex))
+                    })
+                    .forEach(block => {
+                        if (up) {
+                            block.order -= 1;
+                        } else {
+                            block.order += 1;
+                        }
+                    });
+    
+                block_data.order = e.newIndex;
+            } else {
+                const from_right = e.from.id === 'right';
+                block_data.left_column = from_right;
+                block_data.order = e.newIndex;
+
+                blocks
+                    .filter(block => block.left_column === (e.to.id === 'right') && block.order >= e.oldIndex)
+                    .forEach(block => {
+                        block.order -= 1;
+                    });
+
+                blocks
+                    .filter(block => block.left_column === (e.to.id === 'left') && block.order >= e.newIndex && block !== block_data)
+                    .forEach(block => {
+                        block.order += 1;
+                    });
+            }
+            console.log(blocks)
+        }
+    };
     new Sortable(document.querySelector('#left'), {
         group: 'shared',
-        animation: 150
+        animation: 150,
+        onEnd: block_on_end
     });
     new Sortable(document.querySelector('#right'), {
         group: 'shared',
-        animation: 150
+        animation: 150,
+        onEnd: block_on_end
     });
 
     document
@@ -397,10 +481,11 @@ router.on('mount', () => {
         .addEventListener('click', () => {
             const new_block_data = {
                 left_column: true,
-                order: 1
+                order: blocks.filter(block => block.left_column === true).length
             };
             const new_block = document.createElement('div');
             new_block.classList.add('blocks__item');
+            new_block.dataset.id = blocks.length;
 
             const title_label = document.createElement('label');
             title_label.innerText = 'Titre';
@@ -422,38 +507,20 @@ router.on('mount', () => {
             new_block.appendChild(content_editor);
 
             blocks.push(new_block_data);
+            console.log(blocks)
 
             document.querySelector('#left').appendChild(new_block);
 
             const editor = new Quill(content_editor, {
                 modules: {
                     toolbar: [
-                        [{ header: [2, 3, false] }],
                         [{ list: 'ordered' }, { list: 'bullet' }],
                         ['bold', 'link', 'image', 'clean']
                     ]
                 },
                 theme: 'snow'
             });
-            // editor.on('text-change', () => {
-            //     let old_content = editor.getContents();
-            //     let content = Object.assign({}, old_content);
-            //     const images = [];
-
-            //     // console.log(content);
-            //     for (const ops of content.ops) {
-            //         console.log(ops);
-
-            //         if (ops.insert !== undefined && ops.insert.image !== undefined) {
-            //             images.push(ops.insert.image);
-            //             ops.insert = `[[${images.length - 1}]]`;
-            //         }
-            //     }
-
-            //     editor.setContents(content);
-            //     console.log(editor.root.innerHTML);
-            //     editor.setContents(old_content)
-            // });
+            new_block_data.content = editor;
         });
 
     document
@@ -474,6 +541,9 @@ router.on('mount', () => {
         .forEach((item, index) => {
             const article = articles[index];
 
+            item
+                .querySelector('div > :first-child')
+                .addEventListener('click', () => edit_article(article));
             item
                 .querySelector('div > :last-child')
                 .addEventListener('click', () => delete_article(item, index));

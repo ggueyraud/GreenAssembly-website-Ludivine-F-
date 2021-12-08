@@ -137,6 +137,7 @@ input:not([type=checkbox]), textarea, select {
     outline: none;
     width: 100%;
     font-size: inherit;
+    font-family: inherit;
     border: 1px solid #f5f8fa;
     padding: utilities.space(3) utilities.space(6);
     transition: color .2s ease,background-color .2s ease;

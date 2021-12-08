@@ -186,6 +186,7 @@ CREATE TABLE blog_article_block_images (
     file_id INT NOT NULL
         REFERENCES files (id),
     block_id SMALLINT NOT NULL
-        REFERENCES blog_article_blocks (id),
+        REFERENCES blog_article_blocks (id)
+        ON DELETE CASCADE,
     primary key (file_id, block_id)
 );

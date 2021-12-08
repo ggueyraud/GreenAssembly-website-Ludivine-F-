@@ -37,7 +37,8 @@
         border: 1px solid;
         font-size: 0;
         z-index: 10;
-        cursor: pointer
+        cursor: pointer;
+        padding: .25rem
     }
 
     input[type=file] {

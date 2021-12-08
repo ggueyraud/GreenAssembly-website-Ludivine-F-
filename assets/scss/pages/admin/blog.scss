@@ -12,6 +12,10 @@
 @import '../../components/drop_zone';
 @import '../../themes/admin';
 
+#article_modal .drop_zone {
+    height: 100px;
+}
+
 .blocks {
     display: grid;
     gap: .5rem;
@@ -41,7 +45,7 @@
     &__item {
         border-radius: .65rem;
         border: solid 1px #f5f8fa;
-        padding: 2rem 2.25rem;
+        padding: 1rem 1.25rem;
     }
 }
 
@@ -136,20 +140,20 @@
     .card__body {
         margin: 0;
         padding-bottom: utilities.space(4);
-    }
 
-    &__item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: utilities.space(2) 0;
-        column-gap: utilities.space(2);
-
-        button {
-            appearance: none;
-            border: none;
-            background-color: transparent;
-            cursor: pointer;
+        li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: utilities.space(2) 0;
+            column-gap: utilities.space(2);
+    
+            button {
+                appearance: none;
+                border: none;
+                background-color: transparent;
+                cursor: pointer;
+            }
         }
     }
 }

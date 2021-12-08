@@ -45,7 +45,7 @@ async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse
                 TO_CHAR(ba.date, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS international_date,
                 f.path AS cover"#,
                 Some(true),
-                Some(true),
+                None,
                 None
             )
         );
@@ -155,42 +155,45 @@ async fn show_article(
     web::Path((name, id)): web::Path<(String, i16)>,
 ) -> Result<HttpResponse, Error> {
     if !services::blog::articles::exists_for_uri(&pool, &format!("{}-{}", name, id)).await {
+        println!("Pas ok");
         return Ok(HttpResponse::NotFound().finish());
     }
 
-    #[derive(sqlx::FromRow, Debug)]
-    struct Article {
-        title: String,
-        category_id: i16,
-        cover_path: String,
-        description: Option<String>,
-        date: String,
-        international_date: String,
-        // As international date format
-        modified_date: Option<String>,
-        is_published: bool,
-        is_seo: bool,
-    }
+#[derive(sqlx::FromRow, Debug)]
+struct Article {
+    title: String,
+    category_id: Option<i16>,
+    cover_path: String,
+    description: Option<String>,
+    date: String,
+    international_date: String,
+    // As international date format
+    modified_date: Option<String>,
+    is_published: bool,
+    is_seo: bool,
+}
 
-    let article = services::blog::articles::get::<Article>(
-        &pool,
-        r#"title,
-        category_id,
-        f.path AS cover_path,
-        description,
-        TO_CHAR(date, 'DD/MM/YYYY') AS "date",
-        TO_CHAR(date, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS international_date,
-        CASE
-            WHEN modified_date IS NOT NULL
-                THEN 
-                    TO_CHAR(modified_date, 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
-            ELSE NULL
-        END AS modified_date,
-        is_published,
-        is_seo"#,
-        id,
-    )
-    .await;
+let article = services::blog::articles::get::<Article>(
+    &pool,
+    r#"title,
+    category_id,
+    f.path AS cover_path,
+    description,
+    TO_CHAR(date, 'DD/MM/YYYY') AS "date",
+    TO_CHAR(date, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS international_date,
+    CASE
+        WHEN modified_date IS NOT NULL
+            THEN 
+                TO_CHAR(modified_date, 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
+        ELSE NULL
+    END AS modified_date,
+    is_published,
+    is_seo"#,
+    id,
+)
+.await;
+
+    println!("{:?}", article);
 
     if let Ok(article) = article {
         if !article.is_published {
@@ -210,7 +213,7 @@ async fn show_article(
         #[template(path = "pages/blog/article.html")]
         struct BlogArticle {
             article: Article,
-            category: Category,
+            category: Option<Category>,
             left_blocks: Vec<Block>,
             right_blocks: Vec<Block>,
             year: i32,
@@ -224,13 +227,18 @@ async fn show_article(
             uri: String,
         }
 
-        let (metric_id, category, mut blocks) = futures::join!(
-            metrics::add(&pool, &req, services::metrics::BelongsTo::BlogPost(id)),
-            services::blog::categories::get::<Category>(
+        let mut category = Option::<Category>::None;
+
+        if let Some(category_id) = article.category_id {
+            category = Some(services::blog::categories::get::<Category>(
                 &pool,
                 "id, name, uri",
-                article.category_id
-            ),
+                category_id
+            ).await.unwrap());
+        }
+
+        let (metric_id, mut blocks) = futures::join!(
+            metrics::add(&pool, &req, services::metrics::BelongsTo::BlogPost(id)),
             services::blog::articles::blocks::get_all::<Block>(
                 &pool,
                 r#"id, title, content, left_column, "order""#,
@@ -265,7 +273,7 @@ async fn show_article(
 
         return BlogArticle {
             article,
-            category: category.unwrap(),
+            category: category,
             left_blocks: blocks
                 .iter()
                 .filter(|&block| block.left_column == true)
@@ -430,11 +438,11 @@ async fn delete_category(
 
 #[derive(Deserialize, Debug)]
 pub struct ArticleBlock {
+    id: Option<i16>,
     title: Option<String>,
     content: Option<String>,
     left_column: bool,
-    order: i16,
-    pictures: Option<Vec<actix_extract_multipart::File>>,
+    order: i16
 }
 
 #[derive(Deserialize)]
@@ -446,6 +454,7 @@ pub struct NewArticleForm {
     is_published: Option<bool>,
     is_seo: Option<bool>,
     blocks: Vec<String>,
+    pictures: Option<Vec<actix_extract_multipart::File>>
 }
 
 #[post("/articles")]
@@ -454,8 +463,6 @@ async fn insert_article(
     session: Identity,
     mut form: actix_extract_multipart::Multipart<NewArticleForm>,
 ) -> HttpResponse {
-    println!("Ok");
-
     if let None = session.identity() {
         return HttpResponse::Unauthorized().finish();
     }
@@ -522,53 +529,202 @@ async fn insert_article(
     )
     .await
     {
-        for (i, block) in form.blocks.iter().enumerate() {
-            match serde_json::from_str::<ArticleBlock>(block) {
-                Ok(mut block) => {
-                    // If there is only one block it could only be on the left side and order must be for first
-                    if form.blocks.len() == 1 && i == 0 {
-                        if !block.left_column {
-                            block.left_column = true;
+        if let Ok(_) = services::blog::articles::update_uri(
+            transaction.deref_mut(),
+            id,
+            &slugify(&format!("{}-{}", form.title, id))
+        ).await {
+            let mut blocks = vec![];
+            for (i, block) in form.blocks.iter().enumerate() {
+                match serde_json::from_str::<ArticleBlock>(block) {
+                    Ok(mut block) => {
+                        println!("{:?}", block);
+                        // If there is only one block it could only be on the left side and order must be for first
+                        if form.blocks.len() == 1 && i == 0 {
+                            if !block.left_column {
+                                block.left_column = true;
+                            }
+    
+                            if block.order != 0 {
+                                block.order = 0;
+                            }
                         }
-
-                        if block.order != 0 {
-                            block.order = 0;
+    
+                        if let Some(title) = &block.title {
+                            let title = title.trim().to_string();
+    
+                            if title.is_empty() || title.len() > 120 {
+                                return HttpResponse::BadRequest().finish();
+                            }
+    
+                            block.title = Some(title);
+                        }
+    
+                        if let Some(content) = &block.content {
+                            let mut allowed_tags = std::collections::HashSet::<&str>::new();
+                            allowed_tags.insert("b");
+                            allowed_tags.insert("ul");
+                            allowed_tags.insert("ol");
+                            allowed_tags.insert("li");
+                            allowed_tags.insert("a");
+                            allowed_tags.insert("p");
+                            block.content = Some(
+                                ammonia::Builder::default()
+                                    .tags(allowed_tags)
+                                    .clean(content.trim())
+                                    .to_string(),
+                            );
+                        }
+    
+                        let block_id = match services::blog::articles::blocks::insert(
+                            transaction.deref_mut(),
+                            id,
+                            block.title.as_deref(),
+                            block.content.as_deref(),
+                            block.left_column,
+                            block.order,
+                        )
+                        .await {
+                            Ok(id) => {
+                                block.id = Some(id);
+                                blocks.push(block);
+                            },
+                            Err(e) => {
+                                return HttpResponse::InternalServerError().finish()
+                            }
+                        };
+    
+                        // let block_id = if let Ok(id) = services::blog::articles::blocks::insert(
+                        //     transaction.deref_mut(),
+                        //     id,
+                        //     block.title.as_deref(),
+                        //     block.content.as_deref(),
+                        //     block.left_column,
+                        //     block.order,
+                        // )
+                        // .await
+                        // {
+                        //     id
+                        // } else {
+                        //     return HttpResponse::InternalServerError().finish();
+                        // };
+    
+                        // if let Some(pictures) = &block.pictures {
+                        //     for (i, image) in pictures.iter().enumerate() {
+                        //         if !&["image/png", "image/jpeg"].contains(&image.file_type().as_str())
+                        //             || image.len() > 2000000
+                        //         {
+                        //             return HttpResponse::BadRequest().finish();
+                        //         }
+    
+                        //         let image = match image::load_from_memory(image.data()) {
+                        //             Ok(image) => image,
+                        //             Err(_) => return HttpResponse::BadRequest().finish(),
+                        //         };
+                        //         let name = format!(
+                        //             "{}_{}_{}_{}",
+                        //             id,
+                        //             block_id,
+                        //             i,
+                        //             chrono::Utc::now().timestamp()
+                        //         );
+    
+                        //         if let Err(_) = uploader.handle(&image, &name, None, None) {
+                        //             return HttpResponse::BadRequest().finish();
+                        //         }
+    
+                        //         let file_id = if let Ok(id) = services::files::insert(
+                        //             transaction.deref_mut(),
+                        //             None,
+                        //             &format!(
+                        //                 "{}.{}",
+                        //                 name,
+                        //                 if image.color().has_alpha() {
+                        //                     "png"
+                        //                 } else {
+                        //                     "jpg"
+                        //                 }
+                        //             ),
+                        //         )
+                        //         .await
+                        //         {
+                        //             id
+                        //         } else {
+                        //             return HttpResponse::InternalServerError().finish();
+                        //         };
+    
+                        //         if let Err(_) = services::blog::articles::blocks::images::insert(
+                        //             transaction.deref_mut(),
+                        //             block_id,
+                        //             file_id,
+                        //         )
+                        //         .await
+                        //         {
+                        //             return HttpResponse::InternalServerError().finish();
+                        //         }
+                        //     }
+                        // }
+                    }
+                    Err(e) => {
+                        println!("###{:?}", e);
+                        return HttpResponse::BadRequest().finish();
+                    }
+                }
+            }
+    
+            if let Some(pictures) = &form.pictures {
+                for (i, image) in pictures.iter().enumerate() {
+                    println!("Ok");
+                    if !&["image/png", "image/jpeg"].contains(&image.file_type().as_str())
+                        || image.len() > 2000000
+                    {
+                        return HttpResponse::BadRequest().finish();
+                    }
+                    println!("Ok");
+    
+                    let image = match image::load_from_memory(image.data()) {
+                        Ok(image) => image,
+                        Err(e) => {
+                            println!("{:?}", e);
+                            return HttpResponse::BadRequest().finish()
+                        },
+                    };
+    
+                    let mut block_id = Option::<i16>::None;
+                    for block in &blocks {
+                        if let Some(content) = &block.content {
+                            if content.contains(&format!("[[{}]]", i)) {
+                                block_id = block.id;
+                            }
                         }
                     }
-
-                    if let Some(title) = &block.title {
-                        let title = title.trim().to_string();
-
-                        if title.is_empty() || title.len() > 120 {
-                            return HttpResponse::BadRequest().finish();
-                        }
-
-                        block.title = Some(title);
-                    }
-
-                    if let Some(content) = &block.content {
-                        let mut allowed_tags = std::collections::HashSet::<&str>::new();
-                        allowed_tags.insert("b");
-                        allowed_tags.insert("ul");
-                        allowed_tags.insert("ol");
-                        allowed_tags.insert("li");
-                        allowed_tags.insert("a");
-                        allowed_tags.insert("p");
-                        block.content = Some(
-                            ammonia::Builder::default()
-                                .tags(allowed_tags)
-                                .clean(content.trim())
-                                .to_string(),
-                        );
-                    }
-
-                    let block_id = if let Ok(id) = services::blog::articles::blocks::insert(
-                        transaction.deref_mut(),
+    
+                    let block_id = block_id.unwrap();
+    
+                    let name = format!(
+                        "{}_{}_{}_{}",
                         id,
-                        block.title.as_deref(),
-                        block.content.as_deref(),
-                        block.left_column,
-                        block.order,
+                        block_id,
+                        i,
+                        chrono::Utc::now().timestamp()
+                    );
+    
+                    if let Err(_) = uploader.handle(&image, &name, None, None) {
+                        return HttpResponse::BadRequest().finish();
+                    }
+    
+                    let file_id = if let Ok(id) = services::files::insert(
+                        transaction.deref_mut(),
+                        None,
+                        &format!(
+                            "{}.{}",
+                            name,
+                            if image.color().has_alpha() {
+                                "png"
+                            } else {
+                                "jpg"
+                            }
+                        ),
                     )
                     .await
                     {
@@ -576,80 +732,28 @@ async fn insert_article(
                     } else {
                         return HttpResponse::InternalServerError().finish();
                     };
-
-                    if let Some(pictures) = &block.pictures {
-                        for (i, image) in pictures.iter().enumerate() {
-                            if !&["image/png", "image/jpeg"].contains(&image.file_type().as_str())
-                                || image.len() > 2000000
-                            {
-                                return HttpResponse::BadRequest().finish();
-                            }
-
-                            let image = match image::load_from_memory(image.data()) {
-                                Ok(image) => image,
-                                Err(_) => return HttpResponse::BadRequest().finish(),
-                            };
-                            let name = format!(
-                                "{}_{}_{}_{}",
-                                id,
-                                block_id,
-                                i,
-                                chrono::Utc::now().timestamp()
-                            );
-
-                            if let Err(_) = uploader.handle(&image, &name, None, None) {
-                                return HttpResponse::BadRequest().finish();
-                            }
-
-                            let file_id = if let Ok(id) = services::files::insert(
-                                transaction.deref_mut(),
-                                None,
-                                &format!(
-                                    "{}.{}",
-                                    name,
-                                    if image.color().has_alpha() {
-                                        "png"
-                                    } else {
-                                        "jpg"
-                                    }
-                                ),
-                            )
-                            .await
-                            {
-                                id
-                            } else {
-                                return HttpResponse::InternalServerError().finish();
-                            };
-
-                            if let Err(_) = services::blog::articles::blocks::images::insert(
-                                transaction.deref_mut(),
-                                block_id,
-                                file_id,
-                            )
-                            .await
-                            {
-                                return HttpResponse::InternalServerError().finish();
-                            }
-                        }
+    
+                    if let Err(_) = services::blog::articles::blocks::images::insert(
+                        transaction.deref_mut(),
+                        block_id,
+                        file_id,
+                    )
+                    .await
+                    {
+                        return HttpResponse::InternalServerError().finish();
                     }
                 }
-                Err(e) => {
-                    println!("{:?}", e);
-                    return HttpResponse::BadRequest().finish();
-                }
             }
+    
+            transaction.commit().await.unwrap();
+    
+            uploader.clear();
+    
+            return HttpResponse::Created().json(id);
         }
-
-        transaction.commit().await.unwrap();
-
-        uploader.clear();
-
-        return HttpResponse::Created().json(id);
     }
 
     HttpResponse::InternalServerError().finish()
-
-    // HttpResponse::Ok().finish()
 }
 
 #[derive(Deserialize, Serialize, Debug)]
