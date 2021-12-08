@@ -1,8 +1,8 @@
 use actix_identity::Identity;
 use actix_web::{get, web, Error, HttpResponse};
 use askama_actix::{Template, TemplateIntoResponse};
-use serde::Serialize;
 use chrono::{DateTime, Utc};
+use serde::Serialize;
 use sqlx::PgPool;
 
 pub mod home;
@@ -109,7 +109,7 @@ async fn blog(id: Identity, pool: web::Data<PgPool>) -> Result<HttpResponse, Err
             category_id: Option<i16>,
             title: String,
             description: Option<String>,
-            date: DateTime<Utc>
+            date: DateTime<Utc>,
         }
 
         #[derive(Template)]

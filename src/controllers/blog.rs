@@ -159,23 +159,23 @@ async fn show_article(
         return Ok(HttpResponse::NotFound().finish());
     }
 
-#[derive(sqlx::FromRow, Debug)]
-struct Article {
-    title: String,
-    category_id: Option<i16>,
-    cover_path: String,
-    description: Option<String>,
-    date: String,
-    international_date: String,
-    // As international date format
-    modified_date: Option<String>,
-    is_published: bool,
-    is_seo: bool,
-}
+    #[derive(sqlx::FromRow, Debug)]
+    struct Article {
+        title: String,
+        category_id: Option<i16>,
+        cover_path: String,
+        description: Option<String>,
+        date: String,
+        international_date: String,
+        // As international date format
+        modified_date: Option<String>,
+        is_published: bool,
+        is_seo: bool,
+    }
 
-let article = services::blog::articles::get::<Article>(
-    &pool,
-    r#"title,
+    let article = services::blog::articles::get::<Article>(
+        &pool,
+        r#"title,
     category_id,
     f.path AS cover_path,
     description,
@@ -189,9 +189,9 @@ let article = services::blog::articles::get::<Article>(
     END AS modified_date,
     is_published,
     is_seo"#,
-    id,
-)
-.await;
+        id,
+    )
+    .await;
 
     println!("{:?}", article);
 
@@ -230,11 +230,11 @@ let article = services::blog::articles::get::<Article>(
         let mut category = Option::<Category>::None;
 
         if let Some(category_id) = article.category_id {
-            category = Some(services::blog::categories::get::<Category>(
-                &pool,
-                "id, name, uri",
-                category_id
-            ).await.unwrap());
+            category = Some(
+                services::blog::categories::get::<Category>(&pool, "id, name, uri", category_id)
+                    .await
+                    .unwrap(),
+            );
         }
 
         let (metric_id, mut blocks) = futures::join!(
@@ -442,7 +442,7 @@ pub struct ArticleBlock {
     title: Option<String>,
     content: Option<String>,
     left_column: bool,
-    order: i16
+    order: i16,
 }
 
 #[derive(Deserialize)]
@@ -454,7 +454,7 @@ pub struct NewArticleForm {
     is_published: Option<bool>,
     is_seo: Option<bool>,
     blocks: Vec<String>,
-    pictures: Option<Vec<actix_extract_multipart::File>>
+    pictures: Option<Vec<actix_extract_multipart::File>>,
 }
 
 #[post("/articles")]
@@ -532,8 +532,10 @@ async fn insert_article(
         if let Ok(_) = services::blog::articles::update_uri(
             transaction.deref_mut(),
             id,
-            &slugify(&format!("{}-{}", form.title, id))
-        ).await {
+            &slugify(&format!("{}-{}", form.title, id)),
+        )
+        .await
+        {
             let mut blocks = vec![];
             for (i, block) in form.blocks.iter().enumerate() {
                 match serde_json::from_str::<ArticleBlock>(block) {
@@ -544,22 +546,22 @@ async fn insert_article(
                             if !block.left_column {
                                 block.left_column = true;
                             }
-    
+
                             if block.order != 0 {
                                 block.order = 0;
                             }
                         }
-    
+
                         if let Some(title) = &block.title {
                             let title = title.trim().to_string();
-    
+
                             if title.is_empty() || title.len() > 120 {
                                 return HttpResponse::BadRequest().finish();
                             }
-    
+
                             block.title = Some(title);
                         }
-    
+
                         if let Some(content) = &block.content {
                             let mut allowed_tags = std::collections::HashSet::<&str>::new();
                             allowed_tags.insert("b");
@@ -575,7 +577,7 @@ async fn insert_article(
                                     .to_string(),
                             );
                         }
-    
+
                         let block_id = match services::blog::articles::blocks::insert(
                             transaction.deref_mut(),
                             id,
@@ -584,16 +586,15 @@ async fn insert_article(
                             block.left_column,
                             block.order,
                         )
-                        .await {
+                        .await
+                        {
                             Ok(id) => {
                                 block.id = Some(id);
                                 blocks.push(block);
-                            },
-                            Err(e) => {
-                                return HttpResponse::InternalServerError().finish()
                             }
+                            Err(e) => return HttpResponse::InternalServerError().finish(),
                         };
-    
+
                         // let block_id = if let Ok(id) = services::blog::articles::blocks::insert(
                         //     transaction.deref_mut(),
                         //     id,
@@ -608,7 +609,7 @@ async fn insert_article(
                         // } else {
                         //     return HttpResponse::InternalServerError().finish();
                         // };
-    
+
                         // if let Some(pictures) = &block.pictures {
                         //     for (i, image) in pictures.iter().enumerate() {
                         //         if !&["image/png", "image/jpeg"].contains(&image.file_type().as_str())
@@ -616,7 +617,7 @@ async fn insert_article(
                         //         {
                         //             return HttpResponse::BadRequest().finish();
                         //         }
-    
+
                         //         let image = match image::load_from_memory(image.data()) {
                         //             Ok(image) => image,
                         //             Err(_) => return HttpResponse::BadRequest().finish(),
@@ -628,11 +629,11 @@ async fn insert_article(
                         //             i,
                         //             chrono::Utc::now().timestamp()
                         //         );
-    
+
                         //         if let Err(_) = uploader.handle(&image, &name, None, None) {
                         //             return HttpResponse::BadRequest().finish();
                         //         }
-    
+
                         //         let file_id = if let Ok(id) = services::files::insert(
                         //             transaction.deref_mut(),
                         //             None,
@@ -652,7 +653,7 @@ async fn insert_article(
                         //         } else {
                         //             return HttpResponse::InternalServerError().finish();
                         //         };
-    
+
                         //         if let Err(_) = services::blog::articles::blocks::images::insert(
                         //             transaction.deref_mut(),
                         //             block_id,
@@ -671,7 +672,7 @@ async fn insert_article(
                     }
                 }
             }
-    
+
             if let Some(pictures) = &form.pictures {
                 for (i, image) in pictures.iter().enumerate() {
                     println!("Ok");
@@ -681,15 +682,15 @@ async fn insert_article(
                         return HttpResponse::BadRequest().finish();
                     }
                     println!("Ok");
-    
+
                     let image = match image::load_from_memory(image.data()) {
                         Ok(image) => image,
                         Err(e) => {
                             println!("{:?}", e);
-                            return HttpResponse::BadRequest().finish()
-                        },
+                            return HttpResponse::BadRequest().finish();
+                        }
                     };
-    
+
                     let mut block_id = Option::<i16>::None;
                     for block in &blocks {
                         if let Some(content) = &block.content {
@@ -698,9 +699,9 @@ async fn insert_article(
                             }
                         }
                     }
-    
+
                     let block_id = block_id.unwrap();
-    
+
                     let name = format!(
                         "{}_{}_{}_{}",
                         id,
@@ -708,11 +709,11 @@ async fn insert_article(
                         i,
                         chrono::Utc::now().timestamp()
                     );
-    
+
                     if let Err(_) = uploader.handle(&image, &name, None, None) {
                         return HttpResponse::BadRequest().finish();
                     }
-    
+
                     let file_id = if let Ok(id) = services::files::insert(
                         transaction.deref_mut(),
                         None,
@@ -732,7 +733,7 @@ async fn insert_article(
                     } else {
                         return HttpResponse::InternalServerError().finish();
                     };
-    
+
                     if let Err(_) = services::blog::articles::blocks::images::insert(
                         transaction.deref_mut(),
                         block_id,
@@ -744,11 +745,11 @@ async fn insert_article(
                     }
                 }
             }
-    
+
             transaction.commit().await.unwrap();
-    
+
             uploader.clear();
-    
+
             return HttpResponse::Created().json(id);
         }
     }
@@ -1101,17 +1102,17 @@ async fn delete_article(
 
     #[derive(sqlx::FromRow)]
     struct Article {
-        cover_id: i32
+        cover_id: i32,
     }
 
     #[derive(sqlx::FromRow)]
     struct Block {
-        id: i16
+        id: i16,
     }
 
     #[derive(sqlx::FromRow)]
     struct File {
-        path: String
+        path: String,
     }
 
     if services::blog::articles::exists(&pool, id).await {
@@ -1127,35 +1128,44 @@ async fn delete_article(
                 let cover_file_name = file.path.split(".").collect::<Vec<_>>();
                 let cover_file_name = cover_file_name.get(0).unwrap();
 
-                images_to_delete.append(&mut [
-                    format!("./uploads/mobile/{}", file.path),
-                    format!("./uploads/mobile/{}.webp", cover_file_name),
-                    format!("./uploads/{}", file.path),
-                    format!("./uploads/{}.webp", cover_file_name),
-                ].to_vec());
+                images_to_delete.append(
+                    &mut [
+                        format!("./uploads/mobile/{}", file.path),
+                        format!("./uploads/mobile/{}.webp", cover_file_name),
+                        format!("./uploads/{}", file.path),
+                        format!("./uploads/{}.webp", cover_file_name),
+                    ]
+                    .to_vec(),
+                );
 
                 for block in &blocks {
-                    blocks_images_fut.push(services::blog::articles::blocks::images::get_all(pool.get_ref(), block.id));
+                    blocks_images_fut.push(services::blog::articles::blocks::images::get_all(
+                        pool.get_ref(),
+                        block.id,
+                    ));
                 }
-        
+
                 for block_images in &futures::future::join_all(blocks_images_fut).await {
                     for path in block_images {
                         let file_name = path.split(".").collect::<Vec<_>>();
                         let file_name = file_name.get(0).unwrap();
 
-                        images_to_delete.append(&mut [
-                            format!("./uploads/mobile/{}", path),
-                            format!("./uploads/mobile/{}.webp", file_name),
-                            format!("./uploads/{}", path),
-                            format!("./uploads/{}.webp", file_name),
-                        ].to_vec());
+                        images_to_delete.append(
+                            &mut [
+                                format!("./uploads/mobile/{}", path),
+                                format!("./uploads/mobile/{}.webp", file_name),
+                                format!("./uploads/{}", path),
+                                format!("./uploads/{}.webp", file_name),
+                            ]
+                            .to_vec(),
+                        );
                     }
                 }
-        
+
                 services::blog::articles::delete(&pool, id).await;
 
                 crate::utils::image::remove_files(&images_to_delete);
-        
+
                 return HttpResponse::Ok().finish();
             }
         }

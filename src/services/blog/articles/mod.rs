@@ -155,13 +155,9 @@ pub async fn insert(
 pub async fn update_uri(
     pool: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
     id: i16,
-    uri: &str
+    uri: &str,
 ) -> Result<bool, Error> {
-    let res = sqlx::query!(
-        "UPDATE blog_articles SET uri = $1 WHERE id = $2",
-        uri,
-        id
-    )
+    let res = sqlx::query!("UPDATE blog_articles SET uri = $1 WHERE id = $2", uri, id)
         .execute(pool)
         .await?;
 
