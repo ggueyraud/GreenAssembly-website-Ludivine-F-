@@ -168,8 +168,8 @@
                         <h3>{{ article.title }}</h3>
 
                         {% match article.category_id %}
-                            {% when Some with (_) %}
-                                <span class="category"></span>
+                            {% when Some with (category_id) %}
+                                <span data-id="{{ category_id }}" class="category"></span>
                             {% when None %}
                         {% endmatch %}
                     </header>

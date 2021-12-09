@@ -155,7 +155,6 @@ async fn show_article(
     web::Path((name, id)): web::Path<(String, i16)>,
 ) -> Result<HttpResponse, Error> {
     if !services::blog::articles::exists_for_uri(&pool, &format!("{}-{}", name, id)).await {
-        println!("Pas ok");
         return Ok(HttpResponse::NotFound().finish());
     }
 
@@ -192,8 +191,6 @@ async fn show_article(
         id,
     )
     .await;
-
-    println!("{:?}", article);
 
     if let Ok(article) = article {
         if !article.is_published {
@@ -254,11 +251,28 @@ async fn show_article(
                         .iter()
                         .enumerate()
                 {
+                    println!("replace [[{}]]", i);
+                    let filename = image.split(".").collect::<Vec<_>>();
+                    let filename = filename.get(0).unwrap();
+
                     // TODO : replace by picture tag
                     block.content = Some(content.replacen(
-                        &format!("{{{}}}", i),
-                        &format!(r#"<img src="" />"#),
-                        i,
+                        &format!("[[{}]]", i),
+                        &format!(
+                            r#"
+                            <picture>
+                                <source srcset="/uploads/mobile/{}.webp" media="(min-width: 768px)" type="image/webp" />
+                                <source srcset="/uploads/mobile/{}" media="(min-width: 768px)" />
+                                <source srcset="/uploads/{}.webp" media="(max-width: 768px)" type="image/webp" />
+
+                                <img src="/uploads/{}" />
+                            </picture>"#,
+                            filename,
+                            image,
+                            filename,
+                            image
+                        ),
+                        1
                     ));
                 }
             }
