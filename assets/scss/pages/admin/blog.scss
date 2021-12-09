@@ -27,25 +27,41 @@
     label {
         grid-area: label;
     }
-
+    
     #left {
         grid-area: left_col;
     }
-
+    
     #right {
         grid-area: right_col;
     }
-
+    
     #add_block {
         display: flex;
         justify-content: center;
         grid-area: button
     }
-
+    
     &__item {
+        position: relative;
         border-radius: .65rem;
         border: solid 1px #f5f8fa;
         padding: 1rem 1.25rem;
+
+        button.delete {
+            color: utilities.color('error');
+            outline: none;
+            background-color: #fff;
+            position: absolute;
+            right: .5rem;
+            top: .5rem;
+            border-radius: 50%;
+            border: 1px solid;
+            font-size: 0;
+            z-index: 10;
+            cursor: pointer;
+            padding: .25rem
+        }
     }
 }
 

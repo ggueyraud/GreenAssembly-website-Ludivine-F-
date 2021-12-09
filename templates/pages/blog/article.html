@@ -3,6 +3,10 @@
 {% block title %}{{ article.title }}{% endblock %}
 
 {% block head %}
+    {% if article.is_seo %}
+        <meta name="robots" content="noindex" />
+    {% endif %}
+
     {% match article.description %}
         {% when Some with (description) %}
             <meta name="description" content="{{ description }}" />
@@ -74,7 +78,7 @@
     
                     {% match block.content %}
                         {% when Some with (content) %}
-                            <p>{{ content }}</p>
+                            <p>{{ content|safe }}</p>
                         {% when None %}
                     {% endmatch %}
                 </div>
@@ -92,7 +96,7 @@
     
                     {% match block.content %}
                         {% when Some with (content) %}
-                            <p>{{ content }}</p>
+                            <p>{{ content|safe }}</p>
                         {% when None %}
                     {% endmatch %}
                 </div>

@@ -9,19 +9,13 @@ import { formatDistance } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { base64_to_blob } from '../../utils/base642blob';
 import { DropZone } from '../../components/assets_grid';
+import swal_error from '@js/utils/swal_error';
 
 const { router } = window;
 
 let category_to_modify = null;
 let article_to_modify = null;
 let blocks = [];
-
-const swal_error = () => Swal.fire({
-    title: 'Une erreur est survenue',
-    text: 'Si le problème persiste veuillez contacter la personne en charge de la maintenance de votre site-web.',
-    icon: 'error',
-    footer: `<a href="https://greenassembly.fr/contact" target="_blank">Contacter l'agence GreenAssembly</a>`
-});
 
 router.on('mount', () => {
     let category_modal_container = document.querySelector('#category_modal');
@@ -282,6 +276,12 @@ router.on('mount', () => {
         category_container.appendChild(edit_btn);
         category_container.appendChild(delete_btn);
 
+        // Add category to select
+        const option = document.createElement('option');
+        option.setAttribute('value', category.id);
+        option.innerText = category.name;
+        document.querySelector('#category_id').appendChild(option);
+
         categories_container.appendChild(category_container);
     }
 
@@ -314,6 +314,16 @@ router.on('mount', () => {
                 }
 
                 categories.splice(index, 1);
+                document
+                    .querySelector(`#category_id [value="${id}"]`)
+                    .remove();
+                document
+                    .querySelectorAll(`.category[data-id="${id}"]`)
+                    .forEach(category_tag => {
+                        console.log(category_tag);
+                        category_tag.remove()
+                    });
+
                 category_el.remove();
             } else {
                 swal_error()
@@ -335,6 +345,7 @@ router.on('mount', () => {
 
             if (category) {
                 const category_el = document.createElement('span');
+                category_el.dataset.id = category_id;
                 category_el.innerText = category.name;
                 category_el.classList.add('category');
                 header_el.appendChild(category_el);
@@ -487,27 +498,40 @@ router.on('mount', () => {
             new_block.classList.add('blocks__item');
             new_block.dataset.id = blocks.length;
 
+            const remove_btn = document.createElement('button');
+            remove_btn.innerHTML = `<svg class="icon icon--sm">
+                <use xlink:href="/icons.svg#close"></use>
+            </svg>`;
+            remove_btn.classList.add('delete');
+            remove_btn.addEventListener('click', () => {
+                new_block.remove();
+                const index = blocks.findIndex(block => block == new_block_data);
+
+                if (index !== -1) {
+                    blocks.splice(index, 1);
+                }
+            });
+            new_block.appendChild(remove_btn);
+
             const title_label = document.createElement('label');
             title_label.innerText = 'Titre';
-
+            new_block.appendChild(title_label);
+            
             const input = document.createElement('input');
             input.type = 'text';
             input.addEventListener('input', e => {
                 new_block_data.title = e.target.value;
             });
+            new_block.appendChild(input);
 
             const content_label = document.createElement('label');
             content_label.innerText = 'Contenu';
+            new_block.appendChild(content_label);
 
             const content_editor = document.createElement('div');
-
-            new_block.appendChild(title_label);
-            new_block.appendChild(input);
-            new_block.appendChild(content_label);
             new_block.appendChild(content_editor);
 
             blocks.push(new_block_data);
-            console.log(blocks)
 
             document.querySelector('#left').appendChild(new_block);
 
@@ -524,7 +548,7 @@ router.on('mount', () => {
         });
 
     document
-        .querySelectorAll('.categories__item')
+        .querySelectorAll('.categories li')
         .forEach((item, index) => {
             const category = categories[index];
 

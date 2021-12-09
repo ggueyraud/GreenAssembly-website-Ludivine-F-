@@ -22,6 +22,7 @@ export class DropZone {
 
             reader.onload = e => {
                 this.#fire('change', [e.target.result]);
+                this.container.classList.add(is_filled_class);
             }
 
             reader.readAsDataURL(this.input.files[0]);
