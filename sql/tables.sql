@@ -155,7 +155,8 @@ DROP TABLE IF EXISTS blog_articles CASCADE;
 CREATE TABLE blog_articles (
     id SMALLINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     category_id SMALLINT
-        REFERENCES blog_categories (id),
+        REFERENCES blog_categories (id)
+        ON DELETE SET NULL,
     cover_id INT NOT NULL
         REFERENCES files (id)
         ON DELETE SET NULL,
