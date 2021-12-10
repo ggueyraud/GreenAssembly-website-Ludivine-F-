@@ -1,16 +1,13 @@
 @use 'style-box/abstracts/functions/utilities';
 @use 'style-box/abstracts/mixins/margin';
 @use 'style-box/abstracts/mixins/text';
+@use 'formvalidation/src/index' as fv;
 
 label {
     color: utilities.color(gray);
     display: inline-block;
     margin-bottom: utilities.space(2);
     text-transform: uppercase
-}
-
-select {
-    background: red
 }
 
 input {
@@ -22,8 +19,13 @@ input {
     @include text.text(sm)
 }
 
+.input + .fv_error--show {
+    background-color: blue;
+}
+
 .input {
     position: relative;
+    font-size: 0;
 
     &.valid {
         .bg {
@@ -31,13 +33,27 @@ input {
         }
     }
 
+    .fv_border_error {
+        border-color: fv.$error
+    }
+
+    .fv_border_error + .bg {
+        border-color: fv.$error
+    }
+
     input, textarea {
         position: relative;
+        font-family: inherit;
+        font-size: initial;
+        padding: utilities.space(4) utilities.space(5);
         z-index: 1;
+        width: 100%;
+        background-color: transparent;
         border: none;
         border-left: 1px solid utilities.color(blue);
 
         &:focus {
+            outline: none;
             &+ .bg {
                 width: 100%
             }

@@ -38,35 +38,55 @@
             </div>
         </div>
 
+        <div id="success" class="hidden">
+            <h2 class="mb_2 text_blue">Félicitation !! 🎉</h2>
+
+            <p>Votre message m'a bien été transmis, je répondrai à ce dernier dans <u>les plus brefs délais</u> ! 😊</p>
+        </div>
+
         <form method="post" action="">
             <label for="lastname">Nom</label>
-            <div class="input">
-                <input type="text" id="lastname" name="lastname" />
-                <div class="bg"></div>
+            <div>
+                <div class="input">
+                    <input type="text" id="lastname" name="lastname" maxlength="120" />
+                    <div class="bg"></div>
+                </div>
             </div>
 
             <label for="firstname" class="mt_2">Prénom</label>
-            <div class="input">
-                <input type="text" id="firstname" name="firstname" />
-                <div class="bg"></div>
+            <div>
+                <div class="input">
+                    <input type="text" id="firstname" name="firstname" maxlength="120" />
+                    <div class="bg"></div>
+                </div>
             </div>
 
-            <label for="phone" class="mt_2">Numéro</label>
-            <div class="input">
-                <input type="text" id="phone" name="phone" />
-                <div class="bg"></div>
+            <label for="phone_number" class="mt_2">Numéro</label>
+            <div>
+                <div class="input">
+                    <input type="text" id="phone_number" name="phone_number" />
+                    <div class="bg"></div>
+                </div>
             </div>
 
             <label for="email" class="mt_2">Mail</label>
-            <div class="input">
-                <input type="text" id="email" name="email" />
-                <div class="bg"></div>
+            <div>
+                <div class="input">
+                    <input type="text" id="email" name="email" />
+                    <div class="bg"></div>
+                </div>
             </div>
 
             <label for="content" class="mt_2">Message</label>
-            <div class="input">
-                <textarea name="content" id="content"></textarea>
-                <div class="bg"></div>
+            <div>
+                <div class="input">
+                    <textarea name="content" id="content" maxlength="500"></textarea>
+                    <div class="bg"></div>
+                </div>
+            </div>
+
+            <div id="error" class="hidden text_center text_warning py_4">
+                <span class="font_bold">Oups, une erreur est survenue 😬</span><br />Si l'erreur persiste contactez moi directement au <a href="tel:+33675605185">06 75 60 51 85</a>
             </div>
 
             <div class="flex justify_end mt_8 md_mt_15">

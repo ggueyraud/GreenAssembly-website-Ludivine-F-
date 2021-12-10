@@ -1,4 +1,5 @@
 @use 'style-box/abstracts/mixins/grid';
+@import 'formvalidation/dist/main';
 @import '../custom.scss';
 @import 'style-box/abstracts/mixins/breakpoints';
 @import 'style-box/base/display';
@@ -27,5 +28,5 @@ section {
 textarea {
     resize: none;
     overflow: hidden;
-    min-height: 50px
+    min-height: 100px
 }
