@@ -21,4 +21,3 @@ pub struct Article {
     pub is_published: Option<bool>,
     pub is_seo: Option<bool>,
 }
-// TODO : update_uri

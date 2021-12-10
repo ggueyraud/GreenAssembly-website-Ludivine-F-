@@ -35,14 +35,6 @@ pub async fn get<
     .await
 }
 
-pub async fn update(pool: &PgPool, id: i32, name: Option<&str>) -> Result<bool, Error> {
-    let res = sqlx::query!("UPDATE files SET name = $1 WHERE id = $2", name, id)
-        .execute(pool)
-        .await?;
-
-    Ok(res.rows_affected() == 1)
-}
-
 pub async fn delete(pool: impl sqlx::Executor<'_, Database = sqlx::Postgres>, id: i32) -> bool {
     let rows = sqlx::query!("DELETE FROM files WHERE id = $1", id)
         .execute(pool)

@@ -2,15 +2,6 @@ use serde::Deserialize;
 use serde_json::Value;
 use sqlx::{Error, PgPool};
 
-#[derive(Deserialize, Debug)]
-pub struct CategoryInformations {
-    name: String,
-    description: Option<String>,
-    is_visible: Option<bool>,
-    is_seo: Option<bool>,
-    order: i16,
-}
-
 pub async fn exists(pool: &PgPool, id: i16) -> bool {
     sqlx::query!("SELECT 1 AS one FROM blog_categories WHERE id = $1", id)
         .fetch_one(pool)
@@ -157,32 +148,6 @@ pub async fn partial_update(
     }
 
     Ok(false)
-}
-
-pub async fn update(
-    pool: &PgPool,
-    id: i16,
-    category: &CategoryInformations,
-) -> Result<bool, Error> {
-    let res = sqlx::query!(
-        r#"UPDATE blog_categories SET
-            name = $1,
-            description = $2,
-            is_visible = $3,
-            is_seo = $4,
-            "order" = $5
-        WHERE id = $6"#,
-        category.name,
-        category.description,
-        category.is_visible,
-        category.is_seo,
-        category.order,
-        id
-    )
-    .execute(pool)
-    .await?;
-
-    Ok(res.rows_affected() == 1)
 }
 
 pub async fn delete(pool: &PgPool, id: i16) -> bool {
