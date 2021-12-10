@@ -9,3 +9,4 @@ key.pem
 /assets/wasm/target
 /node_modules
 /uploads/
+.vscode
