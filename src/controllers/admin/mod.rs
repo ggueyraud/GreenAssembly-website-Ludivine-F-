@@ -98,9 +98,6 @@ async fn blog(id: Identity, pool: web::Data<PgPool>) -> Result<HttpResponse, Err
         struct Category {
             id: i16,
             name: String,
-            description: Option<String>,
-            is_visible: Option<bool>,
-            is_seo: Option<bool>,
         }
 
         #[derive(sqlx::FromRow, Serialize, Debug)]
@@ -122,7 +119,7 @@ async fn blog(id: Identity, pool: web::Data<PgPool>) -> Result<HttpResponse, Err
         let (categories, articles) = futures::join!(
             services::blog::categories::get_all::<Category>(
                 &pool,
-                "id, name, description, is_visible, is_seo",
+                "id, name",
                 None,
                 None
             ),

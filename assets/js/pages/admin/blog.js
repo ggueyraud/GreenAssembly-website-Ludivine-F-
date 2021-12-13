@@ -1,7 +1,7 @@
 import 'router';
 import Modal from '@js/components/modal';
 import Form, { Required, StringLength } from 'formvalidation';
-import { post, patch, del } from '@js/utils/http';
+import { get, post, patch, del } from '@js/utils/http';
 import Swal from 'sweetalert2';
 import Sortable from 'sortablejs';
 import Quill from 'quill';
@@ -9,7 +9,7 @@ import { formatDistance } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { base64_to_blob } from '../../utils/base642blob';
 import { DropZone } from '../../components/assets_grid';
-import swal_error from '@js/utils/swal_error';
+import swal_error, { data_removed } from '@js/utils/swal_error';
 
 const { router } = window;
 
@@ -60,6 +60,13 @@ router.on('mount', () => {
                 body = e.detail;
             }
 
+            // If we want to modify a category but no fields has changed so we don't make an update
+            if (category_to_modify && Object.entries(body).length === 0) {
+                category_modal.close();
+                submit_btn.removeAttribute('disabled');
+                return;
+            }
+
             const endpoint = `/api/blog/categories${category_to_modify ? `/${category_to_modify.id}` : ''}`;
             const options = {
                 headers: {
@@ -72,7 +79,13 @@ router.on('mount', () => {
                 if (category_to_modify) {
                     await patch(endpoint, options);
 
-                    document.querySelector(`[data-id="${category_to_modify.id}"] span`).innerText = e.detail.name;
+                    if (e.detail.name != category_to_modify.name) {
+                        document.querySelector(`[data-id="${category_to_modify.id}"] span`).innerText = e.detail.name;
+                        document
+                            .querySelectorAll(`.category[data-id="${category_to_modify.id}"]`)
+                            .forEach(label => label.innerText = e.detail.name);
+                    }
+
                     Object.assign(category_to_modify, e.detail);
                 } else {
                     const res = await post(endpoint, options);
@@ -95,10 +108,10 @@ router.on('mount', () => {
         });
     const article_form = new Form(document.querySelector('[name="article_form"]'), {
         fields: {
-            cover: {
-                validators: [new Required()],
-                container: document.querySelector('#cover_container')
-            },
+            // cover: {
+            //     validators: [new Required()],
+            //     container: document.querySelector('#cover_container')
+            // },
             title: {
                 validators: [new Required(), new StringLength(1, 255)]
             },
@@ -120,11 +133,11 @@ router.on('mount', () => {
             </svg> Envoi en cours..`;
 
             e.detail.cover = document.querySelector('[name="cover"]').files[0];
+            e.detail.category_id = e.detail.category_id === '' ? null : parseInt(e.detail.category_id);
             
             for (const [key, value] of Object.entries(e.detail)) {
                 if (article_to_modify) {
-                    if (article_to_modify[key] !== value) {
-                        // body[key] = value;
+                    if (article_to_modify[key] !== value && value) {
                         body.append(key, value);
                     }
                 } else {
@@ -152,18 +165,25 @@ router.on('mount', () => {
                 block.content.setContents(content);
                 const formatted_content = block.content.root.innerHTML
                 block.content.setContents(old_content);
-                console.log(old_content, content)
-
                 block.content = formatted_content;
-                // block.pictures = images.map(image => base64_to_blob(image));
-                // block.pictures = images;
-                console.log(block, images)
 
                 body.append('blocks[]', JSON.stringify(block));
             }
 
             for (const image of images) {
                 body.append('pictures[]', base64_to_blob(image));
+            }
+
+            i = 0;
+            for (const _ of body.entries()) {
+                i += 1;
+            }
+
+            // If article edit mod and no data has been updated, close modal
+            if (article_to_modify && i == 0) {
+                article_modal.close();
+                submit_btn.removeAttribute('disabled');
+                return;
             }
 
             const endpoint = `/api/blog/articles${article_to_modify ? `/${article_to_modify.id}` : ''}`;
@@ -173,8 +193,47 @@ router.on('mount', () => {
 
             try {
                 if (article_to_modify) {
-                    await patch(endpoint, options);
+                    await patch(endpoint, options);                    
 
+                    if (e.detail !== article_to_modify.title) {
+                        document
+                            .querySelector(`.articles [data-id="${article_to_modify.id}"] h3`)
+                            .innerText = e.detail.title;
+                    }
+
+                    if (e.detail.category_id != article_to_modify.category_id) {
+                        let category_el = document.querySelector(`.articles [data-id="${article_to_modify.id}"] span[data-id="${article_to_modify.category_id}"]`);
+                        const category = categories.find(category => category.id == e.detail.category_id);
+
+                        if (category_el) {
+                            category_el.innerText = category.name;
+                            category_el.dataset.id = category.id;
+                        } else {
+                            category_el = document.createElement('span');
+                            category_el.dataset.id = category.id;
+                            category_el.innerText = category.name;
+                            category_el.classList.add('category');
+                            document
+                                .querySelector(`.articles [data-id="${article_to_modify.id}"] header`)
+                                .insertAdjacentElement('beforeend', category_el);
+                        }
+                    }
+
+                    if (e.detail.description !== article_to_modify.description) {
+                        let description_el = document.querySelector(`.articles [data-id="${article_to_modify.id}"] p`);
+
+                        if (description_el) {
+                            description_el.innerText = e.detail.description;
+                        } else {
+                            description_el = document.createElement('p');
+                            description_el.innerText = e.detail.description;
+                            document
+                                .querySelector(`.articles [data-id="${article_to_modify.id}"] header`)
+                                .insertAdjacentElement('afterend', description_el);
+                        }
+                    }
+
+                    Object.assign(article_to_modify, e.detail);
                     // TODO : update article dom
                 } else {
                     const res = await post(endpoint, options);
@@ -184,8 +243,6 @@ router.on('mount', () => {
                     new_article.id = id;
                     new_article.date = new Date();
                     articles.push(new_article);
-
-                    console.log(new_article)
 
                     add_article(new_article);
                 }
@@ -200,21 +257,46 @@ router.on('mount', () => {
             submit_btn.removeAttribute('disabled');
         });
     let category_modal = new Modal(category_modal_container)
-        .on('open', () => {
-            document.querySelector('[name="name"]').focus();
+        .on('beforeOpen', async () => {
+            if (category_to_modify) {
+                try {
+                    let res = await get(`/api/blog/categories/${category_to_modify.id}`);
+                    Object.assign(category_to_modify, await res.json());
+                } catch (e) {
+                    // Already removed from another user or in another tab
+                    if (e.status === 404) {
+                        data_removed(category_to_modify.name);
+
+                        const index = categories.findIndex(category => category.id === category_to_modify.id);
+                        if (index !== -1) {
+                            categories.splice(index, 1);
+                        }
+
+                        document
+                            .querySelector(`.categories [data-id="${category_to_modify.id}"]`)
+                            .remove();
+    
+                        // Prevent the modal to be opened
+                        return false;
+                    }
+                }
+            }
 
             category_modal_container
                 .querySelector('.modal__dialog__header__title')
                 .innerText = category_to_modify
                     ? `Modifier la catégorie : ${category_to_modify.name}`
                     : 'Créer une catégorie';
-
+            
             category_modal_submit_btn.innerText = category_to_modify ? 'Modifier' : 'Créer';
             category_modal_submit_btn.classList.add(`btn__${category_to_modify ? 'blue' : 'green'}`);
-
+            
             if (category_to_modify) {
                 category_form.fill(category_to_modify);
             }
+        })
+        .on('open', () => {
+            document.querySelector('[name="name"]').focus();
         })
         .on('close', () => {
             category_modal_submit_btn.classList.remove(`btn__${category_to_modify ? 'blue' : 'green'}`);
@@ -222,21 +304,54 @@ router.on('mount', () => {
             category_form.clear();
         });
     let article_modal = new Modal(article_modal_container)
-        .on('open', () => {
-            document.querySelector('[name="title"]').focus();
+        .on('beforeOpen', async () => {
+            if (article_to_modify) {
+                try {
+                    let res = await get(`/api/blog/articles/${article_to_modify.id}`);
+                    Object.assign(article_to_modify, await res.json());
+                } catch (e) {
+                    // Already removed from another user or in another tab
+                    if (e.status === 404) {
+                        data_removed(article_to_modify.title);
+
+                        const index = articles.findIndex(article => article.id === article_to_modify.id);
+
+                        if (index !== -1) {
+                            articles.splice(index, 1);
+                        }
+
+                        document
+                            .querySelector(`.articles [data-id="${article_to_modify.id}"]`)
+                            .remove();
+    
+                        // Prevent the modal to be opened
+                        return false;
+                    }
+                }
+
+                // TODO : set cover
+                article_cover_dropzone.setImage(`/uploads/${article_to_modify.cover}`);
+
+                article_to_modify
+                    .blocks
+                    .forEach(block => add_block(block, block.left_column));
+            }
 
             article_modal_container
                 .querySelector('.modal__dialog__header__title')
                 .innerText = article_to_modify
                     ? `Modifier l'article : ${article_to_modify.title}`
                     : 'Créer un article';
-
+    
             article_form_submit_btn.innerText = article_to_modify ? 'Modifier' : 'Créer';
             article_form_submit_btn.classList.add(`btn__${article_to_modify ? 'blue' : 'green'}`);
-
+    
             if (article_to_modify) {
                 article_form.fill(article_to_modify);
             }
+        })
+        .on('open', async () => {
+            document.querySelector('[name="title"]').focus();
         })
         .on('close', () => {
             article_form_submit_btn.classList.remove(`btn__${article_to_modify ? 'blue' : 'green'}`);
@@ -284,12 +399,10 @@ router.on('mount', () => {
 
         categories_container.appendChild(category_container);
     }
-
     const edit_category = category => {
         category_to_modify = category;
         category_modal.open();
     }
-
     const delete_category = async (category_el, index = null) => {
         const id = category_el.dataset.id;
 
@@ -319,10 +432,7 @@ router.on('mount', () => {
                     .remove();
                 document
                     .querySelectorAll(`.category[data-id="${id}"]`)
-                    .forEach(category_tag => {
-                        console.log(category_tag);
-                        category_tag.remove()
-                    });
+                    .forEach(category_tag => category_tag.remove());
 
                 category_el.remove();
             } else {
@@ -331,21 +441,21 @@ router.on('mount', () => {
         }
     }
 
-    const add_article = ({ id, title, category_id, description, date }) => {
+    const add_article = article => {
         const container_el = document.createElement('li');
-        container_el.dataset.id = id;
+        container_el.dataset.id = article.id;
         
         const header_el = document.createElement('header');
         const title_id = document.createElement('h3');
-        title_id.innerText = title;
+        title_id.innerText = article.title;
         header_el.appendChild(title_id);
         
-        if (category_id) {
-            const category = categories.find(category => category.id == category_id);
+        if (article.category_id) {
+            const category = categories.find(category => category.id == article.category_id);
 
             if (category) {
                 const category_el = document.createElement('span');
-                category_el.dataset.id = category_id;
+                category_el.dataset.id = article.category_id;
                 category_el.innerText = category.name;
                 category_el.classList.add('category');
                 header_el.appendChild(category_el);
@@ -353,9 +463,9 @@ router.on('mount', () => {
         }
         container_el.appendChild(header_el);
 
-        if (description) {
+        if (article.description) {
             const description_el = document.createElement('p');
-            description_el.innerText = description;
+            description_el.innerText = article.description;
             container_el.appendChild(description_el);
         }
 
@@ -365,6 +475,7 @@ router.on('mount', () => {
         edit_btn.innerHTML = `<svg class="icon">
             <use xlink:href="/dashboard_icons.svg#edit"></use>
         </svg>`;
+        edit_btn.addEventListener('click', () => edit_article(article));
         const delete_btn = document.createElement('button');
         delete_btn.classList.add('text_error');
         delete_btn.innerHTML = `<svg class="icon">
@@ -376,7 +487,7 @@ router.on('mount', () => {
         container_el.appendChild(actions_el);
 
         const time = document.createElement('time');
-        time.innerText = formatDistance(new Date(date), new Date(), { addSuffix: true, locale: fr });
+        time.innerText = formatDistance(new Date(article.date), new Date(), { addSuffix: true, locale: fr });
         container_el.appendChild(time);
 
         articles_container.prepend(container_el);
@@ -467,7 +578,6 @@ router.on('mount', () => {
                         block.order += 1;
                     });
             }
-            console.log(blocks)
         }
     };
     new Sortable(document.querySelector('#left'), {
@@ -480,6 +590,69 @@ router.on('mount', () => {
         animation: 150,
         onEnd: block_on_end
     });
+
+    const add_block = (data, left_column = true) => {
+        const block = document.createElement('div');
+        block.classList.add('blocks__item');
+        block.dataset.id = blocks.length;
+
+        const remove_btn = document.createElement('button');
+        remove_btn.innerHTML = `<svg class="icon icon--sm">
+            <use xlink:href="/icons.svg#close"></use>
+        </svg>`;
+        remove_btn.classList.add('delete');
+        remove_btn.addEventListener('click', () => {
+            block.remove();
+            const index = blocks.findIndex(block => block == data);
+
+            if (index !== -1) {
+                blocks.splice(index, 1);
+            }
+        });
+        block.appendChild(remove_btn);
+
+        const title_label = document.createElement('label');
+        title_label.innerText = 'Titre';
+        block.appendChild(title_label);
+        
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.setAttribute('maxlength', 120);
+        input.addEventListener('input', e => {
+            data.title = e.target.value;
+        });
+        block.appendChild(input);
+
+        if (data.title) {
+            input.value = data.title;
+        }
+
+        const content_label = document.createElement('label');
+        content_label.innerText = 'Contenu';
+        block.appendChild(content_label);
+        const content_editor = document.createElement('div');
+        block.appendChild(content_editor);
+
+        document
+            .querySelector(`#${left_column ? 'left' : 'right'}`)
+            .appendChild(block);
+
+        const editor = new Quill(content_editor, {
+            modules: {
+                toolbar: [
+                    [{ list: 'ordered' }, { list: 'bullet' }],
+                    ['bold', 'link', 'image', 'clean']
+                ]
+            },
+            theme: 'snow'
+        });
+
+        if (data.content) {
+            editor.root.innerHTML = data.content
+        }
+
+        data.content = editor;
+    }
 
     document
         .querySelector('#btn_add_category')
@@ -494,57 +667,10 @@ router.on('mount', () => {
                 left_column: true,
                 order: blocks.filter(block => block.left_column === true).length
             };
-            const new_block = document.createElement('div');
-            new_block.classList.add('blocks__item');
-            new_block.dataset.id = blocks.length;
 
-            const remove_btn = document.createElement('button');
-            remove_btn.innerHTML = `<svg class="icon icon--sm">
-                <use xlink:href="/icons.svg#close"></use>
-            </svg>`;
-            remove_btn.classList.add('delete');
-            remove_btn.addEventListener('click', () => {
-                new_block.remove();
-                const index = blocks.findIndex(block => block == new_block_data);
-
-                if (index !== -1) {
-                    blocks.splice(index, 1);
-                }
-            });
-            new_block.appendChild(remove_btn);
-
-            const title_label = document.createElement('label');
-            title_label.innerText = 'Titre';
-            new_block.appendChild(title_label);
-            
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.addEventListener('input', e => {
-                new_block_data.title = e.target.value;
-            });
-            new_block.appendChild(input);
-
-            const content_label = document.createElement('label');
-            content_label.innerText = 'Contenu';
-            new_block.appendChild(content_label);
-
-            const content_editor = document.createElement('div');
-            new_block.appendChild(content_editor);
+            add_block(new_block_data, true);
 
             blocks.push(new_block_data);
-
-            document.querySelector('#left').appendChild(new_block);
-
-            const editor = new Quill(content_editor, {
-                modules: {
-                    toolbar: [
-                        [{ list: 'ordered' }, { list: 'bullet' }],
-                        ['bold', 'link', 'image', 'clean']
-                    ]
-                },
-                theme: 'snow'
-            });
-            new_block_data.content = editor;
         });
 
     document

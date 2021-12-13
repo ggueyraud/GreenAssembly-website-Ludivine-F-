@@ -46,22 +46,26 @@ export default class Modal {
         return this
     }
 
-    #fire(event_name, args = []) {
+    async #fire(event_name, args = []) {
         if (this.#events.has(event_name)) {
-            return this.#events.get(event_name)(this, ...args);
+            return await this.#events.get(event_name)(this, ...args);
         }
 
         // throw new TypeError(`Event "${event_name}" doesn't exist!`);
     }
 
-    open() {
-        this.modal.classList.add('modal--show');
+    async open() {
+        const open = await this.#fire('beforeOpen');
 
-        this.#fire('open');
+        if (open !== false) {
+            this.modal.classList.add('modal--show');
+    
+            await this.#fire('open');
+        }
     }
 
-    close() {
-        this.#fire('close');
+    async close() {
+        await this.#fire('close');
 
         this.modal.classList.remove('modal--show');
     }

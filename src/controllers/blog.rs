@@ -6,10 +6,10 @@ use askama_actix::{Template, TemplateIntoResponse};
 use chrono::Datelike;
 use serde::{Deserialize, Serialize};
 use slugmin::slugify;
-use sqlx::PgPool;
+use sqlx::{PgPool, FromRow};
 use std::ops::DerefMut;
 
-#[derive(sqlx::FromRow)]
+#[derive(FromRow)]
 struct Article {
     title: String,
     uri: String,
@@ -19,7 +19,7 @@ struct Article {
     cover: String,
 }
 
-#[derive(sqlx::FromRow)]
+#[derive(FromRow)]
 struct Category {
     name: String,
     uri: String,
@@ -92,7 +92,7 @@ async fn show_category(
         return Ok(HttpResponse::NotFound().finish());
     }
 
-    #[derive(sqlx::FromRow)]
+    #[derive(FromRow)]
     struct CategoryDetails {
         name: String,
         description: Option<String>,
@@ -158,7 +158,7 @@ async fn show_article(
         return Ok(HttpResponse::NotFound().finish());
     }
 
-    #[derive(sqlx::FromRow, Debug)]
+    #[derive(FromRow, Debug)]
     struct Article {
         title: String,
         category_id: Option<i16>,
@@ -197,7 +197,7 @@ async fn show_article(
             return Ok(HttpResponse::NotFound().finish());
         }
 
-        #[derive(sqlx::FromRow, Clone)]
+        #[derive(FromRow, Clone)]
         struct Block {
             id: i16,
             title: Option<String>,
@@ -217,7 +217,7 @@ async fn show_article(
             metric_token: Option<String>,
         }
 
-        #[derive(sqlx::FromRow)]
+        #[derive(FromRow)]
         struct Category {
             name: String,
             uri: String,
@@ -304,6 +304,44 @@ async fn show_article(
     }
 
     Ok(HttpResponse::InternalServerError().finish())
+}
+
+#[get("/categories/{id}")]
+async fn get_category(
+    pool: web::Data<PgPool>,
+    session: Identity,
+    web::Path(id): web::Path<i16>
+) -> HttpResponse {
+    if let None = session.identity() {
+        return HttpResponse::Unauthorized().finish();
+    }
+
+    if !services::blog::categories::exists(&pool, id).await {
+        return HttpResponse::NotFound().finish()
+    }
+
+    #[derive(FromRow)]
+    struct Category {
+        name: String,
+        description: Option<String>,
+        is_visible: Option<bool>,
+        is_seo: Option<bool>
+    }
+
+    match services::blog::categories::get::<Category>(
+        &pool,
+        "name, description, is_visible, is_seo",
+        id
+    ).await {
+        Ok(category) => HttpResponse::Ok().json(serde_json::json!({
+            "id": id,
+            "name": category.name,
+            "description": category.description,
+            "is_visible": category.is_visible,
+            "is_seo": category.is_seo
+        })),
+        Err(_) => HttpResponse::InternalServerError().finish()
+    }
 }
 
 #[derive(Deserialize)]
@@ -447,6 +485,61 @@ async fn delete_category(
     }
 
     HttpResponse::NotFound().finish()
+}
+
+#[get("/articles/{id}")]
+async fn get_article(
+    pool: web::Data<PgPool>,
+    session: Identity,
+    web::Path(id): web::Path<i16>
+) -> HttpResponse {
+    if let None = session.identity() {
+        return HttpResponse::Unauthorized().finish();
+    }
+
+    if !services::blog::articles::exists(&pool, id).await {
+        return HttpResponse::NotFound().finish()
+    }
+
+    #[derive(FromRow)]
+    struct Article {
+        cover: String,
+        title: String,
+        description: Option<String>,
+        is_published: Option<bool>,
+        is_seo: Option<bool>,
+    }
+
+    #[derive(FromRow, Serialize)]
+    struct Block {
+        id: i16,
+        title: Option<String>,
+        content: Option<String>,
+        left_column: bool,
+        order: i16
+    }
+
+    let (article, blocks) = futures::join!(
+        services::blog::articles::get::<Article>(
+            &pool,
+            r#"f.path AS "cover", title, description, is_published, is_seo"#,
+            id
+        ),
+        services::blog::articles::blocks::get_all::<Block>(&pool, r#"id, title, content, left_column, "order""#, id)
+    );
+
+    match article {
+        Ok(article) => HttpResponse::Ok().json(serde_json::json!({
+            "id": id,
+            "cover": article.cover,
+            "title": article.title,
+            "description": article.description,
+            "is_published": article.is_published,
+            "is_seo": article.is_seo,
+            "blocks": serde_json::json!(blocks)
+        })),
+        Err(_) => HttpResponse::InternalServerError().finish()
+    }
 }
 
 #[derive(Deserialize, Debug)]
@@ -746,7 +839,7 @@ async fn update_article(
         return HttpResponse::NotFound().finish();
     }
 
-    #[derive(sqlx::FromRow)]
+    #[derive(FromRow)]
     struct Article {
         cover_id: i32,
     }
@@ -1025,7 +1118,7 @@ async fn update_article(
                 .unwrap();
 
                 // Delete old cover from disk
-                #[derive(sqlx::FromRow)]
+                #[derive(FromRow)]
                 struct Cover {
                     path: String,
                 }
@@ -1073,7 +1166,10 @@ async fn update_article(
         return HttpResponse::InternalServerError().finish();
     }
 
-    services::files::delete(transaction.deref_mut(), cover_id).await;
+    // If an cover has been supplied, remove old
+    if let Patch::Value(_) = &form.cover {
+        services::files::delete(transaction.deref_mut(), cover_id).await;
+    }
 
     transaction.commit().await.unwrap();
 
@@ -1094,17 +1190,17 @@ async fn delete_article(
         return HttpResponse::Unauthorized().finish();
     }
 
-    #[derive(sqlx::FromRow)]
+    #[derive(FromRow)]
     struct Article {
         cover_id: i32,
     }
 
-    #[derive(sqlx::FromRow)]
+    #[derive(FromRow)]
     struct Block {
         id: i16,
     }
 
-    #[derive(sqlx::FromRow)]
+    #[derive(FromRow)]
     struct File {
         path: String,
     }

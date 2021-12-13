@@ -33,6 +33,11 @@ export class DropZone {
         return this.input.value !== '';
     }
 
+    setImage(image) {
+        this.image.setAttribute('src', image);
+        this.container.classList.add(is_filled_class);
+    }
+
     clear() {
         //this.input.value = '';
 
