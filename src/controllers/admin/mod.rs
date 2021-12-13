@@ -17,7 +17,7 @@ mod filters {
 
 #[get("")]
 pub async fn index(id: Identity) -> Result<HttpResponse, Error> {
-    if let Some(id) = id.identity() {
+    if let Some(_) = id.identity() {
         #[derive(Template)]
         #[template(path = "pages/admin/index.html")]
         struct Dashboard;
@@ -127,7 +127,7 @@ async fn blog(id: Identity, pool: web::Data<PgPool>) -> Result<HttpResponse, Err
                 None
             ),
             // TODO : refactor function to prevent test none
-            services::blog::articles::get_all1::<Article>(
+            services::blog::articles::get_all::<Article>(
                 &pool,
                 "ba.id, category_id, title, description, date",
                 None,
@@ -150,7 +150,7 @@ async fn blog(id: Identity, pool: web::Data<PgPool>) -> Result<HttpResponse, Err
 
 #[get("/parametres")]
 pub async fn settings(id: Identity, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
-    if let Some(id) = id.identity() {
+    if let Some(_) = id.identity() {
         #[derive(Template)]
         #[template(path = "pages/admin/settings.html")]
         struct Setting {

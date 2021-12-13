@@ -1,4 +1,3 @@
-use serde::Deserialize;
 use serde_json::Value;
 use sqlx::{Error, PgPool};
 
@@ -40,7 +39,7 @@ pub async fn get<
     Ok(article)
 }
 
-pub async fn get_all1<
+pub async fn get_all<
     T: std::marker::Unpin + std::marker::Send + for<'c> sqlx::FromRow<'c, sqlx::postgres::PgRow>,
 >(
     pool: &PgPool,
@@ -60,7 +59,7 @@ pub async fn get_all1<
         fields
     );
 
-    if let Some(category_id) = category_id {
+    if category_id.is_some() {
         query += " AND ba.category_id = $3"
     }
 
@@ -77,56 +76,8 @@ pub async fn get_all1<
     q.fetch_all(pool).await.unwrap()
 }
 
-pub async fn get_all(pool: &PgPool) -> Vec<super::Article> {
-    sqlx::query!(
-        r#"SELECT
-            ba.id AS article_id,
-            ba.title AS article_title,
-            ba.date AS article_date,
-            ba.is_published AS article_is_published,
-            ba.is_seo AS article_is_seo,
-            bc.id AS "category_id?",
-            bc.name AS "category_name?"
-        FROM blog_articles ba
-        LEFT JOIN blog_categories bc ON ba.category_id = bc.id
-        ORDER BY ba.id DESC"#
-    )
-    .fetch_all(pool)
-    .await
-    .expect("blog::articles::get_all")
-    .iter()
-    .map(|row| super::Article {
-        id: row.article_id,
-        category: if let Some(category_id) = row.category_id {
-            Some(serde_json::json!({
-                "id": category_id,
-                "name": row.category_name.as_ref().unwrap()
-            }))
-        } else {
-            None
-        },
-        title: row.article_title.clone(),
-        date: row.article_date,
-        is_published: row.article_is_published,
-        is_seo: row.article_is_seo,
-    })
-    .collect::<Vec<super::Article>>()
-}
-
-#[derive(Deserialize)]
-pub struct ArticleInformations {
-    category_id: Option<i16>,
-    cover_id: Option<i32>,
-    title: String,
-    description: Option<String>,
-    is_published: bool,
-    is_seo: bool,
-}
-
 pub async fn insert(
-    // pool: &sqlx::Executor<Database = sqlx::Postgres>,
     pool: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
-    // pool: &PgPool,
     category_id: Option<i16>,
     cover_id: i32,
     title: &str,

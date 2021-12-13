@@ -36,7 +36,7 @@ async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse
                 Some(true),
                 Some(true)
             ),
-            services::blog::articles::get_all1::<Article>(
+            services::blog::articles::get_all::<Article>(
                 &pool,
                 r#"ba.title,
                 ba.uri,
@@ -102,7 +102,7 @@ async fn show_category(
         metrics::add(&pool, &req, services::metrics::BelongsTo::BlogPost(id)),
         services::blog::categories::get::<CategoryDetails>(&pool, "name, description", id),
         services::blog::categories::get_all::<Category>(&pool, "name, uri", Some(true), Some(true)),
-        services::blog::articles::get_all1::<Article>(
+        services::blog::articles::get_all::<Article>(
             &pool,
             r#"ba.title,
             ba.uri,
@@ -219,7 +219,6 @@ async fn show_article(
 
         #[derive(sqlx::FromRow)]
         struct Category {
-            id: i16,
             name: String,
             uri: String,
         }
@@ -228,7 +227,7 @@ async fn show_article(
 
         if let Some(category_id) = article.category_id {
             category = Some(
-                services::blog::categories::get::<Category>(&pool, "id, name, uri", category_id)
+                services::blog::categories::get::<Category>(&pool, "name, uri", category_id)
                     .await
                     .unwrap(),
             );
@@ -591,7 +590,7 @@ async fn insert_article(
                             );
                         }
 
-                        let block_id = match services::blog::articles::blocks::insert(
+                        match services::blog::articles::blocks::insert(
                             transaction.deref_mut(),
                             id,
                             block.title.as_deref(),
@@ -607,80 +606,8 @@ async fn insert_article(
                             }
                             Err(_) => return HttpResponse::InternalServerError().finish(),
                         };
-
-                        // let block_id = if let Ok(id) = services::blog::articles::blocks::insert(
-                        //     transaction.deref_mut(),
-                        //     id,
-                        //     block.title.as_deref(),
-                        //     block.content.as_deref(),
-                        //     block.left_column,
-                        //     block.order,
-                        // )
-                        // .await
-                        // {
-                        //     id
-                        // } else {
-                        //     return HttpResponse::InternalServerError().finish();
-                        // };
-
-                        // if let Some(pictures) = &block.pictures {
-                        //     for (i, image) in pictures.iter().enumerate() {
-                        //         if !&["image/png", "image/jpeg"].contains(&image.file_type().as_str())
-                        //             || image.len() > 2000000
-                        //         {
-                        //             return HttpResponse::BadRequest().finish();
-                        //         }
-
-                        //         let image = match image::load_from_memory(image.data()) {
-                        //             Ok(image) => image,
-                        //             Err(_) => return HttpResponse::BadRequest().finish(),
-                        //         };
-                        //         let name = format!(
-                        //             "{}_{}_{}_{}",
-                        //             id,
-                        //             block_id,
-                        //             i,
-                        //             chrono::Utc::now().timestamp()
-                        //         );
-
-                        //         if let Err(_) = uploader.handle(&image, &name, None, None) {
-                        //             return HttpResponse::BadRequest().finish();
-                        //         }
-
-                        //         let file_id = if let Ok(id) = services::files::insert(
-                        //             transaction.deref_mut(),
-                        //             None,
-                        //             &format!(
-                        //                 "{}.{}",
-                        //                 name,
-                        //                 if image.color().has_alpha() {
-                        //                     "png"
-                        //                 } else {
-                        //                     "jpg"
-                        //                 }
-                        //             ),
-                        //         )
-                        //         .await
-                        //         {
-                        //             id
-                        //         } else {
-                        //             return HttpResponse::InternalServerError().finish();
-                        //         };
-
-                        //         if let Err(_) = services::blog::articles::blocks::images::insert(
-                        //             transaction.deref_mut(),
-                        //             block_id,
-                        //             file_id,
-                        //         )
-                        //         .await
-                        //         {
-                        //             return HttpResponse::InternalServerError().finish();
-                        //         }
-                        //     }
-                        // }
                     }
-                    Err(e) => {
-                        println!("###{:?}", e);
+                    Err(_) => {
                         return HttpResponse::BadRequest().finish();
                     }
                 }
@@ -688,18 +615,15 @@ async fn insert_article(
 
             if let Some(pictures) = &form.pictures {
                 for (i, image) in pictures.iter().enumerate() {
-                    println!("Ok");
                     if !&["image/png", "image/jpeg"].contains(&image.file_type().as_str())
                         || image.len() > 2000000
                     {
                         return HttpResponse::BadRequest().finish();
                     }
-                    println!("Ok");
 
                     let image = match image::load_from_memory(image.data()) {
                         Ok(image) => image,
-                        Err(e) => {
-                            println!("{:?}", e);
+                        Err(_) => {
                             return HttpResponse::BadRequest().finish();
                         }
                     };
