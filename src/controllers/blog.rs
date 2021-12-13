@@ -708,7 +708,7 @@ pub struct UpdateArticleBlock {
     order: Patch<i16>,
     #[serde(default, skip_serializing)]
     pictures: Patch<Option<Vec<actix_extract_multipart::File>>>,
-    to_delete: Option<bool>
+    to_delete: Option<bool>,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -728,7 +728,7 @@ pub struct UpdateArticleForm {
     #[serde(default)]
     blocks: Patch<Vec<String>>,
     #[serde(default, skip_serializing)]
-    pictures: Patch<Option<Vec<actix_extract_multipart::File>>>
+    pictures: Patch<Option<Vec<actix_extract_multipart::File>>>,
 }
 
 #[patch("/articles/{id}")]
@@ -792,23 +792,23 @@ async fn update_article(
                         if let Some(block_id) = block.id {
                             services::blog::articles::blocks::delete(
                                 transaction.deref_mut(),
-                                block_id
+                                block_id,
                             )
                             .await;
                         } else {
-                            return HttpResponse::BadRequest().finish()
+                            return HttpResponse::BadRequest().finish();
                         }
                     } else {
                         if let Patch::Value(Some(title)) = &block.title {
                             let title = title.trim().to_string();
-    
+
                             if title.is_empty() || title.len() > 120 {
                                 return HttpResponse::BadRequest().finish();
                             }
-    
+
                             block.title = Patch::Value(Some(title));
                         }
-                        
+
                         if let Patch::Value(Some(content)) = &block.content {
                             let mut allowed_tags = std::collections::HashSet::<&str>::new();
                             allowed_tags.insert("b");
@@ -817,7 +817,7 @@ async fn update_article(
                             allowed_tags.insert("li");
                             allowed_tags.insert("a");
                             allowed_tags.insert("p");
-    
+
                             block.content = Patch::Value(Some(
                                 ammonia::Builder::default()
                                     .tags(allowed_tags)
@@ -839,7 +839,7 @@ async fn update_article(
                                 {
                                     let filename = path.split(".").collect::<Vec<_>>();
                                     let filename = filename.get(0).unwrap();
-        
+
                                     files_to_remove.append(
                                         &mut [
                                             format!("./uploads/mobile/{}", path),
@@ -850,20 +850,21 @@ async fn update_article(
                                         .to_vec(),
                                     );
                                 }
-        
+
                                 services::blog::articles::blocks::images::delete(
                                     transaction.deref_mut(),
                                     block_id,
                                 )
                                 .await;
-        
+
                                 for (i, image) in pictures.iter().enumerate() {
-                                    if !&["image/png", "image/jpeg"].contains(&image.file_type().as_str())
+                                    if !&["image/png", "image/jpeg"]
+                                        .contains(&image.file_type().as_str())
                                         || image.len() > 2000000
                                     {
                                         return HttpResponse::BadRequest().finish();
                                     }
-        
+
                                     let image = match image::load_from_memory(image.data()) {
                                         Ok(image) => image,
                                         Err(_) => return HttpResponse::BadRequest().finish(),
@@ -875,11 +876,11 @@ async fn update_article(
                                         i,
                                         chrono::Utc::now().timestamp()
                                     );
-        
+
                                     if let Err(_) = uploader.handle(&image, &name, None, None) {
                                         return HttpResponse::BadRequest().finish();
                                     }
-        
+
                                     let file_id = if let Ok(id) = services::files::insert(
                                         transaction.deref_mut(),
                                         None,
@@ -899,19 +900,20 @@ async fn update_article(
                                     } else {
                                         return HttpResponse::InternalServerError().finish();
                                     };
-        
-                                    if let Err(_) = services::blog::articles::blocks::images::insert(
-                                        transaction.deref_mut(),
-                                        block_id,
-                                        file_id,
-                                    )
-                                    .await
+
+                                    if let Err(_) =
+                                        services::blog::articles::blocks::images::insert(
+                                            transaction.deref_mut(),
+                                            block_id,
+                                            file_id,
+                                        )
+                                        .await
                                     {
                                         return HttpResponse::InternalServerError().finish();
                                     }
                                 }
                             }
-        
+
                             if let Err(_) = services::blog::articles::blocks::partial_update(
                                 transaction.deref_mut(),
                                 block_id,
@@ -935,12 +937,12 @@ async fn update_article(
                             let left_column = if let Patch::Value(left_column) = block.left_column {
                                 left_column
                             } else {
-                                return HttpResponse::BadRequest().finish()
+                                return HttpResponse::BadRequest().finish();
                             };
                             let order = if let Patch::Value(order) = block.order {
                                 order
                             } else {
-                                return HttpResponse::BadRequest().finish()
+                                return HttpResponse::BadRequest().finish();
                             };
 
                             // NEW BLOCK
@@ -950,11 +952,12 @@ async fn update_article(
                                 title.as_deref(),
                                 content.as_deref(),
                                 left_column,
-                                order
+                                order,
                             )
-                            .await {
-                                Ok(_) => {},
-                                Err(_) => return HttpResponse::InternalServerError().finish()
+                            .await
+                            {
+                                Ok(_) => {}
+                                Err(_) => return HttpResponse::InternalServerError().finish(),
                             }
                         }
                     }

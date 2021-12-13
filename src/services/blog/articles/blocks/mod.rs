@@ -89,10 +89,7 @@ pub async fn partial_update(
     Ok(false)
 }
 
-pub async fn delete(
-    pool: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
-    id: i16
-) -> bool {
+pub async fn delete(pool: impl sqlx::Executor<'_, Database = sqlx::Postgres>, id: i16) -> bool {
     sqlx::query!("DELETE FROM blog_article_blocks WHERE id = $1", id)
         .execute(pool)
         .await
