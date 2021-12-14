@@ -119,7 +119,7 @@ router.on('mount', () => {
             description: {
                 validators: [new StringLength(0, 320)]
             },
-            is_visible: {},
+            is_published: {},
             is_seo: {}
         }
     })
@@ -400,7 +400,8 @@ router.on('mount', () => {
         categories_container.appendChild(category_container);
     }
     const edit_category = category => {
-        category_to_modify = category;
+        // category_to_modify = category;
+        category_to_modify = Object.assign({}, category);
         category_modal.open();
     }
     const delete_category = async (category_el, index = null) => {
@@ -493,7 +494,9 @@ router.on('mount', () => {
         articles_container.prepend(container_el);
     }
     const edit_article = article => {
-        article_to_modify = article;
+        // article_to_modify = article;
+        article_to_modify = Object.assign({}, article);
+        console.log(article_to_modify);
         article_modal.open();
     }
     const delete_article = async (article_el, index = null) => {
@@ -679,10 +682,10 @@ router.on('mount', () => {
             const category = categories[index];
 
             item
-                .querySelector('.btn_edit_category')
+                .querySelector('div > :first-child')
                 .addEventListener('click', () => edit_category(category));
             item
-                .querySelector('.btn_delete_category')
+                .querySelector('div > :last-child')
                 .addEventListener('click', () => delete_category(item, index));
         });
 

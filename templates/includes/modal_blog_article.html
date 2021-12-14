@@ -1,0 +1,73 @@
+<div class="modal modal--full" id="article_modal">
+    <div class="modal__dialog">
+        <div class="modal__dialog__header">
+            <h5 class="modal__dialog__header__title"></h5>
+        </div>
+
+        <form name="article_form" class="modal__dialog__body">
+            <label>Couverture <span class="text_error">*</span></label>
+
+            <div id="cover_container" class="mb_2">
+                <div class="drop_zone">
+                    <input type="file" name="cover" accept="image/png, image/jpeg" />
+
+                    <img src="" />
+
+                    <button type="button">
+                        <svg class="icon icon--sm">
+                            <use xlink:href="/icons.svg#close"></use>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <label for="title">Titre <span class="text_error">*</span></label>
+            <input type="text" id="title" name="title" maxlength="255" class="mb_2" />
+
+            <label for="category_id">Catégorie</label>
+            <select id="category_id" name="category_id" class="mb_2">
+                <option></option>
+                {% for category in categories %}
+                    <option value="{{ category.id }}">{{ category.name }}</option>
+                {% endfor %}
+            </select>
+
+            <label for="description">Description</label>
+            <textarea id="description" name="description" maxlength="320" class="mb_2"></textarea>
+
+            <!-- BLOCKS -->
+            <div class="blocks mb_2">
+                <label>Contenu</label>
+
+                <div id="left" class="space_y_2"></div>
+                <div id="right" class="space_y_2"></div>
+
+                <div id="add_block" class="flex justify_center w_100">
+                    <button
+                        type="button"
+                        class="btn btn__blue btn--sm"
+                    >
+                        Ajouter un block
+                        <svg class="icon ml_1">
+                            <use xlink:href="/dashboard_icons.svg#plus"></use>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <label class="block">
+                Visible sur le site ?
+                <input type="checkbox" name="is_published" />
+            </label>
+
+            <label class="block">
+                Référençable par les moteurs de recherche ?
+                <input type="checkbox" name="is_seo" />
+            </label>
+
+            <div class="flex justify_end">
+                <button type="submit" class="btn btn__green btn--sm">Créer</button>
+            </div>
+        </form>
+    </div>
+</div>
