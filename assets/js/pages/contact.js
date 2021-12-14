@@ -24,7 +24,7 @@ window.router.on('mount', () => {
                     required_validator,
                     new Regex(
                     /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
-                    `L'email saisit n'a pas un format valide`
+                    "L'email saisit n'a pas un format valide"
                     )
                 ],
                 container: document.querySelector('[for="email"]').nextElementSibling

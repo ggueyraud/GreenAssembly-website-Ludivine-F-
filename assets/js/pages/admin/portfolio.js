@@ -55,7 +55,7 @@ window.router.on('mount', () => {
         title: 'Une erreur est survenue',
         text: 'Si le problème persiste veuillez contacter la personne en charge de la maintenance de votre site-web.',
         icon: 'error',
-        footer: `<a href="https://greenassembly.fr/contact" target="_blank">Contacter l'agence GreenAssembly</a>`
+        footer: "<a href=\"https://greenassembly.fr/contact\" target=\"_blank\">Contacter l'agence GreenAssembly</a>"
     });
 
     const init_category_events = (el, span = null, input = null, button = null) => {

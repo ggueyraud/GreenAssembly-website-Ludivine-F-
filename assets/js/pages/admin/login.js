@@ -6,7 +6,7 @@ window.router.on('mount', () => {
     const required_validator = new Required();
     const email_validator = new Regex(
         /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
-        `L'email saisit n'a pas un format valide`
+        "L'email saisit n'a pas un format valide"
     );
     const login_form = document.querySelector('[name=login]');
     const lost_password_form = document.querySelector('[name=lost_password]')
@@ -63,7 +63,7 @@ window.router.on('mount', () => {
                 res = await res.json();
                 
                 if (!res.is_valid) {
-                    lost_password_error.innerHTML = `L'email saisit n'existe pas ou n'est pas valide`;
+                    lost_password_error.innerHTML = "L'email saisit n'existe pas ou n'est pas valide";
 
                     if (lost_password_error.classList.contains('hidden')) {
                         lost_password_error.classList.remove('hidden')
@@ -75,9 +75,9 @@ window.router.on('mount', () => {
 
                 // Too many attempts
                 if (e.status === 429) {
-                    error_msg = `Limite de tentatives de récupération d'email atteinte, veuillez réessayer d'ici une heure`;
+                    error_msg = "Limite de tentatives de récupération d'email atteinte, veuillez réessayer d'ici une heure";
                 } else if (e.status === 400) {
-                    error_msg = `L'email saisit n'a pas un format valide`;
+                    error_msg = "L'email saisit n'a pas un format valide";
                 } else {
                     error_msg = 'Une erreur est survenue';
                 }
