@@ -5,7 +5,7 @@
         </div>
 
         <form name="article_form" class="modal__dialog__body">
-            <label>Couverture <span class="text_error">*</span></label>
+            <label class="required">Couverture</label>
 
             <div id="cover_container" class="mb_2">
                 <div class="drop_zone">
@@ -21,7 +21,7 @@
                 </div>
             </div>
 
-            <label for="title">Titre <span class="text_error">*</span></label>
+            <label for="title" class="required">Titre</label>
             <input type="text" id="title" name="title" maxlength="255" class="mb_2" />
 
             <label for="category_id">Catégorie</label>
@@ -37,7 +37,7 @@
 
             <!-- BLOCKS -->
             <div class="blocks mb_2">
-                <label>Contenu</label>
+                <label class="required">Contenu</label>
 
                 <div id="left" class="space_y_2"></div>
                 <div id="right" class="space_y_2"></div>
@@ -65,7 +65,14 @@
                 <input type="checkbox" name="is_seo" />
             </label>
 
-            <div class="flex justify_end">
+            <div class="modal__dialog__footer p_0">
+                <button type="button" class="btn btn__error btn--sm hidden">
+                    Supprimer
+                    <svg class="icon icon--sm ml_1">
+                        <use xlink:href="/dashboard_icons.svg#delete"></use>
+                    </svg>
+                </button>
+
                 <button type="submit" class="btn btn__green btn--sm">Créer</button>
             </div>
         </form>

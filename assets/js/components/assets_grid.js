@@ -15,7 +15,10 @@ export class DropZone {
         });
 
         const remove_btn = this.container.querySelector('button');
-        remove_btn.addEventListener('click', () => this.#fire('clear'));
+        remove_btn.addEventListener('click', () => {
+            this.container.classList.remove(is_filled_class);
+            this.#fire('clear');
+        });
 
         this.input.addEventListener('change', () => {
             const reader = new FileReader();

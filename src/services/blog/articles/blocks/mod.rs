@@ -12,7 +12,7 @@ pub async fn get_all<
     article_id: i16,
 ) -> Vec<T> {
     sqlx::query_as::<_, T>(&format!(
-        "SELECT {} FROM blog_article_blocks WHERE article_id = $1",
+        r#"SELECT {} FROM blog_article_blocks WHERE article_id = $1 ORDER BY "order""#,
         fields
     ))
     .bind(article_id)
@@ -76,7 +76,8 @@ pub async fn partial_update(
                 }
                 Value::String(value) => {
                     query = query.bind(value.as_str());
-                }
+                },
+                Value::Bool(value) => query = query.bind(value),
                 _ => (),
             }
         }

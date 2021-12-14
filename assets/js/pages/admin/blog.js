@@ -20,7 +20,11 @@ let blocks = [];
 router.on('mount', () => {
     let category_modal_container = document.querySelector('#category_modal');
     let category_modal_submit_btn = category_modal_container.querySelector('[type="submit"]');
+    const category_modal_delete_btn = category_modal_container
+        .querySelector('.modal__dialog__footer > :first-child');
     let article_modal_container = document.querySelector('#article_modal');
+    const article_modal_delete_btn = article_modal_container
+        .querySelector('.modal__dialog__footer > :first-child');
     let article_form_submit_btn = article_modal_container.querySelector('[type="submit"]');
     let categories_container = document.querySelector('.categories .card__body');
     let articles_container = document.querySelector('.articles .card__body');
@@ -85,8 +89,6 @@ router.on('mount', () => {
                             .querySelectorAll(`.category[data-id="${category_to_modify.id}"]`)
                             .forEach(label => label.innerText = e.detail.name);
                     }
-
-                    Object.assign(category_to_modify, e.detail);
                 } else {
                     const res = await post(endpoint, options);
                     const id = await res.json();
@@ -108,10 +110,10 @@ router.on('mount', () => {
         });
     const article_form = new Form(document.querySelector('[name="article_form"]'), {
         fields: {
-            // cover: {
-            //     validators: [new Required()],
-            //     container: document.querySelector('#cover_container')
-            // },
+            cover: {
+                validators: [new Required()],
+                container: document.querySelector('#cover_container')
+            },
             title: {
                 validators: [new Required(), new StringLength(1, 255)]
             },
@@ -145,36 +147,103 @@ router.on('mount', () => {
                 }
             }
 
-            let i = 0;
-            const images = [];
+            if (article_to_modify) {
+                let i = 0;
+                const images = [];
 
-            for (const block of blocks) {
-                let old_content = block.content.getContents();
-                let content = JSON.parse(JSON.stringify(old_content));
-                // const images = [];
+                for (const [index, block] of blocks.entries()) {
+                    const update_block = {};
 
-                for (const ops of content.ops) {
-                    if (ops.insert !== undefined && ops.insert.image !== undefined) {
-                        images.push(ops.insert.image);
-                        // ops.insert = `[[${images.length - 1}]]`;
-                        ops.insert = `[[${i}]]`;
-                        i += 1;
+                    const old = article_to_modify.blocks[index];
+
+                    if (old) {
+                        for (const [key, value] of Object.entries(block)) {
+                            if (key === 'content') {
+                                if (value.root.innerHTML !== old.content) {
+                                    let old_content = value.getContents();
+                                    let content = JSON.parse(JSON.stringify(old_content));
+    
+                                    for (const ops of content.ops) {
+                                        if (ops.insert !== undefined && ops.insert.image !== undefined) {
+                                            images.push(ops.insert.image);
+                                            ops.insert = `[[${i}]]`;
+                                            i += 1;
+                                        }
+                                    }
+    
+                                    value.setContents(content);
+                                    const formatted_content = value.root.innerHTML;
+                                    value.setContents(old_content);
+    
+                                    update_block.content = formatted_content;
+                                }
+                            } else {
+                                if (value !== old[key]) {
+                                    update_block[key] = value;
+                                }
+                            }
+                        }
+
+                        if (Object.entries(update_block).length > 0) {
+                            update_block.id = block.id;
+                            body.append('blocks[]', JSON.stringify(update_block));
+                        }
+                    } else {
+                        // It's a new block, just add it
+                        let old_content = block.content.getContents();
+                        let content = JSON.parse(JSON.stringify(old_content));
+        
+                        for (const ops of content.ops) {
+                            if (ops.insert !== undefined && ops.insert.image !== undefined) {
+                                images.push(ops.insert.image);
+                                ops.insert = `[[${i}]]`;
+                                i += 1;
+                            }
+                        }
+        
+                        block.content.setContents(content);
+                        const formatted_content = block.content.root.innerHTML
+                        block.content.setContents(old_content);
+                        block.content = formatted_content;
+
+                        body.append('blocks[]', JSON.stringify(block))
                     }
+
                 }
 
-                block.content.setContents(content);
-                const formatted_content = block.content.root.innerHTML
-                block.content.setContents(old_content);
-                block.content = formatted_content;
+                for (const image of images) {
+                    body.append('pictures[]', base64_to_blob(image))
+                }
+            } else {
+                let i = 0;
+                const images = [];
 
-                body.append('blocks[]', JSON.stringify(block));
+                for (const block of blocks) {
+                    let old_content = block.content.getContents();
+                    let content = JSON.parse(JSON.stringify(old_content));
+    
+                    for (const ops of content.ops) {
+                        if (ops.insert !== undefined && ops.insert.image !== undefined) {
+                            images.push(ops.insert.image);
+                            ops.insert = `[[${i}]]`;
+                            i += 1;
+                        }
+                    }
+    
+                    block.content.setContents(content);
+                    const formatted_content = block.content.root.innerHTML
+                    block.content.setContents(old_content);
+                    block.content = formatted_content;
+    
+                    body.append('blocks[]', JSON.stringify(block));
+                }
+    
+                for (const image of images) {
+                    body.append('pictures[]', base64_to_blob(image));
+                }
             }
 
-            for (const image of images) {
-                body.append('pictures[]', base64_to_blob(image));
-            }
-
-            i = 0;
+            let i  = 0;
             for (const _ of body.entries()) {
                 i += 1;
             }
@@ -232,9 +301,6 @@ router.on('mount', () => {
                                 .insertAdjacentElement('afterend', description_el);
                         }
                     }
-
-                    Object.assign(article_to_modify, e.detail);
-                    // TODO : update article dom
                 } else {
                     const res = await post(endpoint, options);
                     const id = await res.json();
@@ -282,6 +348,12 @@ router.on('mount', () => {
                 }
             }
 
+            if (category_to_modify) {
+                category_modal_delete_btn.style.removeProperty('display');
+            } else {
+                category_modal_delete_btn.style.setProperty('display', 'none', 'important');
+            }
+
             category_modal_container
                 .querySelector('.modal__dialog__header__title')
                 .innerText = category_to_modify
@@ -295,17 +367,22 @@ router.on('mount', () => {
                 category_form.fill(category_to_modify);
             }
         })
-        .on('open', () => {
-            document.querySelector('[name="name"]').focus();
-        })
+        .on('open', () => document.querySelector('[name="name"]').focus())
         .on('close', () => {
             category_modal_submit_btn.classList.remove(`btn__${category_to_modify ? 'blue' : 'green'}`);
             category_to_modify = null;
             category_form.clear();
         });
+    category_modal_delete_btn
+        .addEventListener('click', () => {
+            delete_category(document.querySelector(`.categories li[data-id="${category_to_modify.id}"]`));
+        });
+
     let article_modal = new Modal(article_modal_container)
         .on('beforeOpen', async () => {
             if (article_to_modify) {
+                article_form.remove_field('cover');
+
                 try {
                     let res = await get(`/api/blog/articles/${article_to_modify.id}`);
                     Object.assign(article_to_modify, await res.json());
@@ -332,9 +409,16 @@ router.on('mount', () => {
                 // TODO : set cover
                 article_cover_dropzone.setImage(`/uploads/${article_to_modify.cover}`);
 
-                article_to_modify
-                    .blocks
+                // Copy blocks
+                blocks = JSON.parse(JSON.stringify(article_to_modify.blocks));
+                blocks
                     .forEach(block => add_block(block, block.left_column));
+            }
+
+            if (article_to_modify) {
+                article_modal_delete_btn.style.removeProperty('display');
+            } else {
+                article_modal_delete_btn.style.setProperty('display', 'none', 'important');
             }
 
             article_modal_container
@@ -350,9 +434,7 @@ router.on('mount', () => {
                 article_form.fill(article_to_modify);
             }
         })
-        .on('open', async () => {
-            document.querySelector('[name="title"]').focus();
-        })
+        .on('open', () => document.querySelector('[name="title"]').focus())
         .on('close', () => {
             article_form_submit_btn.classList.remove(`btn__${article_to_modify ? 'blue' : 'green'}`);
             article_to_modify = null;
@@ -362,7 +444,15 @@ router.on('mount', () => {
             article_modal_container.querySelector('#left').innerHTML = '';
             article_modal_container.querySelector('#right').innerHTML = '';
 
+            article_form.add_field('cover', {
+                validators: [new Required()],
+                container: document.querySelector('#cover_container')
+            });
             article_form.clear();
+        });
+    article_modal_delete_btn
+        .addEventListener('click', () => {
+            delete_article(document.querySelector(`.articles li[data-id="${article_to_modify.id}"]`));
         });
 
     const add_category = (category) => {
@@ -400,7 +490,6 @@ router.on('mount', () => {
         categories_container.appendChild(category_container);
     }
     const edit_category = category => {
-        // category_to_modify = category;
         category_to_modify = Object.assign({}, category);
         category_modal.open();
     }
@@ -428,14 +517,23 @@ router.on('mount', () => {
                 }
 
                 categories.splice(index, 1);
+
+                // Remove the category on the select of the article form
                 document
                     .querySelector(`#category_id [value="${id}"]`)
                     .remove();
+                
+                // Remove all tag on articles
                 document
                     .querySelectorAll(`.category[data-id="${id}"]`)
                     .forEach(category_tag => category_tag.remove());
 
                 category_el.remove();
+
+                // If removed from category modal, close the modal
+                if (category_to_modify) {
+                    category_modal.close();
+                }
             } else {
                 swal_error()
             }
@@ -494,9 +592,7 @@ router.on('mount', () => {
         articles_container.prepend(container_el);
     }
     const edit_article = article => {
-        // article_to_modify = article;
         article_to_modify = Object.assign({}, article);
-        console.log(article_to_modify);
         article_modal.open();
     }
     const delete_article = async (article_el, index = null) => {
@@ -524,6 +620,10 @@ router.on('mount', () => {
 
                 articles.splice(index, 1);
                 article_el.remove();
+
+                if (article_to_modify) {
+                    article_modal.close();
+                }
             } else {
                 swal_error()
             }
@@ -545,7 +645,10 @@ router.on('mount', () => {
     //     }
     // });
     const block_on_end = e => {
-        const block_data = blocks[parseInt(e.item.dataset.id)];
+        const id = parseInt(e.item.dataset.id);
+        const block_data = article_to_modify
+            ? blocks.find(block => block.id === id)
+            : blocks[id];
 
         if ((e.from !== e.to || e.newIndex !== e.oldIndex) && block_data) {
             if (e.from === e.to) {
@@ -583,21 +686,19 @@ router.on('mount', () => {
             }
         }
     };
-    new Sortable(document.querySelector('#left'), {
-        group: 'shared',
-        animation: 150,
-        onEnd: block_on_end
-    });
-    new Sortable(document.querySelector('#right'), {
-        group: 'shared',
-        animation: 150,
-        onEnd: block_on_end
-    });
+
+    for (const block_column of document.querySelectorAll('#left, #right')) {
+        new Sortable(block_column, {
+            group: 'shared',
+            animation: 150,
+            onEnd: block_on_end
+        });
+    }
 
     const add_block = (data, left_column = true) => {
         const block = document.createElement('div');
         block.classList.add('blocks__item');
-        block.dataset.id = blocks.length;
+        block.dataset.id = data.id ?? blocks.length;
 
         const remove_btn = document.createElement('button');
         remove_btn.innerHTML = `<svg class="icon icon--sm">
@@ -609,7 +710,11 @@ router.on('mount', () => {
             const index = blocks.findIndex(block => block == data);
 
             if (index !== -1) {
-                blocks.splice(index, 1);
+                if (article_to_modify) {
+                    blocks[index].to_delete = true;
+                } else {
+                    blocks.splice(index, 1);
+                }
             }
         });
         block.appendChild(remove_btn);
@@ -651,17 +756,17 @@ router.on('mount', () => {
         });
 
         if (data.content) {
-            editor.root.innerHTML = data.content
+            editor.root.innerHTML = data.content;
         }
 
         data.content = editor;
     }
 
     document
-        .querySelector('#btn_add_category')
+        .querySelector('.categories .card__header button')
         .addEventListener('click', () => category_modal.open());
     document
-        .querySelector('#btn_add_article')
+        .querySelector('.articles .card__header button')
         .addEventListener('click', () => article_modal.open());
     document
         .querySelector('#add_block button')
@@ -701,6 +806,7 @@ router.on('mount', () => {
                 .querySelector('div > :last-child')
                 .addEventListener('click', () => delete_article(item, index));
 
+            // Fill the article time tag with formatted date
             const time = item.querySelector('time');
             time.innerText = formatDistance(new Date(time.getAttribute('datetime')), new Date(), { addSuffix: true, locale: fr });
 

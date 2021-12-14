@@ -178,8 +178,8 @@ CREATE TABLE blog_article_blocks (
     title VARCHAR(120),
     content TEXT,
     left_column BOOLEAN NOT NULL DEFAULT TRUE,
-    "order" SMALLINT NOT NULL,
-    UNIQUE (article_id, left_column, "order")
+    "order" SMALLINT NOT NULL
+    -- UNIQUE (article_id, left_column, "order")
 );
 
 DROP TABLE IF EXISTS blog_article_block_images CASCADE;
