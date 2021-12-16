@@ -1,7 +1,7 @@
 use serde_json::Value;
 use sqlx::{Error, PgPool};
 
-pub mod blocks;
+pub mod images;
 
 pub async fn exists(pool: &PgPool, id: i16) -> bool {
     sqlx::query!("SELECT 1 AS one FROM blog_articles WHERE id = $1", id)
@@ -82,18 +82,20 @@ pub async fn insert(
     cover_id: i32,
     title: &str,
     description: Option<&str>,
+    content: &str,
     is_published: Option<bool>,
     is_seo: Option<bool>,
 ) -> Result<i16, Error> {
     let res = sqlx::query!(
         "INSERT INTO blog_articles
-            (category_id, cover_id, title, description, is_published, is_seo)
-        VALUES ($1, $2, $3, $4, $5, $6)
+            (category_id, cover_id, title, description, content, is_published, is_seo)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING id",
         category_id,
         cover_id,
         title,
         description,
+        content,
         is_published,
         is_seo
     )
@@ -101,18 +103,6 @@ pub async fn insert(
     .await?;
 
     Ok(res.id)
-}
-
-pub async fn update_uri(
-    pool: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
-    id: i16,
-    uri: &str,
-) -> Result<bool, Error> {
-    let res = sqlx::query!("UPDATE blog_articles SET uri = $1 WHERE id = $2", uri, id)
-        .execute(pool)
-        .await?;
-
-    Ok(res.rows_affected() == 1)
 }
 
 pub async fn partial_update(

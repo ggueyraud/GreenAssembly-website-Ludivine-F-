@@ -117,12 +117,7 @@ async fn blog(id: Identity, pool: web::Data<PgPool>) -> Result<HttpResponse, Err
         }
 
         let (categories, articles) = futures::join!(
-            services::blog::categories::get_all::<Category>(
-                &pool,
-                "id, name",
-                None,
-                None
-            ),
+            services::blog::categories::get_all::<Category>(&pool, "id, name", None, None),
             // TODO : refactor function to prevent test none
             services::blog::articles::get_all::<Article>(
                 &pool,

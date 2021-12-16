@@ -49,24 +49,24 @@ async fn edit_image(id: Identity, data: Multipart<HomeImage>) -> Result<HttpResp
         .unwrap();
 
     // Create webp format
-    let image_webp =
-        Encoder::from_image(&image.resize(MAX_MOBILE.0, MAX_MOBILE.1, image::imageops::CatmullRom))
-            .encode(100.0);
-    let v = image_webp.iter().map(|a| *a).collect::<Vec<u8>>();
-    let mut webp_file =
-        std::fs::File::create(format!("{}{}_mobile.webp", IMG_PUBLIC_FOLDER, name)).unwrap();
-    webp_file.write_all(&v).unwrap();
+    // let image_webp =
+    //     Encoder::from_image(&image.resize(MAX_MOBILE.0, MAX_MOBILE.1, image::imageops::CatmullRom))
+    //         .encode(100.0);
+    // let v = image_webp.iter().map(|a| *a).collect::<Vec<u8>>();
+    // let mut webp_file =
+    //     std::fs::File::create(format!("{}{}_mobile.webp", IMG_PUBLIC_FOLDER, name)).unwrap();
+    // webp_file.write_all(&v).unwrap();
 
-    let image_webp = Encoder::from_image(&image.resize(
-        MAX_DESKTOP.0,
-        MAX_DESKTOP.1,
-        image::imageops::CatmullRom,
-    ))
-    .encode(100.0);
-    let v = image_webp.iter().map(|a| *a).collect::<Vec<u8>>();
-    let mut webp_file =
-        std::fs::File::create(format!("{}{}.webp", IMG_PUBLIC_FOLDER, name)).unwrap();
-    webp_file.write_all(&v).unwrap();
+    // let image_webp = Encoder::from_image(&image.resize(
+    //     MAX_DESKTOP.0,
+    //     MAX_DESKTOP.1,
+    //     image::imageops::CatmullRom,
+    // ))
+    // .encode(100.0);
+    // let v = image_webp.iter().map(|a| *a).collect::<Vec<u8>>();
+    // let mut webp_file =
+    //     std::fs::File::create(format!("{}{}.webp", IMG_PUBLIC_FOLDER, name)).unwrap();
+    // webp_file.write_all(&v).unwrap();
 
     Ok(HttpResponse::Ok().finish())
 }

@@ -162,6 +162,7 @@ CREATE TABLE blog_articles (
         ON DELETE SET NULL,
     title VARCHAR(255) NOT NULL,
     description VARCHAR(320),
+    content TEXT NOT NULL,
     uri VARCHAR(260),
     "date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     modified_date TIMESTAMP WITH TIME ZONE,
@@ -169,25 +170,12 @@ CREATE TABLE blog_articles (
     is_seo BOOLEAN DEFAULT FALSE
 );
 
-DROP TABLE IF EXISTS blog_article_blocks CASCADE;
-CREATE TABLE blog_article_blocks (
-    id SMALLINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+DROP TABLE IF EXISTS blog_article_images CASCADE;
+CREATE TABLE blog_article_images (
+    id uuid NOT NULL DEFAULT gen_random_uuid(),
     article_id SMALLINT NOT NULL
         REFERENCES blog_articles (id)
         ON DELETE CASCADE,
-    title VARCHAR(120),
-    content TEXT,
-    left_column BOOLEAN NOT NULL DEFAULT TRUE,
-    "order" SMALLINT NOT NULL
-    -- UNIQUE (article_id, left_column, "order")
-);
-
-DROP TABLE IF EXISTS blog_article_block_images CASCADE;
-CREATE TABLE blog_article_block_images (
     file_id INT NOT NULL
-        REFERENCES files (id),
-    block_id SMALLINT NOT NULL
-        REFERENCES blog_article_blocks (id)
-        ON DELETE CASCADE,
-    primary key (file_id, block_id)
+        REFERENCES files (id)
 );

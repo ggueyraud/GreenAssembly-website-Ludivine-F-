@@ -22,21 +22,30 @@ fn thumbnail(
 }
 
 fn webp_thumbnail(image: &DynamicImage, size: (u32, u32), path: &str) -> Result<(), ImageError> {
-    let image_webp =
-        Encoder::from_image(&image.resize(size.0, size.1, image::imageops::CatmullRom))
-            .encode(100.0);
-    let v = image_webp.iter().map(|a| *a).collect::<Vec<u8>>();
+    match Encoder::from_image(&image.resize(size.0, size.1, image::imageops::CatmullRom)) {
+        Ok(encoder) => {
+            let image_webp = encoder.encode(80.0);
+            // let image_webp =
+            //     Encoder::from_image(&image.resize(size.0, size.1, image::imageops::CatmullRom))
+            //         .encode(100.0);
+            let v = image_webp.iter().map(|a| *a).collect::<Vec<u8>>();
 
-    match std::fs::File::create(path) {
-        Ok(mut file) => {
-            if let Err(e) = file.write_all(&v) {
-                return Err(ImageError::IoError(e));
+            match std::fs::File::create(path) {
+                Ok(mut file) => {
+                    if let Err(e) = file.write_all(&v) {
+                        return Err(ImageError::IoError(e));
+                    }
+                }
+                Err(e) => return Err(ImageError::IoError(e)),
             }
-        }
-        Err(e) => return Err(ImageError::IoError(e)),
-    }
 
-    Ok(())
+            Ok(())
+        }
+        Err(e) => Err(ImageError::Encoding(image::error::EncodingError::new(
+            image::error::ImageFormatHint::Name(e.to_string()),
+            e,
+        ))),
+    }
 }
 
 pub fn create_images(

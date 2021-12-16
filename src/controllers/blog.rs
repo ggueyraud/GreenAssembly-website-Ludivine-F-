@@ -5,8 +5,10 @@ use actix_web::{delete, get, patch, post, web, Error, HttpRequest, HttpResponse}
 use askama_actix::{Template, TemplateIntoResponse};
 use chrono::Datelike;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use slugmin::slugify;
-use sqlx::{PgPool, FromRow};
+use sqlx::{FromRow, PgPool};
+use std::collections::HashMap;
 use std::ops::DerefMut;
 
 #[derive(FromRow)]
@@ -164,20 +166,22 @@ async fn show_article(
         category_id: Option<i16>,
         cover_path: String,
         description: Option<String>,
+        content: String,
         date: String,
         international_date: String,
         // As international date format
         modified_date: Option<String>,
-        is_published: bool,
-        is_seo: bool,
+        is_published: Option<bool>,
+        is_seo: Option<bool>,
     }
 
-    let article = services::blog::articles::get::<Article>(
+    match services::blog::articles::get::<Article>(
         &pool,
         r#"title,
     category_id,
     f.path AS cover_path,
     description,
+    content,
     TO_CHAR(date, 'DD/MM/YYYY') AS "date",
     TO_CHAR(date, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS international_date,
     CASE
@@ -190,134 +194,101 @@ async fn show_article(
     is_seo"#,
         id,
     )
-    .await;
-
-    if let Ok(article) = article {
-        if !article.is_published {
-            return Ok(HttpResponse::NotFound().finish());
-        }
-
-        #[derive(FromRow, Clone)]
-        struct Block {
-            id: i16,
-            title: Option<String>,
-            content: Option<String>,
-            left_column: bool,
-            order: i16,
-        }
-
-        #[derive(Template)]
-        #[template(path = "pages/blog/article.html")]
-        struct BlogArticle {
-            article: Article,
-            category: Option<Category>,
-            left_blocks: Vec<Block>,
-            right_blocks: Vec<Block>,
-            year: i32,
-            metric_token: Option<String>,
-        }
-
-        #[derive(FromRow)]
-        struct Category {
-            name: String,
-            uri: String,
-        }
-
-        let mut category = Option::<Category>::None;
-
-        if let Some(category_id) = article.category_id {
-            category = Some(
-                services::blog::categories::get::<Category>(&pool, "name, uri", category_id)
-                    .await
-                    .unwrap(),
-            );
-        }
-
-        let (metric_id, mut blocks) = futures::join!(
-            metrics::add(&pool, &req, services::metrics::BelongsTo::BlogPost(id)),
-            services::blog::articles::blocks::get_all::<Block>(
-                &pool,
-                r#"id, title, content, left_column, "order""#,
-                id
-            )
-        );
-
-        for block in &mut blocks {
-            if let Some(content) = block.content.clone() {
-                for (i, image) in
-                    services::blog::articles::blocks::images::get_all(pool.as_ref(), block.id)
+    .await {
+        Ok(mut article) => {
+            match article.is_published {
+                None | Some(false) => return Ok(HttpResponse::NotFound().finish()),
+                _ => ()
+            }
+        
+            #[derive(Template)]
+            #[template(path = "pages/blog/article.html")]
+            struct BlogArticle {
+                article: Article,
+                category: Option<Category>,
+                year: i32,
+                metric_token: Option<String>,
+            }
+        
+            #[derive(FromRow)]
+            struct Category {
+                name: String,
+                uri: String,
+            }
+        
+            let mut category = Option::<Category>::None;
+        
+            if let Some(category_id) = article.category_id {
+                category = Some(
+                    services::blog::categories::get::<Category>(&pool, "name, uri", category_id)
                         .await
-                        .iter()
-                        .enumerate()
-                {
-                    println!("replace [[{}]]", i);
-                    let filename = image.split(".").collect::<Vec<_>>();
-                    let filename = filename.get(0).unwrap();
+                        .unwrap(),
+                );
+            }
+        
+            let (metric_id, images) = futures::join!(
+                metrics::add(&pool, &req, services::metrics::BelongsTo::BlogPost(id)),
+                services::blog::articles::images::get_all(&pool, id)
+            );
 
-                    // TODO : replace by picture tag
-                    block.content = Some(content.replacen(
-                        &format!("[[{}]]", i),
-                        &format!(
-                            r#"
-                            <picture>
-                                <source srcset="/uploads/mobile/{}.webp" media="(min-width: 768px)" type="image/webp" />
-                                <source srcset="/uploads/mobile/{}" media="(min-width: 768px)" />
-                                <source srcset="/uploads/{}.webp" media="(max-width: 768px)" type="image/webp" />
+            for image in &images {
+                let filename = image.path.split(".").collect::<Vec<_>>();
+                let filename = filename.get(0).unwrap();
 
-                                <img src="/uploads/{}" />
-                            </picture>"#,
-                            filename,
-                            image,
-                            filename,
-                            image
-                        ),
-                        1
-                    ));
+                article.content = article.content.replacen(
+                    &format!("[[{}]]", image.id),
+                    &format!(
+                        r#"
+                        <picture>
+                            <source srcset="/uploads/mobile/{}.webp" media="(min-width: 768px)" type="image/webp" />
+                            <source srcset="/uploads/mobile/{}" media="(min-width: 768px)" />
+                            <source srcset="/uploads/{}.webp" media="(max-width: 768px)" type="image/webp" />
+
+                            <img src="/uploads/{}" />
+                        </picture>"#,
+                        filename,
+                        image.path,
+                        filename,
+                        image.path
+                    ),
+                    1
+                );
+            }
+        
+            let mut token: Option<String> = None;
+            if let Ok(Some(id)) = metric_id {
+                if let Ok(metric_token) = services::metrics::tokens::add(&pool, id).await {
+                    token = Some(metric_token.to_string());
                 }
             }
-        }
-
-        let mut token: Option<String> = None;
-        if let Ok(Some(id)) = metric_id {
-            if let Ok(metric_token) = services::metrics::tokens::add(&pool, id).await {
-                token = Some(metric_token.to_string());
+        
+            return BlogArticle {
+                article,
+                category: category,
+                year: chrono::Utc::now().year(),
+                metric_token: token,
             }
+            .into_response();
+        },
+        Err(e) => {
+            eprintln!("{:?}", e);
+            Ok(HttpResponse::InternalServerError().finish())
         }
-
-        return BlogArticle {
-            article,
-            category: category,
-            left_blocks: blocks
-                .iter()
-                .filter(|&block| block.left_column == true)
-                .cloned()
-                .collect::<Vec<_>>(),
-            right_blocks: blocks
-                .iter()
-                .filter(|&block| block.left_column == false)
-                .cloned()
-                .collect::<Vec<_>>(),
-            year: chrono::Utc::now().year(),
-            metric_token: token,
-        }
-        .into_response();
     }
-
-    Ok(HttpResponse::InternalServerError().finish())
 }
 
 #[get("/categories/{id}")]
 async fn get_category(
     pool: web::Data<PgPool>,
     session: Identity,
-    web::Path(id): web::Path<i16>
+    web::Path(id): web::Path<i16>,
 ) -> HttpResponse {
     if let None = session.identity() {
         return HttpResponse::Unauthorized().finish();
     }
 
     if !services::blog::categories::exists(&pool, id).await {
-        return HttpResponse::NotFound().finish()
+        return HttpResponse::NotFound().finish();
     }
 
     #[derive(FromRow)]
@@ -325,14 +296,16 @@ async fn get_category(
         name: String,
         description: Option<String>,
         is_visible: Option<bool>,
-        is_seo: Option<bool>
+        is_seo: Option<bool>,
     }
 
     match services::blog::categories::get::<Category>(
         &pool,
         "name, description, is_visible, is_seo",
-        id
-    ).await {
+        id,
+    )
+    .await
+    {
         Ok(category) => HttpResponse::Ok().json(serde_json::json!({
             "id": id,
             "name": category.name,
@@ -340,7 +313,7 @@ async fn get_category(
             "is_visible": category.is_visible,
             "is_seo": category.is_seo
         })),
-        Err(_) => HttpResponse::InternalServerError().finish()
+        Err(_) => HttpResponse::InternalServerError().finish(),
     }
 }
 
@@ -491,64 +464,63 @@ async fn delete_category(
 async fn get_article(
     pool: web::Data<PgPool>,
     session: Identity,
-    web::Path(id): web::Path<i16>
+    web::Path(id): web::Path<i16>,
 ) -> HttpResponse {
     if let None = session.identity() {
         return HttpResponse::Unauthorized().finish();
     }
 
     if !services::blog::articles::exists(&pool, id).await {
-        return HttpResponse::NotFound().finish()
+        return HttpResponse::NotFound().finish();
     }
 
-    #[derive(FromRow)]
+    #[derive(FromRow, Serialize)]
     struct Article {
         cover: String,
         title: String,
         description: Option<String>,
+        content: String,
         is_published: Option<bool>,
         is_seo: Option<bool>,
     }
 
-    #[derive(FromRow, Serialize)]
-    struct Block {
-        id: i16,
-        title: Option<String>,
-        content: Option<String>,
-        left_column: bool,
-        order: i16
+    #[derive(Serialize)]
+    struct File {
+        id: String,
+        path: String,
     }
 
-    let (article, blocks) = futures::join!(
+    let (article, images) = futures::join!(
         services::blog::articles::get::<Article>(
             &pool,
-            r#"f.path AS "cover", title, description, is_published, is_seo"#,
+            r#"f.path AS "cover", title, description, content, is_published, is_seo"#,
             id
         ),
-        services::blog::articles::blocks::get_all::<Block>(&pool, r#"id, title, content, left_column, "order""#, id)
+        services::blog::articles::images::get_all(&pool, id)
     );
 
-    match article {
-        Ok(article) => HttpResponse::Ok().json(serde_json::json!({
+    if let Ok(article) = article {
+        return HttpResponse::Ok().json(serde_json::json!({
             "id": id,
             "cover": article.cover,
             "title": article.title,
             "description": article.description,
+            "content": article.content,
             "is_published": article.is_published,
             "is_seo": article.is_seo,
-            "blocks": serde_json::json!(blocks)
-        })),
-        Err(_) => HttpResponse::InternalServerError().finish()
+            "images": serde_json::json!(
+                images
+                    .iter()
+                    .map(|image| File {
+                        id: image.id.to_string(),
+                        path: image.path.clone()
+                    })
+                    .collect::<Vec<File>>()
+            )
+        }));
     }
-}
 
-#[derive(Deserialize, Debug)]
-pub struct ArticleBlock {
-    id: Option<i16>,
-    title: Option<String>,
-    content: Option<String>,
-    left_column: bool,
-    order: i16,
+    HttpResponse::InternalServerError().finish()
 }
 
 #[derive(Deserialize)]
@@ -559,21 +531,9 @@ pub struct NewArticleForm {
     description: Option<String>,
     is_published: Option<bool>,
     is_seo: Option<bool>,
-    blocks: Vec<String>,
+    content: String,
     pictures: Option<Vec<actix_extract_multipart::File>>,
 }
-
-// #[derive(Deserialize)]
-// pub struct NewArticleForm {
-//     cover: actix_extract_multipart::File,
-//     category_id: Option<i16>,
-//     title: String,
-//     description: Option<String>,
-//     is_published: Option<bool>,
-//     is_seo: Option<bool>,
-//     content: String,
-//     pictures: Option<Vec<actix_extract_multipart::File>>,
-// }
 
 #[post("/articles")]
 async fn insert_article(
@@ -636,89 +596,34 @@ async fn insert_article(
         Err(_) => return HttpResponse::BadRequest().finish(),
     };
 
-    if let Ok(id) = services::blog::articles::insert(
+    let mut allowed_tags = std::collections::HashSet::<&str>::new();
+    allowed_tags.insert("b");
+    allowed_tags.insert("ul");
+    allowed_tags.insert("ol");
+    allowed_tags.insert("li");
+    allowed_tags.insert("a");
+    allowed_tags.insert("p");
+    allowed_tags.insert("br");
+
+    form.content = ammonia::Builder::default()
+        .tags(allowed_tags)
+        .clean(form.content.trim())
+        .to_string();
+
+    match services::blog::articles::insert(
         transaction.deref_mut(),
         form.category_id,
         cover_id,
         &form.title,
         form.description.as_deref(),
+        &form.content,
         form.is_published,
         form.is_seo,
     )
     .await
     {
-        if let Ok(_) = services::blog::articles::update_uri(
-            transaction.deref_mut(),
-            id,
-            &slugify(&format!("{}-{}", form.title, id)),
-        )
-        .await
-        {
-            let mut blocks = vec![];
-            for (i, block) in form.blocks.iter().enumerate() {
-                match serde_json::from_str::<ArticleBlock>(block) {
-                    Ok(mut block) => {
-                        // If there is only one block it could only be on the left side and order must be for first
-                        if form.blocks.len() == 1 && i == 0 {
-                            if !block.left_column {
-                                block.left_column = true;
-                            }
-
-                            if block.order != 0 {
-                                block.order = 0;
-                            }
-                        }
-
-                        if let Some(title) = &block.title {
-                            let title = title.trim().to_string();
-
-                            if title.is_empty() || title.len() > 120 {
-                                return HttpResponse::BadRequest().finish();
-                            }
-
-                            block.title = Some(title);
-                        }
-
-                        if let Some(content) = &block.content {
-                            let mut allowed_tags = std::collections::HashSet::<&str>::new();
-                            allowed_tags.insert("b");
-                            allowed_tags.insert("ul");
-                            allowed_tags.insert("ol");
-                            allowed_tags.insert("li");
-                            allowed_tags.insert("a");
-                            allowed_tags.insert("p");
-                            allowed_tags.insert("br");
-
-                            block.content = Some(
-                                ammonia::Builder::default()
-                                    .tags(allowed_tags)
-                                    .clean(content.trim())
-                                    .to_string(),
-                            );
-                        }
-
-                        match services::blog::articles::blocks::insert(
-                            transaction.deref_mut(),
-                            id,
-                            block.title.as_deref(),
-                            block.content.as_deref(),
-                            block.left_column,
-                            block.order,
-                        )
-                        .await
-                        {
-                            Ok(id) => {
-                                block.id = Some(id);
-                                blocks.push(block);
-                            }
-                            Err(_) => return HttpResponse::InternalServerError().finish(),
-                        };
-                    }
-                    Err(_) => {
-                        return HttpResponse::BadRequest().finish();
-                    }
-                }
-            }
+        Ok(id) => {
+            let mut content = form.content.clone();
 
             if let Some(pictures) = &form.pictures {
                 for (i, image) in pictures.iter().enumerate() {
@@ -735,24 +640,7 @@ async fn insert_article(
                         }
                     };
 
-                    let mut block_id = Option::<i16>::None;
-                    for block in &blocks {
-                        if let Some(content) = &block.content {
-                            if content.contains(&format!("[[{}]]", i)) {
-                                block_id = block.id;
-                            }
-                        }
-                    }
-
-                    let block_id = block_id.unwrap();
-
-                    let name = format!(
-                        "{}_{}_{}_{}",
-                        id,
-                        block_id,
-                        i,
-                        chrono::Utc::now().timestamp()
-                    );
+                    let name = format!("{}_{}_{}", id, i, chrono::Utc::now().timestamp());
 
                     if let Err(_) = uploader.handle(&image, &name, None, None) {
                         return HttpResponse::BadRequest().finish();
@@ -778,16 +666,37 @@ async fn insert_article(
                         return HttpResponse::InternalServerError().finish();
                     };
 
-                    if let Err(_) = services::blog::articles::blocks::images::insert(
+                    match services::blog::articles::images::insert(
                         transaction.deref_mut(),
-                        block_id,
+                        id,
                         file_id,
                     )
                     .await
                     {
-                        return HttpResponse::InternalServerError().finish();
+                        Ok(id) => {
+                            content =
+                                content.replacen(&format!("[[{}]]", i), &format!("[[{}]]", id), 1);
+                        }
+                        Err(_) => return HttpResponse::InternalServerError().finish(),
                     }
                 }
+            }
+
+            let mut fields_to_update = HashMap::new();
+            fields_to_update.insert(
+                String::from("uri"),
+                Value::String(slugify(&format!("{}-{}", form.title, id))),
+            );
+            fields_to_update.insert(String::from("content"), Value::String(content));
+
+            if let Err(_) = services::blog::articles::partial_update(
+                transaction.deref_mut(),
+                id,
+                fields_to_update,
+            )
+            .await
+            {
+                return HttpResponse::InternalServerError().finish();
             }
 
             transaction.commit().await.unwrap();
@@ -796,24 +705,10 @@ async fn insert_article(
 
             return HttpResponse::Created().json(id);
         }
+        Err(e) => println!("{}", e),
     }
 
     HttpResponse::InternalServerError().finish()
-}
-
-#[derive(Deserialize, Serialize, Debug)]
-pub struct UpdateArticleBlock {
-    // If no id, it's a new block
-    id: Option<i16>,
-    #[serde(default)]
-    title: Patch<Option<String>>,
-    #[serde(default)]
-    content: Patch<Option<String>>,
-    #[serde(default)]
-    left_column: Patch<bool>,
-    #[serde(default)]
-    order: Patch<i16>,
-    to_delete: Option<bool>,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -827,11 +722,11 @@ pub struct UpdateArticleForm {
     #[serde(default)]
     description: Patch<Option<String>>,
     #[serde(default)]
+    content: Patch<String>,
+    #[serde(default)]
     is_published: Patch<bool>,
     #[serde(default)]
     is_seo: Patch<bool>,
-    #[serde(default)]
-    blocks: Patch<Vec<String>>,
     #[serde(default, skip_serializing)]
     pictures: Patch<Option<Vec<actix_extract_multipart::File>>>,
 }
@@ -889,191 +784,6 @@ async fn update_article(
     let mut transaction = pool.begin().await.unwrap();
     let mut files_to_remove = vec![];
 
-    if let Patch::Value(blocks) = &form.blocks {
-        for block in blocks {
-            match serde_json::from_str::<UpdateArticleBlock>(block) {
-                Ok(mut block) => {
-                    if let Some(true) = block.to_delete {
-                        if let Some(block_id) = block.id {
-                            services::blog::articles::blocks::delete(
-                                transaction.deref_mut(),
-                                block_id,
-                            )
-                            .await;
-                        } else {
-                            return HttpResponse::BadRequest().finish();
-                        }
-                    } else {
-                        if let Patch::Value(Some(title)) = &block.title {
-                            let title = title.trim().to_string();
-
-                            if title.is_empty() || title.len() > 120 {
-                                return HttpResponse::BadRequest().finish();
-                            }
-
-                            block.title = Patch::Value(Some(title));
-                        }
-
-                        if let Patch::Value(Some(content)) = &block.content {
-                            let mut allowed_tags = std::collections::HashSet::<&str>::new();
-                            allowed_tags.insert("b");
-                            allowed_tags.insert("ul");
-                            allowed_tags.insert("ol");
-                            allowed_tags.insert("li");
-                            allowed_tags.insert("a");
-                            allowed_tags.insert("p");
-                            allowed_tags.insert("br");
-
-                            block.content = Patch::Value(Some(
-                                ammonia::Builder::default()
-                                    .tags(allowed_tags)
-                                    .clean(content.trim())
-                                    .to_string(),
-                            ));
-                        }
-
-                        if let Some(block_id) = block.id {
-                            // TODO : if content of block changed, remove all images linked to this block
-
-                            // TODO : handle pictures
-                            // if let Patch::Value(Some(pictures)) = &block.pictures {
-                            //     for path in services::blog::articles::blocks::images::get_all(
-                            //         pool.as_ref(),
-                            //         block_id,
-                            //     )
-                            //     .await
-                            //     {
-                            //         let filename = path.split(".").collect::<Vec<_>>();
-                            //         let filename = filename.get(0).unwrap();
-
-                            //         files_to_remove.append(
-                            //             &mut [
-                            //                 format!("./uploads/mobile/{}", path),
-                            //                 format!("./uploads/mobile/{}.webp", filename),
-                            //                 format!("./uploads/{}", path),
-                            //                 format!("./uploads/{}.webp", filename),
-                            //             ]
-                            //             .to_vec(),
-                            //         );
-                            //     }
-
-                            //     services::blog::articles::blocks::images::delete(
-                            //         transaction.deref_mut(),
-                            //         block_id,
-                            //     )
-                            //     .await;
-
-                            //     for (i, image) in pictures.iter().enumerate() {
-                            //         if !&["image/png", "image/jpeg"]
-                            //             .contains(&image.file_type().as_str())
-                            //             || image.len() > 2000000
-                            //         {
-                            //             return HttpResponse::BadRequest().finish();
-                            //         }
-
-                            //         let image = match image::load_from_memory(image.data()) {
-                            //             Ok(image) => image,
-                            //             Err(_) => return HttpResponse::BadRequest().finish(),
-                            //         };
-                            //         let name = format!(
-                            //             "{}_{}_{}_{}",
-                            //             id,
-                            //             block_id,
-                            //             i,
-                            //             chrono::Utc::now().timestamp()
-                            //         );
-
-                            //         if let Err(_) = uploader.handle(&image, &name, None, None) {
-                            //             return HttpResponse::BadRequest().finish();
-                            //         }
-
-                            //         let file_id = if let Ok(id) = services::files::insert(
-                            //             transaction.deref_mut(),
-                            //             None,
-                            //             &format!(
-                            //                 "{}.{}",
-                            //                 name,
-                            //                 if image.color().has_alpha() {
-                            //                     "png"
-                            //                 } else {
-                            //                     "jpg"
-                            //                 }
-                            //             ),
-                            //         )
-                            //         .await
-                            //         {
-                            //             id
-                            //         } else {
-                            //             return HttpResponse::InternalServerError().finish();
-                            //         };
-
-                            //         if let Err(_) =
-                            //             services::blog::articles::blocks::images::insert(
-                            //                 transaction.deref_mut(),
-                            //                 block_id,
-                            //                 file_id,
-                            //             )
-                            //             .await
-                            //         {
-                            //             return HttpResponse::InternalServerError().finish();
-                            //         }
-                            //     }
-                            // }
-
-                            if let Err(e) = services::blog::articles::blocks::partial_update(
-                                transaction.deref_mut(),
-                                block_id,
-                                crate::utils::patch::extract_fields(&block),
-                            )
-                            .await
-                            {
-                                println!("{:?}", e);
-                                return HttpResponse::InternalServerError().finish();
-                            }
-                        } else {
-                            let title = if let Patch::Value(title) = block.title {
-                                title
-                            } else {
-                                None
-                            };
-                            let content = if let Patch::Value(content) = block.content {
-                                content
-                            } else {
-                                None
-                            };
-                            let left_column = if let Patch::Value(left_column) = block.left_column {
-                                left_column
-                            } else {
-                                return HttpResponse::BadRequest().finish();
-                            };
-                            let order = if let Patch::Value(order) = block.order {
-                                order
-                            } else {
-                                return HttpResponse::BadRequest().finish();
-                            };
-
-                            // NEW BLOCK
-                            match services::blog::articles::blocks::insert(
-                                transaction.deref_mut(),
-                                id,
-                                title.as_deref(),
-                                content.as_deref(),
-                                left_column,
-                                order,
-                            )
-                            .await
-                            {
-                                Ok(_) => {}
-                                Err(_) => return HttpResponse::InternalServerError().finish(),
-                            }
-                        }
-                    }
-                }
-                Err(_) => return HttpResponse::BadRequest().finish(),
-            }
-        }
-    }
-
     if let Patch::Value(title) = &form.title {
         let title = title.trim().to_string();
 
@@ -1102,6 +812,112 @@ async fn update_article(
         if !services::blog::categories::exists(&pool, category_id).await {
             return HttpResponse::NotFound().finish();
         }
+    }
+
+    if let Patch::Value(content) = &form.content {
+        let mut allowed_tags = std::collections::HashSet::<&str>::new();
+        allowed_tags.insert("b");
+        allowed_tags.insert("ul");
+        allowed_tags.insert("ol");
+        allowed_tags.insert("li");
+        allowed_tags.insert("a");
+        allowed_tags.insert("p");
+        allowed_tags.insert("br");
+
+        // TODO : compare with old content, if [[UID]] has be removed, if new images
+        let images = services::blog::articles::images::get_all(pool.as_ref(), id).await;
+
+        for image in &images {
+            // If content doesnt has id anymore so the image has been deleted
+            if !content.contains(&image.id.to_string()) {
+                services::blog::articles::images::delete(transaction.deref_mut(), image.id).await;
+                println!("{} doesn't exist anymore !", image.id);
+                let filename = image.path.split(".").collect::<Vec<_>>();
+                let filename = filename.get(0).unwrap();
+
+                files_to_remove.append(
+                    &mut [
+                        format!("./uploads/mobile/{}", image.path),
+                        format!("./uploads/mobile/{}.webp", filename),
+                        format!("./uploads/{}", image.path),
+                        format!("./uploads/{}.webp", filename),
+                    ]
+                    .to_vec(),
+                );
+            }
+        }
+
+        form.content = Patch::Value(
+            ammonia::Builder::default()
+                .tags(allowed_tags)
+                .clean(content.trim())
+                .to_string(),
+        );
+    }
+
+    if let Patch::Value(Some(pictures)) = &form.pictures {
+        let mut content = if let Patch::Value(content) = &form.content {
+            content.clone()
+        } else {
+            return HttpResponse::BadRequest().finish()
+        };
+
+        for (i, image) in pictures.iter().enumerate() {
+            if !&["image/png", "image/jpeg"].contains(&image.file_type().as_str())
+                || image.len() > 2000000
+            {
+                return HttpResponse::BadRequest().finish();
+            }
+
+            let image = match image::load_from_memory(image.data()) {
+                Ok(image) => image,
+                Err(_) => {
+                    return HttpResponse::BadRequest().finish();
+                }
+            };
+
+            let name = format!("{}_{}_{}", id, i, chrono::Utc::now().timestamp());
+
+            if let Err(_) = uploader.handle(&image, &name, None, None) {
+                return HttpResponse::BadRequest().finish();
+            }
+
+            let file_id = if let Ok(id) = services::files::insert(
+                transaction.deref_mut(),
+                None,
+                &format!(
+                    "{}.{}",
+                    name,
+                    if image.color().has_alpha() {
+                        "png"
+                    } else {
+                        "jpg"
+                    }
+                ),
+            )
+            .await
+            {
+                id
+            } else {
+                return HttpResponse::InternalServerError().finish();
+            };
+
+            match services::blog::articles::images::insert(
+                transaction.deref_mut(),
+                id,
+                file_id,
+            )
+            .await
+            {
+                Ok(id) => {
+                    content =
+                        content.replacen(&format!("[[{}]]", i), &format!("[[{}]]", id), 1);
+                }
+                Err(_) => return HttpResponse::InternalServerError().finish(),
+            }
+        }
+
+        form.content = Patch::Value(content);
     }
 
     let mut fields_need_update = crate::utils::patch::extract_fields(&*form);
@@ -1210,21 +1026,15 @@ async fn delete_article(
     }
 
     #[derive(FromRow)]
-    struct Block {
-        id: i16,
-    }
-
-    #[derive(FromRow)]
     struct File {
         path: String,
     }
 
     if services::blog::articles::exists(&pool, id).await {
-        let (article, blocks) = futures::join!(
+        let (article, images) = futures::join!(
             services::blog::articles::get::<Article>(&pool, "cover_id", id),
-            services::blog::articles::blocks::get_all::<Block>(&pool, "id", id)
+            services::blog::articles::images::get_all(&pool, id)
         );
-        let mut blocks_images_fut = vec![];
         let mut images_to_delete = vec![];
 
         if let Ok(article) = article {
@@ -1242,28 +1052,19 @@ async fn delete_article(
                     .to_vec(),
                 );
 
-                for block in &blocks {
-                    blocks_images_fut.push(services::blog::articles::blocks::images::get_all(
-                        pool.get_ref(),
-                        block.id,
-                    ));
-                }
+                for image in &images {
+                    let file_name = image.path.split(".").collect::<Vec<_>>();
+                    let file_name = file_name.get(0).unwrap();
 
-                for block_images in &futures::future::join_all(blocks_images_fut).await {
-                    for path in block_images {
-                        let file_name = path.split(".").collect::<Vec<_>>();
-                        let file_name = file_name.get(0).unwrap();
-
-                        images_to_delete.append(
-                            &mut [
-                                format!("./uploads/mobile/{}", path),
-                                format!("./uploads/mobile/{}.webp", file_name),
-                                format!("./uploads/{}", path),
-                                format!("./uploads/{}.webp", file_name),
-                            ]
-                            .to_vec(),
-                        );
-                    }
+                    images_to_delete.append(
+                        &mut [
+                            format!("./uploads/mobile/{}", image.path),
+                            format!("./uploads/mobile/{}.webp", file_name),
+                            format!("./uploads/{}", image.path),
+                            format!("./uploads/{}.webp", file_name),
+                        ]
+                        .to_vec(),
+                    );
                 }
 
                 services::blog::articles::delete(&pool, id).await;

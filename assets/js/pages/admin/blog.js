@@ -15,7 +15,6 @@ const { router } = window;
 
 let category_to_modify = null;
 let article_to_modify = null;
-let blocks = [];
 
 router.on('mount', () => {
     let category_modal_container = document.querySelector('#category_modal');
@@ -121,6 +120,9 @@ router.on('mount', () => {
             description: {
                 validators: [new StringLength(0, 320)]
             },
+            content: {
+                validators: [new Required()]
+            },
             is_published: {},
             is_seo: {}
         }
@@ -135,15 +137,18 @@ router.on('mount', () => {
             </svg> Envoi en cours..`;
 
             e.detail.cover = document.querySelector('[name="cover"]').files[0];
-            e.detail.category_id = e.detail.category_id === '' ? null : parseInt(e.detail.category_id);
+            console.log(e.detail.category_id, e.detail.category_id === '')
+            e.detail.category_id = e.detail.category_id === '' ? '' : parseInt(e.detail.category_id);
             
             for (const [key, value] of Object.entries(e.detail)) {
                 if (article_to_modify) {
-                    if (article_to_modify[key] !== value && value) {
+                    if (article_to_modify[key] !== value && value && key !== 'content') {
                         body.append(key, value);
                     }
                 } else {
-                    body.append(key, value);
+                    if (value && key !== 'content') {
+                        body.append(key, value);
+                    }
                 }
             }
 
@@ -151,92 +156,56 @@ router.on('mount', () => {
                 let i = 0;
                 const images = [];
 
-                for (const [index, block] of blocks.entries()) {
-                    const update_block = {};
+                let old_content = content_quill.getContents();
+                let content = JSON.parse(JSON.stringify(old_content));
 
-                    const old = article_to_modify.blocks[index];
+                const a = article_to_modify.images.map(image => `/uploads/${image.path}`);
 
-                    if (old) {
-                        for (const [key, value] of Object.entries(block)) {
-                            if (key === 'content') {
-                                if (value.root.innerHTML !== old.content) {
-                                    let old_content = value.getContents();
-                                    let content = JSON.parse(JSON.stringify(old_content));
-    
-                                    for (const ops of content.ops) {
-                                        if (ops.insert !== undefined && ops.insert.image !== undefined) {
-                                            images.push(ops.insert.image);
-                                            ops.insert = `[[${i}]]`;
-                                            i += 1;
-                                        }
-                                    }
-    
-                                    value.setContents(content);
-                                    const formatted_content = value.root.innerHTML;
-                                    value.setContents(old_content);
-    
-                                    update_block.content = formatted_content;
-                                }
-                            } else {
-                                if (value !== old[key]) {
-                                    update_block[key] = value;
-                                }
-                            }
-                        }
-
-                        if (Object.entries(update_block).length > 0) {
-                            update_block.id = block.id;
-                            body.append('blocks[]', JSON.stringify(update_block));
-                        }
-                    } else {
-                        // It's a new block, just add it
-                        let old_content = block.content.getContents();
-                        let content = JSON.parse(JSON.stringify(old_content));
-        
-                        for (const ops of content.ops) {
-                            if (ops.insert !== undefined && ops.insert.image !== undefined) {
-                                images.push(ops.insert.image);
-                                ops.insert = `[[${i}]]`;
-                                i += 1;
-                            }
-                        }
-        
-                        block.content.setContents(content);
-                        const formatted_content = block.content.root.innerHTML
-                        block.content.setContents(old_content);
-                        block.content = formatted_content;
-
-                        body.append('blocks[]', JSON.stringify(block))
+                for (const ops of content.ops) {
+                    if (
+                        ops.insert !== undefined
+                        && ops.insert.image !== undefined
+                        && !a.includes(ops.insert.image)
+                    ) {
+                        images.push(ops.insert.image);
+                        ops.insert = `[[${i}]]`;
+                        i += 1;
+                        console.log(ops, 'is a new image');
                     }
-
                 }
+                content_quill.setContents(content);
+                let formatted_content = content_quill.root.innerHTML
+                for (const image of article_to_modify.images) {
+                    formatted_content = formatted_content.replace(`<img src="/uploads/${image.path}">`, `[[${image.id}]]`)
+                }
+                content_quill.setContents(old_content);
 
+
+                body.append('content', formatted_content);
+                console.log(formatted_content);
+    
                 for (const image of images) {
-                    body.append('pictures[]', base64_to_blob(image))
+                    body.append('pictures[]', base64_to_blob(image));
                 }
             } else {
                 let i = 0;
                 const images = [];
 
-                for (const block of blocks) {
-                    let old_content = block.content.getContents();
-                    let content = JSON.parse(JSON.stringify(old_content));
-    
-                    for (const ops of content.ops) {
-                        if (ops.insert !== undefined && ops.insert.image !== undefined) {
-                            images.push(ops.insert.image);
-                            ops.insert = `[[${i}]]`;
-                            i += 1;
-                        }
+                let old_content = content_quill.getContents();
+                let content = JSON.parse(JSON.stringify(old_content));
+
+                for (const ops of content.ops) {
+                    if (ops.insert !== undefined && ops.insert.image !== undefined) {
+                        images.push(ops.insert.image);
+                        ops.insert = `[[${i}]]`;
+                        i += 1;
                     }
-    
-                    block.content.setContents(content);
-                    const formatted_content = block.content.root.innerHTML
-                    block.content.setContents(old_content);
-                    block.content = formatted_content;
-    
-                    body.append('blocks[]', JSON.stringify(block));
                 }
+                content_quill.setContents(content);
+                const formatted_content = content_quill.root.innerHTML
+                content_quill.setContents(old_content);
+
+                body.append('content', formatted_content);
     
                 for (const image of images) {
                     body.append('pictures[]', base64_to_blob(image));
@@ -270,7 +239,7 @@ router.on('mount', () => {
                             .innerText = e.detail.title;
                     }
 
-                    if (e.detail.category_id != article_to_modify.category_id) {
+                    if (e.detail.category_id && e.detail.category_id != article_to_modify.category_id) {
                         let category_el = document.querySelector(`.articles [data-id="${article_to_modify.id}"] span[data-id="${article_to_modify.category_id}"]`);
                         const category = categories.find(category => category.id == e.detail.category_id);
 
@@ -315,6 +284,7 @@ router.on('mount', () => {
 
                 article_modal.close();
             } catch(e) {
+                console.log(e)
                 submit_btn.innerHTML = submit_btn_value_before_send;
                 swal_error()
             }
@@ -378,6 +348,26 @@ router.on('mount', () => {
             delete_category(document.querySelector(`.categories li[data-id="${category_to_modify.id}"]`));
         });
 
+    const content_label = document.querySelector('[for="content"]');
+    const content_quill = new Quill(document.querySelector('#content_editor'), {
+        modules: {
+            toolbar: [
+                [{ list: 'ordered' }, { list: 'bullet' }],
+                ['bold', 'link', 'image', 'clean']
+            ]
+        },
+        theme: 'snow'
+    });
+    const content_input = document.querySelector('[name="content"]');
+    content_quill.on('text-change', () => {
+        content_input.value = content_quill.getText().length === 1
+            ? ''
+            : content_quill.root.innerHTML;
+
+        content_input.dispatchEvent(new Event('input'));
+    });
+    content_label.addEventListener('click', () => content_quill.focus());
+
     let article_modal = new Modal(article_modal_container)
         .on('beforeOpen', async () => {
             if (article_to_modify) {
@@ -409,10 +399,13 @@ router.on('mount', () => {
                 // TODO : set cover
                 article_cover_dropzone.setImage(`/uploads/${article_to_modify.cover}`);
 
-                // Copy blocks
-                blocks = JSON.parse(JSON.stringify(article_to_modify.blocks));
-                blocks
-                    .forEach(block => add_block(block, block.left_column));
+                console.log(article_to_modify)
+                for (const image of article_to_modify.images) {
+                    article_to_modify.content = article_to_modify.content.replace(`[[${image.id}]]`, `<img src="/uploads/${image.path}" />`);
+                }
+
+                content_quill.root.innerHTML = article_to_modify.content;
+                console.log(content_quill.getContents());
             }
 
             if (article_to_modify) {
@@ -436,18 +429,20 @@ router.on('mount', () => {
         })
         .on('open', () => document.querySelector('[name="title"]').focus())
         .on('close', () => {
+            content_quill.root.innerHTML = '';
             article_form_submit_btn.classList.remove(`btn__${article_to_modify ? 'blue' : 'green'}`);
             article_to_modify = null;
-            blocks = [];
 
             article_cover_dropzone.clear();
-            article_modal_container.querySelector('#left').innerHTML = '';
-            article_modal_container.querySelector('#right').innerHTML = '';
+            // article_modal_container.querySelector('#left').innerHTML = '';
+            // article_modal_container.querySelector('#right').innerHTML = '';
 
-            article_form.add_field('cover', {
-                validators: [new Required()],
-                container: document.querySelector('#cover_container')
-            });
+            if (article_to_modify) {
+                article_form.add_field('cover', {
+                    validators: [new Required()],
+                    container: document.querySelector('#cover_container')
+                });
+            }
             article_form.clear();
         });
     article_modal_delete_btn
@@ -644,123 +639,6 @@ router.on('mount', () => {
     //         }
     //     }
     // });
-    const block_on_end = e => {
-        const id = parseInt(e.item.dataset.id);
-        const block_data = article_to_modify
-            ? blocks.find(block => block.id === id)
-            : blocks[id];
-
-        if ((e.from !== e.to || e.newIndex !== e.oldIndex) && block_data) {
-            if (e.from === e.to) {
-                const up = e.newIndex > e.oldIndex;
-    
-                blocks
-                    .filter(block => {
-                        return ((up && block.order <= e.newIndex && block.order > e.oldIndex) || (!up && block.order < e.oldIndex && block.order >= e.newIndex))
-                    })
-                    .forEach(block => {
-                        if (up) {
-                            block.order -= 1;
-                        } else {
-                            block.order += 1;
-                        }
-                    });
-    
-                block_data.order = e.newIndex;
-            } else {
-                const from_right = e.from.id === 'right';
-                block_data.left_column = from_right;
-                block_data.order = e.newIndex;
-
-                blocks
-                    .filter(block => block.left_column === (e.to.id === 'right') && block.order >= e.oldIndex)
-                    .forEach(block => {
-                        block.order -= 1;
-                    });
-
-                blocks
-                    .filter(block => block.left_column === (e.to.id === 'left') && block.order >= e.newIndex && block !== block_data)
-                    .forEach(block => {
-                        block.order += 1;
-                    });
-            }
-        }
-    };
-
-    for (const block_column of document.querySelectorAll('#left, #right')) {
-        new Sortable(block_column, {
-            group: 'shared',
-            animation: 150,
-            onEnd: block_on_end
-        });
-    }
-
-    const add_block = (data, left_column = true) => {
-        const block = document.createElement('div');
-        block.classList.add('blocks__item');
-        block.dataset.id = data.id ?? blocks.length;
-
-        const remove_btn = document.createElement('button');
-        remove_btn.innerHTML = `<svg class="icon icon--sm">
-            <use xlink:href="/icons.svg#close"></use>
-        </svg>`;
-        remove_btn.classList.add('delete');
-        remove_btn.addEventListener('click', () => {
-            block.remove();
-            const index = blocks.findIndex(block => block == data);
-
-            if (index !== -1) {
-                if (article_to_modify) {
-                    blocks[index].to_delete = true;
-                } else {
-                    blocks.splice(index, 1);
-                }
-            }
-        });
-        block.appendChild(remove_btn);
-
-        const title_label = document.createElement('label');
-        title_label.innerText = 'Titre';
-        block.appendChild(title_label);
-        
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.setAttribute('maxlength', 120);
-        input.addEventListener('input', e => {
-            data.title = e.target.value;
-        });
-        block.appendChild(input);
-
-        if (data.title) {
-            input.value = data.title;
-        }
-
-        const content_label = document.createElement('label');
-        content_label.innerText = 'Contenu';
-        block.appendChild(content_label);
-        const content_editor = document.createElement('div');
-        block.appendChild(content_editor);
-
-        document
-            .querySelector(`#${left_column ? 'left' : 'right'}`)
-            .appendChild(block);
-
-        const editor = new Quill(content_editor, {
-            modules: {
-                toolbar: [
-                    [{ list: 'ordered' }, { list: 'bullet' }],
-                    ['bold', 'link', 'image', 'clean']
-                ]
-            },
-            theme: 'snow'
-        });
-
-        if (data.content) {
-            editor.root.innerHTML = data.content;
-        }
-
-        data.content = editor;
-    }
 
     document
         .querySelector('.categories .card__header button')
@@ -768,18 +646,6 @@ router.on('mount', () => {
     document
         .querySelector('.articles .card__header button')
         .addEventListener('click', () => article_modal.open());
-    document
-        .querySelector('#add_block button')
-        .addEventListener('click', () => {
-            const new_block_data = {
-                left_column: true,
-                order: blocks.filter(block => block.left_column === true).length
-            };
-
-            add_block(new_block_data, true);
-
-            blocks.push(new_block_data);
-        });
 
     document
         .querySelectorAll('.categories li')

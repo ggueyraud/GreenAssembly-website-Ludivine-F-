@@ -35,8 +35,7 @@
             <label for="description">Description</label>
             <textarea id="description" name="description" maxlength="320" class="mb_2"></textarea>
 
-            <!-- BLOCKS -->
-            <div class="blocks mb_2">
+            {#<div class="blocks mb_2">
                 <label class="required">Contenu</label>
 
                 <div id="left" class="space_y_2"></div>
@@ -53,9 +52,14 @@
                         </svg>
                     </button>
                 </div>
-            </div>
+            </div>#}
 
-            <label class="block">
+            <label for="content" class="required mb_0">Contenu</label>
+            <small class="text_error block mb_2">Seules les images de moins de 2mo sont acceptées</small>
+            <div id="content_editor"></div>
+            <input type="hidden" name="content" />
+
+            <label class="block mt_2">
                 Visible sur le site ?
                 <input type="checkbox" name="is_published" />
             </label>
