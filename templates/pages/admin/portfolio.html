@@ -13,103 +13,7 @@
         const projects = {{ projects|json }};
     </script>
 
-    <div class="modal" id="add_project_modal">
-        <div class="modal__dialog">
-            <div class="modal__dialog__header">Ajouter un projet</div>
-
-            <form name="create_project" class="modal__dialog__body">
-                <label for="name">Nom <span class="text_error">*</span></label>
-                <input type="text" id="name" name="name" />
-
-                <label for="description" class="mt_2">Description</label>
-                <textarea name="description" id="description" maxlength="320"></textarea>
-
-                <label for="content" class="mt_2">Contenu <span class="text_error">*</span></label>
-                <div id="content_editor2"></div>
-
-                <div id="content_editor"></div>
-                <input type="hidden" name="content" />
-
-                <div>
-                    <label for="categories" class="mt_2">Catégories</label>
-
-                    <div class="grid sm_grid_cols_2 col_gap_2 row_gap_2">
-                        {% for category in categories %}
-                            <label class="checkbox mb_0">
-                                <input type="checkbox" value="{{ category.id }}" name="categories" />
-                                <span></span>
-                                {{ category.name }}
-                            </label>
-                        {% endfor %}
-                    </div>
-                </div>
-
-                <label class="mt_2">Photos</label>
-                <div class="assets">
-                    <div class="drop_zone col_span_2 row_span_2">
-                        <input type="file" accept="image/png, image/jpeg" />
-
-                        <img src="" />
-
-                        <button type="button">
-                            <svg class="icon icon--sm" height="24px">
-                                <use xlink:href="/icons.svg#close"></use>
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="drop_zone">
-                        <input type="file" accept="image/png, image/jpeg" disabled />
-
-                        <img src="" />
-
-                        <button type="button">
-                            <svg class="icon icon--sm" height="24px">
-                                <use xlink:href="/icons.svg#close"></use>
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="drop_zone">
-                        <input type="file" accept="image/png, image/jpeg" disabled />
-
-                        <img src="" />
-
-                        <button type="button">
-                            <svg class="icon icon--sm" height="24px">
-                                <use xlink:href="/icons.svg#close"></use>
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="drop_zone col_span_2">
-                        <input type="file" accept="image/png, image/jpeg" disabled />
-
-                        <img src="" />
-
-                        <button type="button">
-                            <svg class="icon icon--sm" height="24px">
-                                <use xlink:href="/icons.svg#close"></use>
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="drop_zone">
-                        <input type="file" accept="image/png, image/jpeg" disabled />
-
-                        <img src="" />
-
-                        <button type="button">
-                            <svg class="icon icon--sm" height="24px">
-                                <use xlink:href="/icons.svg#close"></use>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="flex justify_end">
-                    <button type="submit" class="btn btn__green btn--sm">Créer</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
+    {% include "includes/modal_project.html" %}
     {% include "includes/asset_edit_modal.html" %}
 
     <div class="card">
@@ -126,7 +30,7 @@
                         <input type="text" maxlength="30" value="{{ category.name }}" />
 
                         <button type="button" class="text_error">
-                            <svg class="icon" height="20px">
+                            <svg class="icon icon--sm">
                                 <use xlink:href="/dashboard_icons.svg#delete"></use>
                             </svg>
                         </button>
@@ -162,13 +66,13 @@
 
                         <div class="projects__item__actions">
                             <button type="button" class="text_blue">
-                                <svg class="icon" height="20px">
+                                <svg class="icon">
                                     <use xlink:href="/dashboard_icons.svg#edit"></use>
                                 </svg>
                             </button>
 
                             <button type="button" class="text_error">
-                                <svg class="icon" height="20px">
+                                <svg class="icon">
                                     <use xlink:href="/dashboard_icons.svg#delete"></use>
                                 </svg>
                             </button>

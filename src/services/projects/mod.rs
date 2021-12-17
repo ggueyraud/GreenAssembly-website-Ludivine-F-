@@ -47,6 +47,32 @@ pub async fn get_all(pool: &PgPool, category_id: Option<i16>) -> Vec<Project> {
     projects.fetch_all(pool).await.unwrap()
 }
 
+pub async fn get_all_spe<
+    T: std::marker::Unpin + std::marker::Send + for<'c> sqlx::FromRow<'c, sqlx::postgres::PgRow>,
+>(pool: &PgPool, fields: &str, category_id: Option<i16>) -> Result<Vec<T>, Error> {
+    let query = format!(
+        "SELECT
+            {}
+        FROM projects
+        ORDER BY date DESC",
+        fields
+    );
+
+    // if category_id.is_some() {
+    //     query += " WHERE category_id = $1"
+    // }
+
+    let mut projects = sqlx::query_as::<_, T>(&query);
+
+    if let Some(category_id) = category_id {
+        projects = projects.bind(category_id);
+    }
+
+    let res = projects.fetch_all(pool).await?;
+
+    Ok(res)
+}
+
 pub async fn exists(pool: &PgPool, id: i16) -> bool {
     sqlx::query!("SELECT 1 AS one FROM projects WHERE id = $1", id)
         .fetch_one(pool)

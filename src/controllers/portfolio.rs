@@ -138,9 +138,8 @@ async fn view_project(
             services::projects::assets::get_all(&pool, id)
         );
 
-        if let Ok(project) = services::projects::get(&pool, id).await {
+        if let Ok(project) = project {
             let mut token: Option<String> = None;
-            let assets = services::projects::assets::get_all(&pool, id).await;
 
             if let Ok(Some(id)) =
                 metrics::add(&pool, &req, services::metrics::BelongsTo::Project(id)).await
@@ -186,6 +185,55 @@ async fn view_project(
     }
 
     Ok(HttpResponse::NotFound().finish())
+}
+
+#[get("/projects/{id}")]
+pub async fn get_project(
+    pool: web::Data<PgPool>,
+    session: Identity,
+    web::Path(id): web::Path<i16>
+) -> HttpResponse {
+    if let None = session.identity() {
+        return HttpResponse::Unauthorized().finish()
+    }
+
+    if !services::projects::exists(&pool, id).await {
+        return HttpResponse::NotFound().finish()
+    }
+
+    #[derive(sqlx::FromRow, Serialize)]
+    struct Project {
+        name: String,
+        description: Option<String>,
+        content: String
+    }
+
+    let (project, assets, categories) = futures::join!(
+        services::projects::get_spe::<Project>(&pool, "name, description, content", id),
+        services::projects::assets::get_all(&pool, id),
+        services::projects::categories::get_all(&pool, Some(id))
+    );
+    let categories = categories
+        .iter()
+        .map(|category| category.id)
+        .collect::<Vec<i16>>();
+
+    match project {
+        Ok(project) => {
+            HttpResponse::Ok().json(serde_json::json!({
+                "title": project.name,
+                "description": project.description,
+                "content": project.content,
+                // "categories": 
+                "assets": assets.iter().map(|asset| asset.path.clone()).collect::<Vec<String>>(),
+                "categories": categories
+            }))
+        },
+        Err(e) => {
+            eprintln!("{:?}", e);
+            HttpResponse::InternalServerError().finish()
+        }
+    }
 }
 
 #[derive(Deserialize)]
@@ -302,44 +350,6 @@ async fn delete_category(
     HttpResponse::Unauthorized().finish()
 }
 
-#[get("/projects/{id}")]
-pub async fn get_project(
-    pool: web::Data<PgPool>,
-    session: Identity,
-    web::Path(id): web::Path<i16>,
-) -> HttpResponse {
-    // if session.identity().is_none() {
-    //     return HttpResponse::Unauthorized().finish()
-    // }
-
-    if !services::projects::exists(&pool, id).await {
-        return HttpResponse::NotFound().finish();
-    }
-
-    let (project, assets) = futures::join!(
-        services::projects::get(&pool, id),
-        services::projects::assets::get_all(&pool, id)
-    );
-    let project = project.unwrap();
-
-    HttpResponse::Ok().json(serde_json::json!({
-        "name": project.name,
-        "description": project.name,
-        "content": project.content,
-        "assets": Vec::from(
-            assets
-            .iter()
-            .map(|asset| {
-                serde_json::json!({
-                    "id": asset.id,
-                    "path": asset.path
-                })
-            })
-            .collect::<Vec<_>>()
-        )
-    }))
-}
-
 #[derive(Deserialize, Debug)]
 struct ProjectInformations {
     name: String,
@@ -365,6 +375,7 @@ impl ProjectInformations {
         allowed_tags.insert("li");
         allowed_tags.insert("a");
         allowed_tags.insert("p");
+        allowed_tags.insert("br");
         self.content = Builder::default()
             .tags(allowed_tags)
             .clean(self.content.trim())

@@ -1,4 +1,4 @@
-const is_filled_class = 'drop_zone--is-filled';
+export const is_filled_class = 'drop_zone--is-filled';
 const hover_class = 'drop_zone--hover';
 
 // TODO : implement max file size
@@ -24,8 +24,8 @@ export class DropZone {
             const reader = new FileReader();
 
             reader.onload = e => {
-                this.#fire('change', [e.target.result]);
                 this.container.classList.add(is_filled_class);
+                this.#fire('change', [e.target.result]);
             }
 
             reader.readAsDataURL(this.input.files[0]);
@@ -33,7 +33,8 @@ export class DropZone {
     }
 
     get is_filled() {
-        return this.input.value !== '';
+        return this.container.classList.contains(is_filled_class)
+        // return this.input.value !== '';
     }
 
     setImage(image) {
@@ -42,7 +43,7 @@ export class DropZone {
     }
 
     clear() {
-        //this.input.value = '';
+        // this.input.value = '';
 
         this.container.classList.remove(is_filled_class);
 
@@ -82,7 +83,8 @@ export default class AssetsGrid {
 
             drop_zone
                 .on('clear', () => {
-                    console.log('clear', this.#limit);
+                    console.log('limit', this.#limit)
+                    // console.log('clear', this.#limit);
                     this.#items[this.#limit].input.setAttribute('disabled', true);
                     this.#limit--;
 
@@ -100,21 +102,9 @@ export default class AssetsGrid {
                     this.#fire('select', [image, drop_zone]);
                     // Make available next dropzone
                     this.#limit++;
+                    console.log('limit', this.#limit)
                     this.#items[this.#limit].input.removeAttribute('disabled');
                 });
-            
-            // Input handling
-            // drop_zone.input.addEventListener('change', () => {
-            //     const reader = new FileReader();
-
-            //     reader.onload = e => {
-            //         this.#fire('select', [e.target.result, drop_zone]);
-            //         this.#limit++;
-            //         this.#items[this.#limit].input.removeAttribute('disabled');
-            //     }
-
-            //     reader.readAsDataURL(drop_zone.input.files[0]);
-            // });
 
             // Events initialization
             drop_zone.container.addEventListener('dragstart', e => this.#dragged_element = e.target, false);
@@ -182,22 +172,30 @@ export default class AssetsGrid {
     #update(updated_index, recalculate_each_position = false) {
         if (recalculate_each_position) {
             this.#items.forEach((item, index) => {
-                console.log(item, index, updated_index, item.is_filled);
-                console.log(index >= updated_index && item.is_filled);
-
-                if (index >= updated_index && item.is_filled) {
+                console.log(
+                    `updated_index: ${updated_index}`,
+                    `current index = ${index}`,
+                    item,
+                    item.is_filled,
+                    `${index === updated_index || (index > updated_index && item.is_filled) ? 'va être move' : 'aucun changement'}`
+                );
+                // console.log(index >= updated_index && item.is_filled);
+                
+                if (index === updated_index || (index > updated_index && item.is_filled)) {
+                    // console.log(item, index, updated_index, item.is_filled);
                     const prev = this.#items[index - 1];
 
                     if (prev) {
                         prev.image.setAttribute('src', item.image.getAttribute('src'));
                         prev.container.classList.add(is_filled_class);
                         item.clear();
+                        console.log(item.is_filled)
                     }
                 }
 
-                if (index === 0) {
-                    item.clear();
-                }
+                // if (index === 0) {
+                //     item.clear();
+                // }
             });
         }
     }

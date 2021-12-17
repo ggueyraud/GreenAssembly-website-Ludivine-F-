@@ -16,7 +16,7 @@ pub async fn get_all(pool: &PgPool, project_id: Option<i16>) -> Vec<super::Categ
     );
 
     if project_id.is_some() {
-        query += " WHERE pc.project_id = $1";
+        query += " WHERE pcs.project_id = $1";
     }
 
     query += r#" ORDER BY "order""#;
@@ -28,18 +28,6 @@ pub async fn get_all(pool: &PgPool, project_id: Option<i16>) -> Vec<super::Categ
     }
 
     query.fetch_all(pool).await.unwrap()
-
-    // sqlx::query_as!(
-    //     super::Category,
-    //     r#"SELECT
-    //         pc.id, pc.name
-    //     FROM project_categories pc
-    //     LEFT JOIN projects_categories pcs ON pcs.category_id = pc.id
-    //     ORDER BY "order""#
-    // )
-    // .fetch_all(pool)
-    // .await
-    // .unwrap()
 }
 
 pub async fn insert(pool: &PgPool, name: &str) -> Result<i16, Error> {

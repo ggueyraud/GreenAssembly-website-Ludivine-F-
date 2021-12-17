@@ -52,23 +52,41 @@ pub async fn home_page(id: Identity) -> Result<HttpResponse, Error> {
 #[get("/portfolio")]
 pub async fn portfolio(id: Identity, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
     if let Some(_) = id.identity() {
+        #[derive(sqlx::FromRow, Serialize)]
+        struct Project {
+            id: i16,
+            name: String,
+            content: String,
+            date: DateTime<Utc>,
+        }
+
         let (categories, projects) = futures::join!(
             services::projects::categories::get_all(&pool, None),
-            services::projects::get_all(&pool, None)
+            services::projects::get_all_spe::<Project>(&pool, "id, name, content, date", None)
         );
 
-        #[derive(Template)]
-        #[template(path = "pages/admin/portfolio.html")]
-        struct Portfolio {
-            categories: Vec<services::projects::Category>,
-            projects: Vec<services::projects::Project>,
+        match projects {
+            Ok(projects) => {
+                #[derive(Template)]
+                #[template(path = "pages/admin/portfolio.html")]
+                struct Portfolio {
+                    categories: Vec<services::projects::Category>,
+                    projects: Vec<Project>,
+                }
+        
+                return Portfolio {
+                    categories,
+                    projects,
+                }
+                .into_response();
+            },
+            Err(e) => {
+                eprintln!("{:?}", e);
+                return Ok(HttpResponse::InternalServerError().finish())
+            }
         }
 
-        return Portfolio {
-            categories,
-            projects,
-        }
-        .into_response();
+
     }
 
     Ok(HttpResponse::Found().header("location", "/admin").finish())
