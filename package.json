@@ -17,7 +17,7 @@
     "dompurify": "^2.3.3",
     "formvalidation": "../FormValidation",
     "quill": "^1.3.7",
-    "router": "github:GreenAssembly/Router#v2",
+    "router": "../Router",
     "sanitize-html": "^2.5.1",
     "sortablejs": "^1.14.0",
     "style-box": "github:GreenAssembly/style-box",

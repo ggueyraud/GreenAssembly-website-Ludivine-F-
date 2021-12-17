@@ -4,6 +4,7 @@
 @import 'style-box/base/display';
 @import 'style-box/abstracts/functions/utilities';
 @import 'style-box/base/grid';
+@import '../layout/blog_nav';
 
 main {
     display: grid;
@@ -14,41 +15,9 @@ main {
         margin-bottom: space(6)
     }
 
-    nav {
-        order: 2;
-
-        h3 {
-            margin-bottom: space(4)
-        }
-
-        a {
-            position: relative;
-            padding: space(2) space(3);
-
-            &::after {
-                position: absolute;
-                left: 0;
-                top: 0;
-                bottom: 0;
-                content: '';
-                height: 100%;
-                width: 1px;
-                background-color: color(blue);
-                z-index: -1;
-                transition: width 250ms linear;
-            }
-
-            &.active {
-                color: color('white');
-                &::after {
-                    width: 100%
-                }
-            }
-        }
-    }
-
     section {
         order: 3;
+        grid-area: section;
 
         .post {
             box-shadow: 0px 0px 20px rgba(28, 4, 252, 0.3);
@@ -82,15 +51,6 @@ main {
     }
 
     @include md {
-        nav {
-            margin-bottom: space(4);
-
-            h3 {
-                margin-bottom: space(8);
-                text-align: initial;
-            }
-        }
-
         & > header:first-child {
             display: grid;
             gap: space(6);
@@ -105,13 +65,13 @@ main {
         }
     }
 
+    header {
+        grid-area: header;
+    }
+
     @include lg {
-        grid-template-areas:    "header nav",
+        grid-template-areas:    "header nav"
                                 "section nav";
         grid-template-columns: 1fr auto;
-
-        nav h3 {
-            text-align: center
-        }
     }
 }

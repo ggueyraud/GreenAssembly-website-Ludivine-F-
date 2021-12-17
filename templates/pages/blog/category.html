@@ -1,8 +1,14 @@
-{% extends "front_office.html" %}
+{% extends "blog.html" %}
 
 {% block title %}{{ title }}{% endblock %}
 
 {% block head %}
+    {% match is_seo %}
+        {% when Some with (is_seo) %}
+            <meta name="robots" content="noindex" />
+        {% when None %}
+    {% endmatch %}
+
     {% match description %}
         {% when Some with (description) %}
             <meta name="description" content="{{ description }}" />
@@ -18,6 +24,7 @@
     {% endmatch %}
 
     <link rel="stylesheet" href="/css/pages/blog.css" />
+    <script src="/js/blog.js" async></script>
 {% endblock %}
 
 {% block content %}
@@ -29,17 +36,6 @@
         {% when None %}
     {% endmatch %}
 </header>
-
-<nav class="md_order_2">
-    <header>
-        <h3>Catégories</h3>
-    </header>
-
-    <a href="/blog">Tout</a>
-    {% for category in categories %}
-        <a href="blog/categories/{{ category.uri }}">{{ category.name }}</a>
-    {% endfor %}
-</nav>
 
 <section class="grid grid_cols_1 md_grid_cols_2 gap_6">
     {% for article in articles %}

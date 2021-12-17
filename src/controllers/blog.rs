@@ -36,7 +36,7 @@ async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse
                 &pool,
                 "name, uri",
                 Some(true),
-                Some(true)
+                None
             ),
             services::blog::articles::get_all::<Article>(
                 &pool,
@@ -98,12 +98,13 @@ async fn show_category(
     struct CategoryDetails {
         name: String,
         description: Option<String>,
+        is_seo: Option<bool>
     }
 
     let (metric_id, category, categories, articles) = futures::join!(
         metrics::add(&pool, &req, services::metrics::BelongsTo::BlogPost(id)),
-        services::blog::categories::get::<CategoryDetails>(&pool, "name, description", id),
-        services::blog::categories::get_all::<Category>(&pool, "name, uri", Some(true), Some(true)),
+        services::blog::categories::get::<CategoryDetails>(&pool, "name, description, is_seo", id),
+        services::blog::categories::get_all::<Category>(&pool, "name, uri", Some(true), None),
         services::blog::articles::get_all::<Article>(
             &pool,
             r#"ba.title,
@@ -113,7 +114,7 @@ async fn show_category(
             TO_CHAR(ba.date, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS international_date,
             f.path AS cover"#,
             Some(true),
-            Some(true),
+            None,
             Some(id)
         )
     );
@@ -133,6 +134,7 @@ async fn show_category(
     struct BlogCategory {
         title: String,
         description: Option<String>,
+        is_seo: Option<bool>,
         year: i32,
         metric_token: Option<String>,
         categories: Vec<Category>,
@@ -142,6 +144,7 @@ async fn show_category(
     BlogCategory {
         title: category.name,
         description: category.description,
+        is_seo: category.is_seo,
         year: chrono::Utc::now().year(),
         metric_token: token,
         categories,
@@ -206,6 +209,7 @@ async fn show_article(
             struct BlogArticle {
                 article: Article,
                 category: Option<Category>,
+                categories: Vec<Category>,
                 year: i32,
                 metric_token: Option<String>,
             }
@@ -226,9 +230,15 @@ async fn show_article(
                 );
             }
         
-            let (metric_id, images) = futures::join!(
+            let (metric_id, images, categories) = futures::join!(
                 metrics::add(&pool, &req, services::metrics::BelongsTo::BlogPost(id)),
-                services::blog::articles::images::get_all(&pool, id)
+                services::blog::articles::images::get_all(&pool, id),
+                services::blog::categories::get_all::<Category>(
+                    &pool,
+                    "name, uri",
+                    Some(true),
+                    None
+                ),
             );
 
             for image in &images {
@@ -238,11 +248,10 @@ async fn show_article(
                 article.content = article.content.replacen(
                     &format!("[[{}]]", image.id),
                     &format!(
-                        r#"
-                        <picture>
-                            <source srcset="/uploads/mobile/{}.webp" media="(min-width: 768px)" type="image/webp" />
-                            <source srcset="/uploads/mobile/{}" media="(min-width: 768px)" />
-                            <source srcset="/uploads/{}.webp" media="(max-width: 768px)" type="image/webp" />
+                        r#"<picture>
+                            <source srcset="/uploads/mobile/{}.webp" media="(max-width: 768px)" type="image/webp" />
+                            <source srcset="/uploads/mobile/{}" media="(max-width: 768px)" />
+                            <source srcset="/uploads/{}.webp" media="(min-width: 768px)" type="image/webp" />
 
                             <img src="/uploads/{}" />
                         </picture>"#,
@@ -265,6 +274,7 @@ async fn show_article(
             return BlogArticle {
                 article,
                 category: category,
+                categories,
                 year: chrono::Utc::now().year(),
                 metric_token: token,
             }

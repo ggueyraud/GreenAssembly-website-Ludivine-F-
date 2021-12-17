@@ -3,6 +3,11 @@ export default selector => {
     let img;
     let body = document.querySelector('body');
 
+    const hide = el => {
+        el.classList.remove('lightbox--active');
+        body.style.overflow = 'auto';
+    }
+
     if (!lightbox) {
         lightbox = document.createElement('div');
         lightbox.classList.add('lightbox');
@@ -12,11 +17,16 @@ export default selector => {
 
         document.querySelector('body').insertAdjacentElement('beforeend', lightbox);
 
-        lightbox.addEventListener('click', () => {
-            lightbox.classList.remove('lightbox--active');
-            body.style.overflow = 'auto';
-        })
+        lightbox.addEventListener('click', e => hide(e.target))
     }
+
+    window.addEventListener('keydown', e => {
+        const active_box = document.querySelector('.lightbox--active');
+
+        if (active_box && e.key === 'Escape') {
+            hide(active_box)
+        }
+    });
 
     document
         .querySelectorAll(selector)

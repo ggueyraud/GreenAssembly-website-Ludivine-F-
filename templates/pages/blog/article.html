@@ -1,4 +1,4 @@
-{% extends "front_office.html" %}
+{% extends "blog.html" %}
 
 {% block title %}{{ article.title }}{% endblock %}
 
@@ -24,6 +24,7 @@
     {% endmatch %}
 
     <link rel="stylesheet" href="/css/pages/article.css" />
+    <script src="/js/blog.js" async></script>
 
     <script type="application/ld+json">
         {
@@ -52,28 +53,28 @@
 {% endblock %}
 
 {% block content %}
+<header>
+    <h1>{{ article.title }}</h1>
+
+    <div id="date_category">
+        <time datetime="{{ article.international_date }}">{{ article.date }}</time>
+        {% match category %}
+            {% when Some with (category) %}
+                <a
+                    href="/blog/categories/{{ category.uri }}"
+                    id="category"
+                    class="btn btn__blue"
+                >
+                    {{ category.name }}
+                </a>
+            {% when None %}
+        {% endmatch %}
+    </div>
+
+    <div id="cover" style="--bg: url(/uploads/{{ article.cover_path }})"></div>
+</header>
+
 <article>
-    <header>
-        <h1>{{ article.title }}</h1>
-
-        <div id="date_category">
-            <time datetime="{{ article.international_date }}">{{ article.date }}</time>
-            {% match category %}
-                {% when Some with (category) %}
-                    <a
-                        href="/blog/categories/{{ category.uri }}"
-                        id="category"
-                        class="btn btn__blue"
-                    >
-                        {{ category.name }}
-                    </a>
-                {% when None %}
-            {% endmatch %}
-        </div>
-
-        <div id="cover" style="--bg: url(/uploads/{{ article.cover_path }})"></div>
-    </header>
-
     {{ article.content|safe }}
 </article>
 
