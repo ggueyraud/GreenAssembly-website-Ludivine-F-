@@ -9,8 +9,6 @@ const sort = id => {
         { opacity: 0 }
     ], { duration: 250 });
 
-    console.log(all_projects)
-
     setTimeout(() => {
         let projects = all_projects; //.map(project => project.outerHTML);
     

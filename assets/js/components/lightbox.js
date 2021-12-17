@@ -32,7 +32,6 @@ export default selector => {
         .querySelectorAll(selector)
         .forEach(element => {
             element.addEventListener('click', e => {
-                console.log(e, element)
                 e.preventDefault();
 
                 lightbox.classList.add('lightbox--active');

@@ -137,7 +137,6 @@ router.on('mount', () => {
             </svg> Envoi en cours..`;
 
             e.detail.cover = document.querySelector('[name="cover"]').files[0];
-            console.log(e.detail.category_id, e.detail.category_id === '')
             e.detail.category_id = e.detail.category_id === '' ? '' : parseInt(e.detail.category_id);
             
             for (const [key, value] of Object.entries(e.detail)) {
@@ -170,7 +169,6 @@ router.on('mount', () => {
                         images.push(ops.insert.image);
                         ops.insert = `[[${i}]]`;
                         i += 1;
-                        console.log(ops, 'is a new image');
                     }
                 }
                 content_quill.setContents(content);
@@ -182,7 +180,6 @@ router.on('mount', () => {
 
 
                 body.append('content', formatted_content);
-                console.log(formatted_content);
     
                 for (const image of images) {
                     body.append('pictures[]', base64_to_blob(image));
@@ -284,7 +281,6 @@ router.on('mount', () => {
 
                 article_modal.close();
             } catch(e) {
-                console.log(e)
                 submit_btn.innerHTML = submit_btn_value_before_send;
                 swal_error()
             }
@@ -399,13 +395,11 @@ router.on('mount', () => {
                 // TODO : set cover
                 article_cover_dropzone.setImage(`/uploads/${article_to_modify.cover}`);
 
-                console.log(article_to_modify)
                 for (const image of article_to_modify.images) {
                     article_to_modify.content = article_to_modify.content.replace(`[[${image.id}]]`, `<img src="/uploads/${image.path}" />`);
                 }
 
                 content_quill.root.innerHTML = article_to_modify.content;
-                console.log(content_quill.getContents());
             }
 
             if (article_to_modify) {
