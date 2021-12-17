@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="fr">
     <head>
+        <base href="https://localhost:8443" />
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0" />
-	<meta name="robots" content="noindex">
+        <meta name="robots" content="noindex">
 
         <title>{% block title %}{{ title }}{% endblock %} | Ludivine Farat - Designer Graphique Freelance</title>
 
@@ -16,51 +17,7 @@
     </head>
     <body>
         <div class="container mx_auto">
-            <header id="topbar">
-                <a href="#menu-opened" id="open_mobile_menu">
-                    <svg class="icon icon--lg" height="32px">
-                        <use xlink:href="/icons.svg#burger"></use>
-                    </svg>
-                </a>
-    
-                <a id="logo" o-follow href="/">
-                    <img src="/logo.svg" alt="Logo" />
-                </a>
-
-                <nav>
-                    <a o-follow href="/portfolio">Portfolio</a>
-                    <a o-follow href="/motion-design">Motion design</a>
-                    <a o-follow href="/blog">Blog</a>
-                    <a o-follow="preload-once" href="/mes-petits-plus">Mes petits +</a>
-                    <a o-follow="preload-once" href="/contact">Contact</a>
-
-                    <div class="socials">
-                        <a href="http://www.behance.net/ludivinefarat" target="_blank" rel="noopener">
-                            <svg class="icon icon--lg" height="32px">
-                                <use xlink:href="/icons.svg#behance"></use>
-                            </svg>
-                        </a>
-    
-                        <a href="https://www.instagram.com/ludivinefarat/" target="_blank" rel="noopener">
-                            <svg class="icon icon--lg" height="32px">
-                                <use xlink:href="/icons.svg#instagram"></use>
-                            </svg>
-                        </a>
-    
-                        <a href="https://www.linkedin.com/in/ludivine-farat/" target="_blank" rel="noopener">
-                            <svg class="icon icon--lg" height="32px">
-                                <use xlink:href="/icons.svg#linkedin"></use>
-                            </svg>
-                        </a>
-    
-                        <a href="https://vimeo.com/ludivinefarat" target="_blank" rel="noopener">
-                            <svg class="icon icon--lg" height="32px">
-                                <use xlink:href="/icons.svg#vimeo"></use>
-                            </svg>
-                        </a>
-                    </div>
-                </nav>
-            </header>
+            {% include "includes/navbar.html" %}
 
             <ga-frame name="main">
                 <main>
@@ -68,41 +25,7 @@
                 </main>
             </ga-frame>
             
-            <footer>
-                <a class="order_2 md_order_1" href="tel:+33675605185">06 75 60 51 85</a>
-
-                <div class="order_1 md_order_2 space_x_2">
-                    <a href="http://www.behance.net/ludivinefarat" target="_blank" rel="noopener">
-                        <svg class="icon icon--lg" height="32px">
-                            <use xlink:href="/icons.svg#behance"></use>
-                        </svg>
-                    </a>
-
-                    <a href="https://www.instagram.com/ludivinefarat/" target="_blank" rel="noopener">
-                        <svg class="icon icon--lg" height="32px">
-                            <use xlink:href="/icons.svg#instagram"></use>
-                        </svg>
-                    </a>
-
-                    <a href="https://www.linkedin.com/in/ludivine-farat/" target="_blank" rel="noopener">
-                        <svg class="icon icon--lg" height="32px">
-                            <use xlink:href="/icons.svg#linkedin"></use>
-                        </svg>
-                    </a>
-
-                    <a href="https://vimeo.com/ludivinefarat" target="_blank" rel="noopener">
-                        <svg class="icon icon--lg" height="32px">
-                            <use xlink:href="/icons.svg#vimeo"></use>
-                        </svg>
-                    </a>
-                </div>
-
-                <a class="order_3" href="mailto:hello@ludivinefarat.fr">hello@ludivinefarat.fr</a>
-    
-                <span class="md_col_span_5 text_center order_4">
-                    ©{{ year }} Ludivine Farat - Tous droits réservés - <a o-follow="preload-once" href="/mentions-legales">Mentions légales</a>
-                </span>
-            </footer>
+            {% include "includes/footer.html" %}
         </div>
     </body>
 </html>
