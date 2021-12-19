@@ -32,12 +32,7 @@ async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse
     if let Ok(page) = services::pages::get(&pool, "blog").await {
         let (metric_id, categories, articles) = futures::join!(
             metrics::add(&pool, &req, services::metrics::BelongsTo::Page(page.id)),
-            services::blog::categories::get_all::<Category>(
-                &pool,
-                "name, uri",
-                Some(true),
-                None
-            ),
+            services::blog::categories::get_all::<Category>(&pool, "name, uri", Some(true), None),
             services::blog::articles::get_all::<Article>(
                 &pool,
                 r#"ba.title,
@@ -98,7 +93,7 @@ async fn show_category(
     struct CategoryDetails {
         name: String,
         description: Option<String>,
-        is_seo: Option<bool>
+        is_seo: Option<bool>,
     }
 
     let (metric_id, category, categories, articles) = futures::join!(
@@ -197,13 +192,14 @@ async fn show_article(
     is_seo"#,
         id,
     )
-    .await {
+    .await
+    {
         Ok(mut article) => {
             match article.is_published {
                 None | Some(false) => return Ok(HttpResponse::NotFound().finish()),
-                _ => ()
+                _ => (),
             }
-        
+
             #[derive(Template)]
             #[template(path = "pages/blog/article.html")]
             struct BlogArticle {
@@ -213,15 +209,15 @@ async fn show_article(
                 year: i32,
                 metric_token: Option<String>,
             }
-        
+
             #[derive(FromRow)]
             struct Category {
                 name: String,
                 uri: String,
             }
-        
+
             let mut category = Option::<Category>::None;
-        
+
             if let Some(category_id) = article.category_id {
                 category = Some(
                     services::blog::categories::get::<Category>(&pool, "name, uri", category_id)
@@ -229,7 +225,7 @@ async fn show_article(
                         .unwrap(),
                 );
             }
-        
+
             let (metric_id, images, categories) = futures::join!(
                 metrics::add(&pool, &req, services::metrics::BelongsTo::BlogPost(id)),
                 services::blog::articles::images::get_all(&pool, id),
@@ -263,14 +259,14 @@ async fn show_article(
                     1
                 );
             }
-        
+
             let mut token: Option<String> = None;
             if let Ok(Some(id)) = metric_id {
                 if let Ok(metric_token) = services::metrics::tokens::add(&pool, id).await {
                     token = Some(metric_token.to_string());
                 }
             }
-        
+
             BlogArticle {
                 article,
                 category: category,
@@ -279,7 +275,7 @@ async fn show_article(
                 metric_token: token,
             }
             .into_response()
-        },
+        }
         Err(e) => {
             eprintln!("{:?}", e);
             Ok(HttpResponse::InternalServerError().finish())
@@ -443,7 +439,9 @@ async fn update_category(
         );
     }
 
-    if services::blog::categories::partial_update(pool.get_ref(), id, fields_to_update).await.is_err()
+    if services::blog::categories::partial_update(pool.get_ref(), id, fields_to_update)
+        .await
+        .is_err()
     {
         return HttpResponse::InternalServerError().finish();
     }
@@ -581,7 +579,10 @@ async fn insert_article(
         Ok(image) => {
             let name = format!("cover_{}", chrono::Utc::now().timestamp());
 
-            if uploader.handle(&image, &name, Some((500, 250)), Some((700, 350))).is_err() {
+            if uploader
+                .handle(&image, &name, Some((500, 250)), Some((700, 350)))
+                .is_err()
+            {
                 return HttpResponse::BadRequest().finish();
             }
 
@@ -704,7 +705,8 @@ async fn insert_article(
                 id,
                 fields_to_update,
             )
-            .await.is_err()
+            .await
+            .is_err()
             {
                 return HttpResponse::InternalServerError().finish();
             }
@@ -869,7 +871,7 @@ async fn update_article(
         let mut content = if let Patch::Value(content) = &form.content {
             content.clone()
         } else {
-            return HttpResponse::BadRequest().finish()
+            return HttpResponse::BadRequest().finish();
         };
 
         for (i, image) in pictures.iter().enumerate() {
@@ -912,16 +914,11 @@ async fn update_article(
                 return HttpResponse::InternalServerError().finish();
             };
 
-            match services::blog::articles::images::insert(
-                transaction.deref_mut(),
-                id,
-                file_id,
-            )
-            .await
+            match services::blog::articles::images::insert(transaction.deref_mut(), id, file_id)
+                .await
             {
                 Ok(id) => {
-                    content =
-                        content.replacen(&format!("[[{}]]", i), &format!("[[{}]]", id), 1);
+                    content = content.replacen(&format!("[[{}]]", i), &format!("[[{}]]", id), 1);
                 }
                 Err(_) => return HttpResponse::InternalServerError().finish(),
             }
@@ -937,7 +934,10 @@ async fn update_article(
             Ok(image) => {
                 let name = format!("cover_{}", chrono::Utc::now().timestamp());
 
-                if uploader.handle(&image, &name, Some((500, 250)), Some((700, 350))).is_err() {
+                if uploader
+                    .handle(&image, &name, Some((500, 250)), Some((700, 350)))
+                    .is_err()
+                {
                     return HttpResponse::BadRequest().finish();
                 }
 
@@ -1000,8 +1000,8 @@ async fn update_article(
     fields_need_update.remove("blocks");
 
     if services::blog::articles::partial_update(transaction.deref_mut(), id, fields_need_update)
-            .await
-            .is_err()
+        .await
+        .is_err()
     {
         return HttpResponse::InternalServerError().finish();
     }

@@ -73,20 +73,18 @@ pub async fn portfolio(id: Identity, pool: web::Data<PgPool>) -> Result<HttpResp
                     categories: Vec<services::projects::Category>,
                     projects: Vec<Project>,
                 }
-        
+
                 return Portfolio {
                     categories,
                     projects,
                 }
                 .into_response();
-            },
+            }
             Err(e) => {
                 eprintln!("{:?}", e);
-                return Ok(HttpResponse::InternalServerError().finish())
+                return Ok(HttpResponse::InternalServerError().finish());
             }
         }
-
-
     }
 
     Ok(HttpResponse::Found().header("location", "/admin").finish())

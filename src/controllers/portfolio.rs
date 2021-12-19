@@ -191,21 +191,21 @@ async fn view_project(
 pub async fn get_project(
     pool: web::Data<PgPool>,
     session: Identity,
-    web::Path(id): web::Path<i16>
+    web::Path(id): web::Path<i16>,
 ) -> HttpResponse {
     if session.identity().is_none() {
-        return HttpResponse::Unauthorized().finish()
+        return HttpResponse::Unauthorized().finish();
     }
 
     if !services::projects::exists(&pool, id).await {
-        return HttpResponse::NotFound().finish()
+        return HttpResponse::NotFound().finish();
     }
 
     #[derive(sqlx::FromRow, Serialize)]
     struct Project {
         name: String,
         description: Option<String>,
-        content: String
+        content: String,
     }
 
     let (project, assets, categories) = futures::join!(
@@ -224,11 +224,11 @@ pub async fn get_project(
                 "title": project.name,
                 "description": project.description,
                 "content": project.content,
-                // "categories": 
+                // "categories":
                 "assets": assets.iter().map(|asset| asset.path.clone()).collect::<Vec<String>>(),
                 "categories": categories
             }))
-        },
+        }
         Err(e) => {
             eprintln!("{:?}", e);
             HttpResponse::InternalServerError().finish()
@@ -480,7 +480,9 @@ pub async fn insert_project(
                         &name,
                         Some((500, 500)),
                         Some((700, 700)),
-                    ).is_err() {
+                    )
+                    .is_err()
+                    {
                         // TODO : rollback
                         return HttpResponse::BadRequest().finish();
                     }

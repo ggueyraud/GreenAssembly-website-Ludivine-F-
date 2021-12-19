@@ -85,9 +85,7 @@ pub async fn login(
                 }
             }
         }
-        _ => {
-            HttpResponse::InternalServerError().finish()
-        }
+        _ => HttpResponse::InternalServerError().finish(),
     }
 }
 

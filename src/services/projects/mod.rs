@@ -49,7 +49,11 @@ pub async fn get_all(pool: &PgPool, category_id: Option<i16>) -> Vec<Project> {
 
 pub async fn get_all_spe<
     T: std::marker::Unpin + std::marker::Send + for<'c> sqlx::FromRow<'c, sqlx::postgres::PgRow>,
->(pool: &PgPool, fields: &str, category_id: Option<i16>) -> Result<Vec<T>, Error> {
+>(
+    pool: &PgPool,
+    fields: &str,
+    category_id: Option<i16>,
+) -> Result<Vec<T>, Error> {
     let query = format!(
         "SELECT
             {}
