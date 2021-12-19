@@ -70,23 +70,23 @@ pub async fn login(
                     // id.remember(serde_json::to_string(&user).unwrap());
                     id.remember(1.to_string());
 
-                    return HttpResponse::Ok().json(serde_json::json!({
+                    HttpResponse::Ok().json(serde_json::json!({
                         "valid": true
-                    }));
+                    }))
                 }
                 _ => {
                     if attempts_counter + 1 >= 10 {
                         // TODO : inform fail2ban to ban this IP
                     }
 
-                    return HttpResponse::Ok().json(serde_json::json!({
+                    HttpResponse::Ok().json(serde_json::json!({
                         "valid": false
-                    }));
+                    }))
                 }
             }
         }
         _ => {
-            return HttpResponse::InternalServerError().finish();
+            HttpResponse::InternalServerError().finish()
         }
     }
 }
@@ -164,7 +164,7 @@ pub async fn lost_password(
         if let Ok(email) = email {
             let mut mailer = SmtpClient::new_unencrypted_localhost().unwrap().transport();
 
-            if let Ok(_) = mailer.send(email.into()) {
+            if mailer.send(email.into()).is_ok() {
                 return HttpResponse::Ok().json(serde_json::json!({
                     "valid": true
                 }));

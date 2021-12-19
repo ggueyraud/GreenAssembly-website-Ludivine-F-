@@ -107,7 +107,7 @@ async fn post(mut form: web::Form<ContactForm>) -> HttpResponse {
     if let Ok(email) = email {
         let mut mailer = SmtpClient::new_unencrypted_localhost().unwrap().transport();
 
-        if let Ok(_) = mailer.send(email.into()) {
+        if mailer.send(email.into()).is_ok() {
             return HttpResponse::Ok().finish();
         }
     }

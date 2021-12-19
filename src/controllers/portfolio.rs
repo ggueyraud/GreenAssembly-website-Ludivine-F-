@@ -100,7 +100,7 @@ async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse
                         illustration
                             .path
                             .clone()
-                            .split(".")
+                            .split('.')
                             .collect::<Vec<_>>()
                             .get(0)
                             .unwrap()
@@ -193,7 +193,7 @@ pub async fn get_project(
     session: Identity,
     web::Path(id): web::Path<i16>
 ) -> HttpResponse {
-    if let None = session.identity() {
+    if session.identity().is_none() {
         return HttpResponse::Unauthorized().finish()
     }
 
@@ -255,7 +255,7 @@ async fn create_category(
     session: Identity,
     mut form: web::Form<CategoryForm>,
 ) -> HttpResponse {
-    if let Some(_) = session.identity() {
+    if session.identity().is_some() {
         if !form.is_valid() {
             return HttpResponse::BadRequest().finish();
         }
@@ -304,7 +304,7 @@ async fn update_category(
     mut form: web::Form<UpdateCategoryForm>,
     web::Path(id): web::Path<i16>,
 ) -> HttpResponse {
-    if let Some(_) = session.identity() {
+    if session.identity().is_some() {
         if !services::projects::categories::exists(&pool, id).await {
             return HttpResponse::NotFound().finish();
         }
@@ -337,7 +337,7 @@ async fn delete_category(
     session: Identity,
     web::Path(id): web::Path<i16>,
 ) -> HttpResponse {
-    if let Some(_) = session.identity() {
+    if session.identity().is_some() {
         if services::projects::categories::exists(&pool, id).await {
             services::projects::categories::delete(&pool, id).await;
 
@@ -409,7 +409,7 @@ impl ProjectAddForm {
             }
         }
 
-        return true;
+        true
     }
 }
 
@@ -419,7 +419,7 @@ pub async fn insert_project(
     mut form: actix_extract_multipart::Multipart<ProjectAddForm>,
     session: Identity,
 ) -> HttpResponse {
-    if let Some(_) = session.identity() {
+    if session.identity().is_some() {
         if !form.is_valid().await {
             return HttpResponse::BadRequest().finish();
         }
@@ -474,13 +474,13 @@ pub async fn insert_project(
                         Err(_) => return HttpResponse::BadRequest().finish(),
                     };
 
-                    if let Err(_) = crate::utils::image::create_images(
+                    if crate::utils::image::create_images(
                         // file.data(),
                         &image,
                         &name,
                         Some((500, 500)),
                         Some((700, 700)),
-                    ) {
+                    ).is_err() {
                         // TODO : rollback
                         return HttpResponse::BadRequest().finish();
                     }
@@ -537,7 +537,7 @@ pub async fn update_project(
     session: Identity,
     web::Path(id): web::Path<i16>,
 ) -> HttpResponse {
-    if let Some(_) = session.identity() {
+    if session.identity().is_some() {
         //     if !form.is_valid(&pool).await {
         //         return HttpResponse::BadRequest().finish();
         //     }
@@ -557,7 +557,7 @@ async fn delete_project(
     web::Path(id): web::Path<i16>,
     session: Identity,
 ) -> HttpResponse {
-    if let Some(_) = session.identity() {
+    if session.identity().is_some() {
         if services::projects::exists(&pool, id).await {
             let assets = services::projects::assets::get_all(&pool, id).await;
 
@@ -619,7 +619,7 @@ async fn update_asset(
     web::Path((project_id, asset_id)): web::Path<(i16, i16)>,
     form: web::Form<UpdateAssetForm>,
 ) -> HttpResponse {
-    if let Some(_) = session.identity() {
+    if session.identity().is_some() {
         if services::projects::assets::exists(&pool, project_id, asset_id).await {
             match sqlx::query!(
                 "CALL update_asset($1, $2, $3)",
@@ -647,7 +647,7 @@ async fn delete_asset(
     web::Path((project_id, asset_id)): web::Path<(i16, i16)>,
     session: Identity,
 ) -> HttpResponse {
-    if let Some(_) = session.identity() {
+    if session.identity().is_some() {
         if services::projects::assets::exists(&pool, project_id, asset_id).await {
             if let Ok(asset) = services::projects::assets::get(&pool, asset_id).await {
                 // TODO : remove all differents file formats

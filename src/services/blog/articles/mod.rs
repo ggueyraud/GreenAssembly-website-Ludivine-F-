@@ -110,7 +110,7 @@ pub async fn partial_update(
     id: i16,
     fields: std::collections::HashMap<String, serde_json::Value>,
 ) -> Result<bool, Error> {
-    if fields.len() > 0 {
+    if !fields.is_empty() {
         let mut query = String::from("UPDATE blog_articles SET");
         let mut i = 1;
 

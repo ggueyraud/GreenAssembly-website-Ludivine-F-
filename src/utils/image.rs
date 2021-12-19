@@ -28,7 +28,7 @@ fn webp_thumbnail(image: &DynamicImage, size: (u32, u32), path: &str) -> Result<
             // let image_webp =
             //     Encoder::from_image(&image.resize(size.0, size.1, image::imageops::CatmullRom))
             //         .encode(100.0);
-            let v = image_webp.iter().map(|a| *a).collect::<Vec<u8>>();
+            let v = image_webp.iter().copied().collect::<Vec<u8>>();
 
             match std::fs::File::create(path) {
                 Ok(mut file) => {

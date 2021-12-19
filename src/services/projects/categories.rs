@@ -52,7 +52,7 @@ pub async fn update_2(
     id: i16,
     fields: HashMap<String, serde_json::Value>,
 ) -> Result<bool, Error> {
-    if fields.len() > 0 {
+    if !fields.is_empty() {
         let mut query = String::from("UPDATE project_categories SET ");
         let mut i = 1;
 
@@ -88,7 +88,7 @@ pub async fn update_2(
         return Ok(res.rows_affected() == 1);
     }
 
-    return Ok(false);
+    Ok(false)
 }
 
 pub async fn update(pool: &PgPool, id: i16, name: &str, order: i16) -> Result<bool, Error> {

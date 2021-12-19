@@ -242,7 +242,7 @@ async fn show_article(
             );
 
             for image in &images {
-                let filename = image.path.split(".").collect::<Vec<_>>();
+                let filename = image.path.split('.').collect::<Vec<_>>();
                 let filename = filename.get(0).unwrap();
 
                 article.content = article.content.replacen(
@@ -271,14 +271,14 @@ async fn show_article(
                 }
             }
         
-            return BlogArticle {
+            BlogArticle {
                 article,
                 category: category,
                 categories,
                 year: chrono::Utc::now().year(),
                 metric_token: token,
             }
-            .into_response();
+            .into_response()
         },
         Err(e) => {
             eprintln!("{:?}", e);
@@ -293,7 +293,7 @@ async fn get_category(
     session: Identity,
     web::Path(id): web::Path<i16>,
 ) -> HttpResponse {
-    if let None = session.identity() {
+    if session.identity().is_none() {
         return HttpResponse::Unauthorized().finish();
     }
 
@@ -341,7 +341,7 @@ async fn insert_category(
     session: Identity,
     mut form: web::Json<NewCategoryForm>,
 ) -> HttpResponse {
-    if let None = session.identity() {
+    if session.identity().is_none() {
         return HttpResponse::Unauthorized().finish();
     }
 
@@ -360,12 +360,13 @@ async fn insert_category(
     )
     .await
     {
-        if let Ok(_) = services::blog::categories::update_uri(
+        if services::blog::categories::update_uri(
             &pool,
             id,
             &slugify(&format!("{}-{}", form.name, id)),
         )
         .await
+        .is_ok()
         {
             return HttpResponse::Created().json(id);
         }
@@ -395,7 +396,7 @@ async fn update_category(
     web::Path(id): web::Path<i16>,
     mut form: web::Json<UpdateCategoryForm>,
 ) -> HttpResponse {
-    if let None = session.identity() {
+    if session.identity().is_none() {
         return HttpResponse::Unauthorized().finish();
     }
 
@@ -442,8 +443,7 @@ async fn update_category(
         );
     }
 
-    if let Err(_) =
-        services::blog::categories::partial_update(pool.get_ref(), id, fields_to_update).await
+    if services::blog::categories::partial_update(pool.get_ref(), id, fields_to_update).await.is_err()
     {
         return HttpResponse::InternalServerError().finish();
     }
@@ -457,7 +457,7 @@ async fn delete_category(
     session: Identity,
     web::Path(id): web::Path<i16>,
 ) -> HttpResponse {
-    if let None = session.identity() {
+    if session.identity().is_none() {
         return HttpResponse::Unauthorized().finish();
     }
 
@@ -476,7 +476,7 @@ async fn get_article(
     session: Identity,
     web::Path(id): web::Path<i16>,
 ) -> HttpResponse {
-    if let None = session.identity() {
+    if session.identity().is_none() {
         return HttpResponse::Unauthorized().finish();
     }
 
@@ -551,7 +551,7 @@ async fn insert_article(
     session: Identity,
     mut form: actix_extract_multipart::Multipart<NewArticleForm>,
 ) -> HttpResponse {
-    if let None = session.identity() {
+    if session.identity().is_none() {
         return HttpResponse::Unauthorized().finish();
     }
 
@@ -581,7 +581,7 @@ async fn insert_article(
         Ok(image) => {
             let name = format!("cover_{}", chrono::Utc::now().timestamp());
 
-            if let Err(_) = uploader.handle(&image, &name, Some((500, 250)), Some((700, 350))) {
+            if uploader.handle(&image, &name, Some((500, 250)), Some((700, 350))).is_err() {
                 return HttpResponse::BadRequest().finish();
             }
 
@@ -652,7 +652,7 @@ async fn insert_article(
 
                     let name = format!("{}_{}_{}", id, i, chrono::Utc::now().timestamp());
 
-                    if let Err(_) = uploader.handle(&image, &name, None, None) {
+                    if uploader.handle(&image, &name, None, None).is_err() {
                         return HttpResponse::BadRequest().finish();
                     }
 
@@ -699,12 +699,12 @@ async fn insert_article(
             );
             fields_to_update.insert(String::from("content"), Value::String(content));
 
-            if let Err(_) = services::blog::articles::partial_update(
+            if services::blog::articles::partial_update(
                 transaction.deref_mut(),
                 id,
                 fields_to_update,
             )
-            .await
+            .await.is_err()
             {
                 return HttpResponse::InternalServerError().finish();
             }
@@ -748,7 +748,7 @@ async fn update_article(
     mut form: actix_extract_multipart::Multipart<UpdateArticleForm>,
     web::Path(id): web::Path<i16>,
 ) -> HttpResponse {
-    if let None = session.identity() {
+    if session.identity().is_none() {
         return HttpResponse::Unauthorized().finish();
     }
 
@@ -842,7 +842,7 @@ async fn update_article(
             if !content.contains(&image.id.to_string()) {
                 services::blog::articles::images::delete(transaction.deref_mut(), image.id).await;
                 println!("{} doesn't exist anymore !", image.id);
-                let filename = image.path.split(".").collect::<Vec<_>>();
+                let filename = image.path.split('.').collect::<Vec<_>>();
                 let filename = filename.get(0).unwrap();
 
                 files_to_remove.append(
@@ -888,7 +888,7 @@ async fn update_article(
 
             let name = format!("{}_{}_{}", id, i, chrono::Utc::now().timestamp());
 
-            if let Err(_) = uploader.handle(&image, &name, None, None) {
+            if uploader.handle(&image, &name, None, None).is_err() {
                 return HttpResponse::BadRequest().finish();
             }
 
@@ -937,7 +937,7 @@ async fn update_article(
             Ok(image) => {
                 let name = format!("cover_{}", chrono::Utc::now().timestamp());
 
-                if let Err(_) = uploader.handle(&image, &name, Some((500, 250)), Some((700, 350))) {
+                if uploader.handle(&image, &name, Some((500, 250)), Some((700, 350))).is_err() {
                     return HttpResponse::BadRequest().finish();
                 }
 
@@ -971,7 +971,7 @@ async fn update_article(
                     return HttpResponse::InternalServerError().finish();
                 };
 
-                let old_cover_name = path.split(".").collect::<Vec<_>>();
+                let old_cover_name = path.split('.').collect::<Vec<_>>();
                 let old_cover_name = old_cover_name.get(0).unwrap();
 
                 files_to_remove.append(
@@ -999,9 +999,9 @@ async fn update_article(
 
     fields_need_update.remove("blocks");
 
-    if let Err(_) =
-        services::blog::articles::partial_update(transaction.deref_mut(), id, fields_need_update)
+    if services::blog::articles::partial_update(transaction.deref_mut(), id, fields_need_update)
             .await
+            .is_err()
     {
         return HttpResponse::InternalServerError().finish();
     }
@@ -1026,7 +1026,7 @@ async fn delete_article(
     session: Identity,
     web::Path(id): web::Path<i16>,
 ) -> HttpResponse {
-    if let None = session.identity() {
+    if session.identity().is_none() {
         return HttpResponse::Unauthorized().finish();
     }
 
@@ -1049,7 +1049,7 @@ async fn delete_article(
 
         if let Ok(article) = article {
             if let Ok(file) = services::files::get::<File>(&pool, article.cover_id, "path").await {
-                let cover_file_name = file.path.split(".").collect::<Vec<_>>();
+                let cover_file_name = file.path.split('.').collect::<Vec<_>>();
                 let cover_file_name = cover_file_name.get(0).unwrap();
 
                 images_to_delete.append(
@@ -1063,7 +1063,7 @@ async fn delete_article(
                 );
 
                 for image in &images {
-                    let file_name = image.path.split(".").collect::<Vec<_>>();
+                    let file_name = image.path.split('.').collect::<Vec<_>>();
                     let file_name = file_name.get(0).unwrap();
 
                     images_to_delete.append(

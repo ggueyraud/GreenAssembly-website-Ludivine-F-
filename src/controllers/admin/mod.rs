@@ -17,7 +17,7 @@ mod filters {
 
 #[get("")]
 pub async fn index(id: Identity) -> Result<HttpResponse, Error> {
-    if let Some(_) = id.identity() {
+    if id.identity().is_some() {
         #[derive(Template)]
         #[template(path = "pages/admin/index.html")]
         struct Dashboard;
@@ -34,7 +34,7 @@ pub async fn index(id: Identity) -> Result<HttpResponse, Error> {
 
 #[get("/home")]
 pub async fn home_page(id: Identity) -> Result<HttpResponse, Error> {
-    if let Some(_) = id.identity() {
+    if id.identity().is_some() {
         #[derive(Template)]
         #[template(path = "pages/admin/home.html")]
         struct Home;
@@ -51,7 +51,7 @@ pub async fn home_page(id: Identity) -> Result<HttpResponse, Error> {
 
 #[get("/portfolio")]
 pub async fn portfolio(id: Identity, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
-    if let Some(_) = id.identity() {
+    if id.identity().is_some() {
         #[derive(sqlx::FromRow, Serialize)]
         struct Project {
             id: i16,
@@ -94,7 +94,7 @@ pub async fn portfolio(id: Identity, pool: web::Data<PgPool>) -> Result<HttpResp
 
 #[get("/my_little_plus")]
 pub async fn my_little_plus_page(id: Identity) -> Result<HttpResponse, Error> {
-    if let Some(_) = id.identity() {
+    if id.identity().is_some() {
         #[derive(Template)]
         #[template(path = "pages/admin/my_little_plus.html")]
         struct MyLittlePlus;
@@ -111,7 +111,7 @@ pub async fn my_little_plus_page(id: Identity) -> Result<HttpResponse, Error> {
 
 #[get("/blog")]
 async fn blog(id: Identity, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
-    if let Some(_) = id.identity() {
+    if id.identity().is_some() {
         #[derive(sqlx::FromRow, Serialize)]
         struct Category {
             id: i16,
@@ -160,7 +160,7 @@ async fn blog(id: Identity, pool: web::Data<PgPool>) -> Result<HttpResponse, Err
 
 #[get("/parametres")]
 pub async fn settings(id: Identity, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
-    if let Some(_) = id.identity() {
+    if id.identity().is_some() {
         #[derive(Template)]
         #[template(path = "pages/admin/settings.html")]
         struct Setting {
