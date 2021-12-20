@@ -14,7 +14,7 @@ regex = "1.5.4"
 sqlx = { version = "0.5.7", features = ["macros", "postgres", "chrono", "runtime-async-std-native-tls", "uuid"] }
 rustls = "0.18.1"
 askama = { version = "0.10.5", features = ["serde-json", "with-actix-web"] }
-actix-web = { version = "3.3.2", features = ["rustls"] }
+actix-web = { version = "3.3.3", features = ["rustls"] }
 actix-rt = "2.2.0"
 actix-service = "1"
 serde = { version = "1.0.126", features = ["derive"] }
