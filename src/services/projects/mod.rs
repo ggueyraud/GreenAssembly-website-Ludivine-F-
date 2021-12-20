@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc};
 use serde::Serialize;
+use serde_json::Value;
 use sqlx::{Error, FromRow, PgPool};
 
 pub mod assets;
@@ -163,6 +164,45 @@ pub async fn insert(
     Ok(res.id)
 }
 
+pub async fn partial_update(
+    pool: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
+    id: i16,
+    fields: std::collections::HashMap<String, serde_json::Value>,
+) -> Result<bool, Error> {
+    if !fields.is_empty() {
+        let mut query = String::from("UPDATE projects SET ");
+        let mut i = 1;
+
+        for (key, _) in fields.iter() {
+            if i > 1 {
+                query += ",";
+            }
+
+            query += &format!(r#"{} = ${}"#, key, i);
+
+            i += 1;
+        }
+
+        query += &format!(" WHERE id = ${}", i);
+
+        let mut query = sqlx::query(&query);
+
+        for (_, value) in fields.iter() {
+            match value {
+                Value::String(value) => query = query.bind(value.as_str()),
+                Value::Null => query = query.bind(Option::<bool>::None),
+                _ => (),
+            }
+        }
+
+        let res = query.bind(id).execute(pool).await?;
+
+        return Ok(res.rows_affected() == 1);
+    }
+
+    Ok(false)
+}
+
 pub async fn delete(pool: &PgPool, id: i16) -> bool {
     let rows = sqlx::query!("DELETE FROM projects WHERE id = $1", id)
         .execute(pool)
@@ -174,7 +214,7 @@ pub async fn delete(pool: &PgPool, id: i16) -> bool {
 }
 
 pub async fn link_to_category(
-    pool: &PgPool,
+    pool: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
     project_id: i16,
     category_id: i16,
 ) -> Result<(), Error> {
@@ -189,4 +229,20 @@ pub async fn link_to_category(
     .await?;
 
     Ok(())
+}
+
+pub async fn detach_categories(
+    pool: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
+    project_id: i16,
+) -> bool {
+    let rows = sqlx::query!(
+        "DELETE FROM projects_categories WHERE project_id = $1",
+        project_id
+    )
+    .execute(pool)
+    .await
+    .unwrap()
+    .rows_affected();
+
+    rows == 1
 }

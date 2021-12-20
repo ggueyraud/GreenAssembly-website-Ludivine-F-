@@ -8,7 +8,7 @@ use askama_actix::{Template, TemplateIntoResponse};
 use chrono::Datelike;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
-use std::{collections::HashSet, path::Path};
+use std::{collections::HashSet, ops::DerefMut, path::Path};
 
 #[get("")]
 async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
@@ -448,7 +448,7 @@ pub async fn insert_project(
 
                     for category_id in categories {
                         categories_fut.push(services::projects::link_to_category(
-                            &pool,
+                            pool.as_ref(),
                             id,
                             *category_id,
                         ));
@@ -523,34 +523,111 @@ pub async fn insert_project(
 //     to_delete: Option<bool>
 // }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct ProjectUpdateForm {
-    #[serde(flatten)]
-    infos: ProjectInformations,
-    categories: Option<Vec<i16>>,
-    //     files: Vec<ProjectUpdateAssetForm>
+    #[serde(default)]
+    name: Patch<String>,
+    // #[serde(default)]
+    description: Patch<Option<String>>,
+    #[serde(default)]
+    content: Patch<String>,
+    #[serde(default)]
+    categories: Patch<Option<Vec<i16>>>,
 }
 
 #[patch("/projects/{id}")]
 pub async fn update_project(
     pool: web::Data<PgPool>,
-    // mut form: web::Form<services::projects::ProjectInformations>,
     mut form: actix_extract_multipart::Multipart<ProjectUpdateForm>,
     session: Identity,
     web::Path(id): web::Path<i16>,
 ) -> HttpResponse {
-    if session.identity().is_some() {
-        //     if !form.is_valid(&pool).await {
-        //         return HttpResponse::BadRequest().finish();
-        //     }
-
-        //     return match services::projects::update(&pool, id, &*form).await {
-        //         Ok(id) => HttpResponse::Ok().json(id),
-        //         _ => HttpResponse::InternalServerError().finish(),
-        //     };
+    if session.identity().is_none() {
+        return HttpResponse::Unauthorized().finish();
     }
 
-    HttpResponse::Unauthorized().finish()
+    if !services::projects::exists(&pool, id).await {
+        return HttpResponse::NotFound().finish();
+    }
+
+    match &form.name {
+        Patch::Null => return HttpResponse::BadRequest().finish(),
+        Patch::Value(name) => {
+            let name = name.trim().to_string();
+
+            if name.is_empty() || name.len() > 120 {
+                return HttpResponse::BadRequest().finish();
+            }
+
+            form.name = Patch::Value(name);
+        }
+        _ => (),
+    }
+
+    if let Patch::Value(Some(description)) = &form.description {
+        let description = description.trim().to_string();
+
+        if description.len() > 320 {
+            return HttpResponse::BadRequest().finish();
+        }
+
+        form.description = Patch::Value(Some(description));
+    }
+
+    let mut transaction = pool.begin().await.unwrap();
+
+    println!("{:?}", *form);
+
+    services::projects::detach_categories(transaction.deref_mut(), id).await;
+    if let Patch::Value(categories) = &form.categories {
+        if let Some(categories) = &categories {
+            for category_id in categories {
+                if !services::projects::categories::exists(&pool, *category_id).await {
+                    return HttpResponse::NotFound().finish();
+                } else {
+                    if services::projects::link_to_category(
+                        transaction.deref_mut(),
+                        id,
+                        *category_id,
+                    )
+                    .await
+                    .is_err()
+                    {
+                        return HttpResponse::InternalServerError().finish();
+                    }
+                }
+            }
+        }
+    }
+
+    // TODO : check with ammonia
+    if let Patch::Value(content) = &form.content {
+        let content = content.trim().to_string();
+
+        if content.is_empty() || content.len() > 1000 {
+            return HttpResponse::BadRequest().finish();
+        }
+
+        form.content = Patch::Value(content);
+    }
+
+    let mut fields_need_update = crate::utils::patch::extract_fields(&*form);
+
+    fields_need_update.remove("categories");
+
+    // if services::projects::partial_update(transaction.deref_mut(), id, fields_need_update).await.is_err() {
+    //     return HttpResponse::InternalServerError().finish()
+    // }
+
+    match services::projects::partial_update(transaction.deref_mut(), id, fields_need_update).await
+    {
+        Ok(_) => (),
+        Err(e) => println!("{:?}", e),
+    }
+
+    transaction.commit().await.unwrap();
+
+    HttpResponse::Ok().finish()
 }
 
 #[delete("/projects/{id}")]

@@ -42,7 +42,13 @@ pub fn extract_fields(form: &impl Serialize) -> std::collections::HashMap<String
     for (name, obj) in serde_json::json!(form).as_object().unwrap().iter() {
         match obj {
             Value::String(_) => {
-                if obj.as_str().unwrap() != "Undefined" {
+                let value = obj.as_str().unwrap();
+                println!("{}", value);
+                println!("{:?}", value == "Null");
+
+                if value == "Null" {
+                    need_updated_fields.insert(name.to_string(), Value::Null);
+                } else if value != "Undefined" {
                     need_updated_fields.insert(name.to_string(), obj.clone());
                 }
             }

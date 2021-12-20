@@ -2,7 +2,7 @@ import Swal from 'sweetalert2';
 import Sortable from 'sortablejs';
 import Form, { Required, StringLength } from 'formvalidation';
 import Quill from 'quill';
-import { get, post, put, del } from '@js/utils/http';
+import { get, post, patch, put, del } from '@js/utils/http';
 import '@js/components/modal';
 import Modal from '../../components/modal';
 import DOMPurify from 'dompurify'
@@ -18,15 +18,6 @@ let editor = null;
 let add_project_modal = null;
 let project_to_modify = null;
 const { router } = window;
-
-const update_project = (description, name, content) => {
-    project_fv.set_field_value('description', description);
-    project_fv.set_field_value('name', name);
-    project_fv.set_field_value('content', content);
-    editor.root.innerHTML = content;
-
-    add_project_modal.open();
-}
 
 const delete_project = (el, id) => Swal.fire({
     title: 'Suppression',
@@ -175,8 +166,6 @@ router.on('mount', () => {
                 .addEventListener('click', () => {
                     project_to_modify = project;
                     add_project_modal.open();
-                    // update_project(description, name, content)
-                    console.log()
                 });
 
             // Delete button
@@ -208,7 +197,10 @@ router.on('mount', () => {
         update_btn.innerHTML = `<svg class="icon" height="20px">
             <use xlink:href="/dashboard_icons.svg#edit"></use>
         </svg>`;
-        update_btn.addEventListener('click', () => update_project());
+        update_btn.addEventListener('click', () => {
+            project_to_modify = project;
+            add_project_modal.open();
+        });
 
         const delete_btn = document.createElement('button');
         delete_btn.classList.add('text_error');
@@ -238,7 +230,7 @@ router.on('mount', () => {
     }
 
     // Categories
-    categories_container = document.querySelector('.categories');
+    categories_container = document.querySelector('#categories');
     projects_container = document.querySelector('.projects');
     
     const new_category_input = document.querySelector('[name=new_category_name]');
@@ -247,7 +239,7 @@ router.on('mount', () => {
     // projects.reverse().forEach(project => add_project(project));
     // projects.forEach(project => add_project(project));
     
-    sortable_categories = new Sortable(categories_container, {
+    sortable_categories = new Sortable(categories_container.querySelector('.card__body'), {
         animation: 150,
         onEnd: e => {
             if (e.newIndex !== e.oldIndex) {
@@ -305,44 +297,76 @@ router.on('mount', () => {
             'categories[]': {}
         }
     })
-        .on('send', e => {
+        .on('send', async e => {
             const submit_value = project_form_submit.innerHTML;
             project_form_submit.setAttribute('disabled', true);
             project_form_submit.innerHTML = `<svg class="icon icon--rotate icon--sm mr_2" height="18px">
                 <use xlink:href="/dashboard_icons.svg#redo"></use>
             </svg> Envoi en cours..`;
     
-            const form_data = new FormData();
-    
+            const body = new FormData();
+
             for (const [key, value] of Object.entries(e.detail)) {
-                if (Array.isArray(value)) {
-                    for (const item of value) {
-                        form_data.append(`${key}[]`, item);
+                if ((project_to_modify && project_to_modify[key] !== value) || !project_to_modify) {
+                    if (Array.isArray(value)) {
+                        let key_array = `${key}[]`;
+
+                        for (const item of value) {
+                            body.append(key_array, item);
+                        }
+                    } else {
+                        body.append(key, value);
                     }
-                } else {
-                    form_data.append(key, value);
+                }
+
+                if (key === 'categories' && project_to_modify && project_to_modify.categories != e.detail.categories) {
+                    if (e.detail.categories.length === 0) body.append('categories[]', '');
                 }
             }
-    
-            assets_grid.value.forEach(img => form_data.append('files[]', img));
-    
-            post('/api/portfolio/projects', {
-                body: form_data
-            })
-                .then(async res => {
-                    const id = await res.json();
-                    const { name, content } = e.detail;
-    
+
+            if (project_to_modify) {
+                let i = 0;
+                for (const _ of body.entries()) {
+                    i += 1;
+                }
+
+                // No changes detected
+                if (i === 0) {
                     reset_submit_btn(submit_value);
     
                     add_project_modal.close();
-    
+
+                    return;
+                }
+            } else {
+                assets_grid.value.forEach(img => body.append('files[]', img));
+            }
+
+            try {
+                if (project_to_modify) {
+                    await patch(`/api/portfolio/projects/${project_to_modify.id}`, {
+                        body
+                    });
+
+                    // TODO : update DOM
+                } else {
+                    const res = await post('/api/portfolio/projects', {
+                        body
+                    })
+
+                    const id = await res.json();
+                    const { name, content } = e.detail;
+                    
                     add_project({ id, name, content, date: new Date() }, false);
-                })
-                .catch(e => {
-                    reset_submit_btn(submit_value);
-                    swal_error();
-                })
+                }
+
+                reset_submit_btn(submit_value);
+                add_project_modal.close();
+            } catch (e) {
+                console.log(e)
+                reset_submit_btn(submit_value);
+                swal_error();
+            }
         });
     
     editor = new Quill('#content_editor', {
@@ -365,43 +389,6 @@ router.on('mount', () => {
     
         content.dispatchEvent(new Event('input'));
     })
-    
-    add_project_modal = new Modal(document.querySelector('#add_project_modal'))
-        .on('beforeOpen', async (modal) => {
-            if (project_to_modify) {
-                try {
-                    let res = await get(`/api/portfolio/projects/${project_to_modify.id}`);
-                    Object.assign(project_to_modify, await res.json());
-                } catch (e) {
-                    if (e.status === 404) {
-                        data_remove(project_to_modify.name);
-
-                        // TODO : remove project
-                    } else {
-                        swal_error()
-                    }
-
-                    return false;
-                }
-
-                editor.root.innerHTML = project_to_modify.content;
-            } else {}
-
-            modal.modal.querySelector('.modal__dialog__header__title')
-                .innerText = project_to_modify
-                    ? `Modifier le project : ${project_to_modify.name}`
-                    : 'Créer un projet';
-
-            if (project_to_modify) {
-                project_fv.fill(project_to_modify);
-            }
-        })
-        .on('open', e => e.modal.querySelector('[name="name"]').focus())
-        .on('close', () => {
-            assets_grid.clear();
-            project_fv.clear();
-            editor.setContents([]);
-        });
     
     const cropper_el = document.querySelector('#cropper');
     let cropper = null;
@@ -459,6 +446,55 @@ router.on('mount', () => {
         rotate_input.value = value;
         cropper.rotateTo(value);
     });
+
+    add_project_modal = new Modal(document.querySelector('#add_project_modal'))
+        .on('beforeOpen', async (modal) => {
+            if (project_to_modify) {
+                try {
+                    let res = await get(`/api/portfolio/projects/${project_to_modify.id}`);
+                    Object.assign(project_to_modify, await res.json());
+                } catch (e) {
+                    if (e.status === 404) {
+                        data_remove(project_to_modify.name);
+
+                        // TODO : remove project
+                    } else {
+                        swal_error()
+                    }
+
+                    return false;
+                }
+
+                editor.root.innerHTML = project_to_modify.content;
+                assets_grid.setImages(project_to_modify.assets.map(path => `/uploads/${path}`));
+
+                modal.modal.querySelector('.modal__dialog__footer > :first-child').classList.remove('hidden');
+                modal.modal.querySelector('.modal__dialog__footer > :last-child').innerText = project_to_modify
+                    ? `Modifier`
+                    : 'Créer';
+            } else {}
+
+            modal.modal.querySelector('.modal__dialog__header__title')
+                .innerText = project_to_modify
+                    ? `Modifier le project : ${project_to_modify.name}`
+                    : 'Créer un projet';
+
+            if (project_to_modify) {
+                project_to_modify['categories[]'] = project_to_modify.categories;
+                project_fv.fill(project_to_modify);
+            }
+        })
+        .on('open', e => e.modal.querySelector('[name="name"]').focus())
+        .on('close', modal => {
+            if (project_to_modify) {
+                modal.modal.querySelector('.modal__dialog__footer > :first-child').classList.add('hidden');
+            }
+
+            project_to_modify = null;
+            assets_grid.clear();
+            editor.setContents([]);
+            project_fv.clear();
+        });
     
     valid_crop_btn
         .addEventListener('click', () => {
@@ -472,7 +508,7 @@ router.on('mount', () => {
     
             asset_editor_modal.close();
         });
-    document.querySelector('#create_project').addEventListener('click', () => add_project_modal.open());
+    document.querySelector('#projects .card__header button').addEventListener('click', () => add_project_modal.open());
     
     // Quill auto-height
     document.querySelector('[name=description]').addEventListener('input', e => {

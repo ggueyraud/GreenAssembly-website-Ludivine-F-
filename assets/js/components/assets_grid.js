@@ -228,6 +228,14 @@ export default class AssetsGrid {
         this.#limit = 0;
     }
 
+    setImages(images) {
+        images.forEach((image, index) => {
+            if (this.#items.indexOf(index)) {
+                this.#items[index].setImage(image);
+            }
+        });
+    }
+
     get value() {
         const value = [];
 

@@ -16,28 +16,26 @@
     {% include "includes/modal_project.html" %}
     {% include "includes/asset_edit_modal.html" %}
 
-    <div class="card">
+    <div class="card" id="categories">
         <div class="card__header">
             Catégories
         </div>
 
-        <div class="card__body">
-            <ul class="categories">
-                {% for category in categories %}
-                    <li data-id="{{ category.id }}" class="categories__item">
-                        <span>{{ category.name }}</span>
+        <ul class="card__body">
+            {% for category in categories %}
+                <li data-id="{{ category.id }}" class="categories__item">
+                    <span>{{ category.name }}</span>
 
-                        <input type="text" maxlength="30" value="{{ category.name }}" />
+                    <input type="text" maxlength="30" value="{{ category.name }}" />
 
-                        <button type="button" class="text_error">
-                            <svg class="icon icon--sm">
-                                <use xlink:href="/dashboard_icons.svg#delete"></use>
-                            </svg>
-                        </button>
-                    </li>
-                {% endfor %}
-            </ul>
-        </div>
+                    <button type="button" class="text_error">
+                        <svg class="icon icon--sm">
+                            <use xlink:href="/dashboard_icons.svg#delete"></use>
+                        </svg>
+                    </button>
+                </li>
+            {% endfor %}
+        </ul>
 
         <div class="card__footer">
             <input
@@ -49,40 +47,38 @@
         </div>
     </div>
 
-    <div class="card">
+    <div class="card" id="projects">
         <div class="card__header flex justify_between">
             Projets
 
-            <button type="button" class="btn btn__green btn--sm" id="create_project">Ajouter un projet</button>
+            <button type="button" class="btn btn__green btn--sm">Créer un projet</button>
         </div>
 
-        <div class="card__body">
-            <ul class="projects">
-                {% for project in projects %}
-                    <li class="projects__item" data-id="{{ project.id }}">
-                        <span>{{ project.name }}</span>
+        <ul class="card__body">
+            {% for project in projects %}
+                <li class="projects__item" data-id="{{ project.id }}">
+                    <span>{{ project.name }}</span>
 
-                        <div class="projects__item__content">{{ project.content|safe }}</div>
+                    <div class="projects__item__content">{{ project.content|safe }}</div>
 
-                        <div class="projects__item__actions">
-                            <button type="button" class="text_blue">
-                                <svg class="icon">
-                                    <use xlink:href="/dashboard_icons.svg#edit"></use>
-                                </svg>
-                            </button>
+                    <div class="projects__item__actions">
+                        <button type="button" class="text_blue">
+                            <svg class="icon">
+                                <use xlink:href="/dashboard_icons.svg#edit"></use>
+                            </svg>
+                        </button>
 
-                            <button type="button" class="text_error">
-                                <svg class="icon">
-                                    <use xlink:href="/dashboard_icons.svg#delete"></use>
-                                </svg>
-                            </button>
-                        </div>
+                        <button type="button" class="text_error">
+                            <svg class="icon">
+                                <use xlink:href="/dashboard_icons.svg#delete"></use>
+                            </svg>
+                        </button>
+                    </div>
 
-                        {# The javascript will fill this tag #}
-                        <time datetime="{{ project.date|rfc3339 }}"></time>
-                    </li>
-                {% endfor %}
-            </ul>
-        </div>
+                    {# The javascript will fill this tag #}
+                    <time datetime="{{ project.date|rfc3339 }}"></time>
+                </li>
+            {% endfor %}
+        </ul>
     </div>
 {% endblock %}
