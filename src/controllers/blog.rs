@@ -776,9 +776,13 @@ async fn update_article(
     match &form.title {
         Patch::Null => return HttpResponse::BadRequest().finish(),
         Patch::Value(title) => {
+            let title = title.trim().to_string();
+
             if title.is_empty() || title.len() > 255 {
                 return HttpResponse::BadRequest().finish();
             }
+
+            form.title = Patch::Value(title);
         }
         _ => (),
     }
