@@ -208,6 +208,13 @@ pub async fn get_project(
         content: String,
     }
 
+    #[derive(Serialize)]
+    struct Asset {
+        id: i16,
+        path: String,
+        order: usize
+    }
+
     let (project, assets, categories) = futures::join!(
         services::projects::get_spe::<Project>(&pool, "name, description, content", id),
         services::projects::assets::get_all(&pool, id),
@@ -225,7 +232,15 @@ pub async fn get_project(
                 "description": project.description,
                 "content": project.content,
                 // "categories":
-                "assets": assets.iter().map(|asset| asset.path.clone()).collect::<Vec<String>>(),
+                "assets": assets
+                    .iter()
+                    .enumerate()
+                    .map(|(i, asset)| Asset {
+                        id: asset.id,
+                        path: asset.path.clone(),
+                        order: i
+                    })
+                    .collect::<Vec<Asset>>(),
                 "categories": categories
             }))
         }
@@ -518,10 +533,13 @@ pub async fn insert_project(
     HttpResponse::Unauthorized().finish()
 }
 
-// pub struct ProjectUpdateAssetForm {
-//     file: Option<File>,
-//     to_delete: Option<bool>
-// }
+#[derive(Deserialize, Debug)]
+pub struct ProjectUpdateAssetForm {
+    id: i16,
+    order: Option<i16>,
+    //     file: Option<File>,
+    to_delete: Option<bool>,
+}
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct ProjectUpdateForm {
@@ -533,6 +551,10 @@ pub struct ProjectUpdateForm {
     content: Patch<String>,
     #[serde(default)]
     categories: Patch<Option<Vec<i16>>>,
+    #[serde(default, skip_serializing)]
+    assets: Patch<Vec<ProjectUpdateAssetForm>>,
+    #[serde(skip_serializing)]
+    files: Option<Vec<actix_extract_multipart::File>>,
 }
 
 #[patch("/projects/{id}")]
@@ -576,8 +598,6 @@ pub async fn update_project(
 
     let mut transaction = pool.begin().await.unwrap();
 
-    println!("{:?}", *form);
-
     services::projects::detach_categories(transaction.deref_mut(), id).await;
     if let Patch::Value(categories) = &form.categories {
         if let Some(categories) = &categories {
@@ -600,15 +620,48 @@ pub async fn update_project(
         }
     }
 
-    // TODO : check with ammonia
     if let Patch::Value(content) = &form.content {
-        let content = content.trim().to_string();
+        let mut allowed_tags: HashSet<&str> = HashSet::new();
+        allowed_tags.insert("b");
+        allowed_tags.insert("h2");
+        allowed_tags.insert("h3");
+        allowed_tags.insert("ul");
+        allowed_tags.insert("ol");
+        allowed_tags.insert("li");
+        allowed_tags.insert("a");
+        allowed_tags.insert("p");
+        allowed_tags.insert("br");
+
+        let content = Builder::default()
+            .tags(allowed_tags)
+            .clean(content.trim())
+            .to_string();
 
         if content.is_empty() || content.len() > 1000 {
             return HttpResponse::BadRequest().finish();
         }
 
         form.content = Patch::Value(content);
+    }
+
+    if let Patch::Value(assets) = &form.assets {
+        for asset in assets {
+            if let Some(true) = asset.to_delete {
+                services::projects::assets::delete(transaction.deref_mut(), asset.id).await;
+            } else {
+                if let Some(order) = asset.order {
+                    services::projects::assets::update(transaction.deref_mut(), asset.id, order).await;
+                }
+            }
+        }
+    }
+
+    if let Some(files) = &form.files {
+        if services::projects::assets::count(&pool, id).await >= 5 {
+            // cant insert more assets
+        } else {
+
+        }
     }
 
     let mut fields_need_update = crate::utils::patch::extract_fields(&*form);

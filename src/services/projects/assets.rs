@@ -1,5 +1,20 @@
 use sqlx::{Error, PgPool};
 
+pub async fn count(pool: &PgPool, project_id: i16) -> i64 {
+    sqlx::query!(
+        "SELECT
+            COUNT(id)
+        FROM project_assets
+        WHERE project_id = $1",
+        project_id
+    )
+    .fetch_one(pool)
+    .await
+    .unwrap()
+    .count
+    .unwrap()
+}
+
 #[derive(sqlx::FromRow)]
 pub struct Asset {
     id: i16,
@@ -70,7 +85,11 @@ pub async fn insert(
     Ok(res.id)
 }
 
-pub async fn update(pool: &PgPool, id: i16, order: i16) -> Result<bool, Error> {
+pub async fn update(
+    pool: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
+    id: i16,
+    order: i16
+) -> Result<bool, Error> {
     let res = sqlx::query!(
         r#"UPDATE project_assets SET
             "order" = $1
@@ -84,7 +103,10 @@ pub async fn update(pool: &PgPool, id: i16, order: i16) -> Result<bool, Error> {
     Ok(res.rows_affected() == 1)
 }
 
-pub async fn delete(pool: &PgPool, id: i16) -> bool {
+pub async fn delete(
+    pool: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
+    id: i16
+) -> bool {
     sqlx::query!("DELETE FROM project_assets WHERE id = $1", id)
         .execute(pool)
         .await

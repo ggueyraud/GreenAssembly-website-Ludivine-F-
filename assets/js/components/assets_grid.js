@@ -8,7 +8,7 @@ export class DropZone {
     constructor(container) {
         this.container = container;
         this.image = container.querySelector('img');
-        this.input = container.querySelector('input');
+        this.input = container.querySelector('input')
         this.blob = null;
         this.#events.set('change', (_, image) => {
             this.image.setAttribute('src', image);
@@ -83,12 +83,15 @@ export default class AssetsGrid {
 
             drop_zone
                 .on('clear', () => {
-                    console.log('limit', this.#limit)
+                    console.log('limit', this.#limit, this.#items[this.#limit])
                     // console.log('clear', this.#limit);
                     this.#items[this.#limit].input.setAttribute('disabled', true);
                     this.#limit--;
 
                     this.#update(index, true);
+
+                    // console.log(this)
+                    // this.#fire('remove', [drop_zone])
 
                     // // Create timeout for CSS animation
                     // setTimeout(() => {
@@ -107,7 +110,8 @@ export default class AssetsGrid {
                 });
 
             // Events initialization
-            drop_zone.container.addEventListener('dragstart', e => this.#dragged_element = e.target, false);
+            // drop_zone.container.addEventListener('dragstart', e => this.#dragged_element = e.target, false);
+            drop_zone.container.addEventListener('dragstart', e => this.#dragged_element = drop_zone, false);
             drop_zone.container.addEventListener(
                 'drop',
                 e => {
@@ -116,23 +120,32 @@ export default class AssetsGrid {
                     // Can only move asset to a dropzone which is filled, prevent drop an element
                     // from which is not a drop_zone
                     if (drop_zone.is_filled && this.#dragged_element) {
-                        const new_src = this.#dragged_element.getAttribute('src');
+                        const new_src = this.#dragged_element.image.getAttribute('src');
     
                         drop_zone.container.classList.remove(hover_class);
                         drop_zone.image.setAttribute('draggable', true);
     
                         const src = drop_zone.image.getAttribute('src');
+
+                        this.#fire('move', [this.#dragged_element, drop_zone]);
+
+                        console.log('src', src);
+
                         if (src) {
-                            this.#dragged_element.setAttribute('src', src);
+                            // console.log('Blob values', this.#dragged_element, drop_zone);
+                            this.#dragged_element.image.setAttribute('src', src);
+                            const a = this.#dragged_element.blob;
+                            this.#dragged_element.blob = drop_zone.blob;
+                            drop_zone.blob = a;
     
                             // Move image to new location
                             drop_zone.image.setAttribute('src', new_src);
                             this.#dragged_element = null;
                         } else {
-                            this.#dragged_element.parentElement.classList.remove(is_filled_class);
+                            this.#dragged_element.image.parentElement.classList.remove(is_filled_class);
     
                             setTimeout(() => {
-                                this.#dragged_element.setAttribute('src', '');
+                                this.#dragged_element.image.setAttribute('src', '');
                                 
                                 // Move image to new location
                                 drop_zone.image.setAttribute('src', new_src);
@@ -172,30 +185,16 @@ export default class AssetsGrid {
     #update(updated_index, recalculate_each_position = false) {
         if (recalculate_each_position) {
             this.#items.forEach((item, index) => {
-                console.log(
-                    `updated_index: ${updated_index}`,
-                    `current index = ${index}`,
-                    item,
-                    item.is_filled,
-                    `${index === updated_index || (index > updated_index && item.is_filled) ? 'va être move' : 'aucun changement'}`
-                );
-                // console.log(index >= updated_index && item.is_filled);
-                
                 if (index === updated_index || (index > updated_index && item.is_filled)) {
-                    // console.log(item, index, updated_index, item.is_filled);
                     const prev = this.#items[index - 1];
 
                     if (prev) {
                         prev.image.setAttribute('src', item.image.getAttribute('src'));
+                        // prev.blob = item.image.getAttribute('src');
                         prev.container.classList.add(is_filled_class);
                         item.clear();
-                        console.log(item.is_filled)
                     }
                 }
-
-                // if (index === 0) {
-                //     item.clear();
-                // }
             });
         }
     }
@@ -228,22 +227,34 @@ export default class AssetsGrid {
         this.#limit = 0;
     }
 
-    setImages(images) {
+    setImages(images) {        
         images.forEach((image, index) => {
             if (this.#items.indexOf(index)) {
-                this.#items[index].setImage(image);
+                const item = this.#items[index];
+                
+                // item.blob = image;
+                item.setImage(image);
+                item.input.removeAttribute('disabled');
             }
         });
+
+        this.#limit = images.length;
+        this.#items[this.#limit].input.removeAttribute('disabled');
     }
 
     get value() {
-        const value = [];
-
-        this
+        return this
             .#items
             .filter(item => item.image.getAttribute('src'))
-            .forEach(item => value.push(item.blob));
+            .map(item => {
+                if (item.blob) {
+                    return item.blob
+                } else {
+                    return item.image.getAttribute('src')
+                }
+            });
+            // .forEach(item => value.push(item.blob));
 
-        return value;
+        // return value;
     }
 }

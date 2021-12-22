@@ -79,19 +79,38 @@ router.on('mount', () => {
         });
         input.addEventListener('keydown', e => {
             const value = e.target.value;
+            const { name } = categories.find(category => category.id == id);
 
             if (e.key === 'Enter' && value) {
-                put(`/api/portfolio/categories/${id}`, {
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    },
-                    body: new URLSearchParams({ name: value })
-                })
-                    .then(() => {
-                        el.classList.remove('categories__item--edition')
-                        span.innerText = value;
+                // Don't update if value hasn't changed
+                if (name != value) {
+                    put(`/api/portfolio/categories/${id}`, {
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        },
+                        body: new URLSearchParams({ name: value })
                     })
-                    .catch(swal_error)
+                        .then(() => {
+                            el.classList.remove('categories__item--edition');
+    
+                            const checkbox_container = document.querySelector(`[name="categories"][value="${id}"]`).parentElement;
+                            checkbox_container.innerHTML = '';
+                            checkbox_container.textContent = value;
+                            const checkbox_appearence = document.createElement('span');
+                            checkbox_container.prepend(checkbox_appearence);
+                            const checkbox = document.createElement('input');
+                            checkbox.type = 'checkbox';
+                            checkbox.value = id;
+                            checkbox.name = 'categories';
+                            checkbox_container.prepend(checkbox);
+                            // document.querySelector(`[name="categories"][value="${id}"]`).parentElement.innerText = value;
+    
+                            span.innerText = value;
+                        })
+                        .catch(swal_error)
+                } else {
+                    el.classList.remove('categories__item--edition');
+                }
             }
         });
 
@@ -110,7 +129,12 @@ router.on('mount', () => {
                 .then(res => {
                     if (res.isConfirmed) {
                         del(`/api/portfolio/categories/${id}`)
-                            .then(() => categories_container.querySelector(`[data-id="${id}"]`).remove())
+                            .then(() => {
+                                categories_container.querySelector(`[data-id="${id}"]`).remove();
+                                // console.log(document.querySelector(`.categories[type="${id}"]`))
+                                console.log(document.querySelector(`[name="categories"][value="${id}"]`));
+                                document.querySelector(`[name="categories"][value="${id}"]`).parentElement.remove();
+                            })
                             .catch(swal_error)
                     }
                 });
@@ -131,7 +155,7 @@ router.on('mount', () => {
         category_name.classList.add('categories__item__name');
 
         const delete_btn = document.createElement('button');
-        delete_btn.innerHTML = `<svg class="icon" height="20px">
+        delete_btn.innerHTML = `<svg class="icon icon--sm">
             <use xlink:href="/dashboard_icons.svg#delete"></use>
         </svg>`;
         delete_btn.classList.add('text_error');
@@ -155,10 +179,10 @@ router.on('mount', () => {
         .forEach(item => {
             const project = projects.find(project => project.id == item.dataset.id);
 
-            const content_el = item.querySelector('.projects__item__content');
-            content_el.innerHTML = DOMPurify.sanitize(content_el.innerHTML, {
-                ALLOWED_TAGS: []
-            });
+            // const content_el = item.querySelector('.projects__item__content');
+            // content_el.innerHTML = DOMPurify.sanitize(content_el.innerHTML, {
+            //     ALLOWED_TAGS: []
+            // });
 
             // Update button
             item
@@ -230,16 +254,12 @@ router.on('mount', () => {
     }
 
     // Categories
-    categories_container = document.querySelector('#categories');
+    categories_container = document.querySelector('#categories .card__body');
     projects_container = document.querySelector('.projects');
     
     const new_category_input = document.querySelector('[name=new_category_name]');
     
-    // categories.forEach(category => add_category(category.id, category.name));
-    // projects.reverse().forEach(project => add_project(project));
-    // projects.forEach(project => add_project(project));
-    
-    sortable_categories = new Sortable(categories_container.querySelector('.card__body'), {
+    sortable_categories = new Sortable(categories_container, {
         animation: 150,
         onEnd: e => {
             if (e.newIndex !== e.oldIndex) {
@@ -267,8 +287,30 @@ router.on('mount', () => {
                 })
                     .then(async res => {
                         const id = await res.json();
+
+                        // Create new checkbox in project modal
+                        const checkbox_container = document.createElement('label');
+                        checkbox_container.classList.add('checkbox', 'mb_0');
+                        checkbox_container.textContent = value;
+                        const checkbox_appearence = document.createElement('span');
+                        checkbox_container.prepend(checkbox_appearence);
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.value = id;
+                        checkbox.name = 'categories';
+                        // checkbox_container.prep
+                        checkbox_container.prepend(checkbox);
+                        document
+                            .querySelector('[for="categories"]')
+                            .nextElementSibling
+                            .appendChild(checkbox_container);
+
+                        project_fv.remove_field('categories[]');
+                        project_fv.add_field('categories[]');
     
+                        // Add category in categories column
                         add_category(id, value);
+
                         new_category_input.value = '';
                     })
                     .catch(swal_error)
@@ -325,6 +367,31 @@ router.on('mount', () => {
             }
 
             if (project_to_modify) {
+                // console.log(project_to_modify.assets)
+                console.log('--- Grid values ---');
+                console.log(assets_grid.value);
+                console.log('-------------------');
+
+                for (const asset of project_to_modify.assets) {
+                    if (!assets_grid.value.includes(`/uploads/${asset.path}`)) {
+                        console.log(asset, 'removed')
+                        asset.to_delete = true;
+                    }
+
+                    asset.order = assets_grid.value.indexOf(`/uploads/${asset.path}`);
+                }
+
+
+
+                console.log(project_to_modify.assets)
+
+                // for (const asset of assets_grid.value) {
+                //     const existing_asset = project_to_modify.assets.find(existing_asset => existing_asset.path === `/uploads/${asset}`);
+                
+                //     if ()
+                // }
+
+                return;
                 let i = 0;
                 for (const _ of body.entries()) {
                     i += 1;
@@ -348,7 +415,29 @@ router.on('mount', () => {
                         body
                     });
 
-                    // TODO : update DOM
+                    if (e.detail.name !== project_to_modify.name) {
+                        document.querySelector(`#projects [data-id="${project_to_modify.id}"] span`).innerText = e.detail.name;
+                    }
+
+                    if (e.detail.description !== project_to_modify.description) {
+                        console.log(e.detail.description)
+                        let description = document.querySelector(`#projects [data-id="${project_to_modify.id}"] p`);
+
+                        if (e.detail.description) {
+                            if (!description) {
+                                description = document.createElement('p');
+                                document
+                                    .querySelector(`#projects [data-id="${project_to_modify.id}"] span`)
+                                    .insertAdjacentElement('afterend', description);
+                            }
+
+                            description.innerText = e.detail.description;
+                        } else {
+                            if (description) {
+                                description.remove();
+                            }
+                        }
+                    }
                 } else {
                     const res = await post('/api/portfolio/projects', {
                         body
@@ -393,17 +482,26 @@ router.on('mount', () => {
     const cropper_el = document.querySelector('#cropper');
     let cropper = null;
     const assets_grid = new AssetsGrid(document.querySelector('.assets'));
-    assets_grid.on('select', (_, image, img) => {
-        img.container.classList.remove(is_filled_class);
-        cropper_el.setAttribute('src', image);
-        window.img2change = img;
-    
-        if (cropper) {
-            cropper.replace(image);
-        }
-    
-        asset_editor_modal.open();
-    });
+    assets_grid
+        .on('select', (_, image, img) => {
+            img.container.classList.remove(is_filled_class);
+            cropper_el.setAttribute('src', image);
+            window.img2change = img;
+        
+            if (cropper) {
+                cropper.replace(image);
+            }
+        
+            asset_editor_modal.open();
+        });
+        // .on('remove', (_, dropzone) => {
+        //     const asset = project_to_modify.assets.find(asset => `/uploads/${asset.path}` === dropzone.blob);
+
+        //     if (asset) {
+        //         asset.to_delete = true;
+        //     }
+        // })
+        // .on('move', (_, ));
     
     const rotate_selector = document.querySelector('#rotate');
     const rotate_input = rotate_selector.nextElementSibling;
@@ -466,7 +564,7 @@ router.on('mount', () => {
                 }
 
                 editor.root.innerHTML = project_to_modify.content;
-                assets_grid.setImages(project_to_modify.assets.map(path => `/uploads/${path}`));
+                assets_grid.setImages(project_to_modify.assets.map(asset => `/uploads/${asset.path}`));
 
                 modal.modal.querySelector('.modal__dialog__footer > :first-child').classList.remove('hidden');
                 modal.modal.querySelector('.modal__dialog__footer > :last-child').innerText = project_to_modify
@@ -499,11 +597,13 @@ router.on('mount', () => {
     valid_crop_btn
         .addEventListener('click', () => {
             cropper.getCroppedCanvas().toBlob(blob => {
+                console.log('before', window.img2change)
                 window.img2change.blob = blob;
                 window.img2change.image.src = URL.createObjectURL(blob);
                 window.img2change.image.classList.remove('hidden');
                 window.img2change.container.classList.add('drop_zone--is-filled');
                 window.img2change.image.setAttribute('draggable', true);
+                console.log(window.img2change)
             });
     
             asset_editor_modal.close();

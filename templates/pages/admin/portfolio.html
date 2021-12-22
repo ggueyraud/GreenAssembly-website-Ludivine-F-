@@ -59,7 +59,12 @@
                 <li class="projects__item" data-id="{{ project.id }}">
                     <span>{{ project.name }}</span>
 
-                    <div class="projects__item__content">{{ project.content|safe }}</div>
+                    {% match project.description %}
+                        {% when Some with (description) %}
+                            <p>{{ description }}</p>
+                        {% when None %}
+                    {% endmatch %}
+                    {#<div class="projects__item__content">{{ project.content|safe }}</div>#}
 
                     <div class="projects__item__actions">
                         <button type="button" class="text_blue">

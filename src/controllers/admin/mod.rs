@@ -56,13 +56,13 @@ pub async fn portfolio(id: Identity, pool: web::Data<PgPool>) -> Result<HttpResp
         struct Project {
             id: i16,
             name: String,
-            content: String,
+            description: Option<String>,
             date: DateTime<Utc>,
         }
 
         let (categories, projects) = futures::join!(
             services::projects::categories::get_all(&pool, None),
-            services::projects::get_all_spe::<Project>(&pool, "id, name, content, date", None)
+            services::projects::get_all_spe::<Project>(&pool, "id, name, description, date", None)
         );
 
         match projects {
