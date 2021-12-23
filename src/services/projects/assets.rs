@@ -23,18 +23,30 @@ pub struct Asset {
     pub order: i16,
 }
 
-pub async fn get(pool: &PgPool, id: i16) -> Result<Asset, Error> {
-    sqlx::query_as!(
-        Asset,
+pub async fn get<
+    T: std::marker::Unpin + std::marker::Send + for<'c> sqlx::FromRow<'c, sqlx::postgres::PgRow>,
+>(
+    pool: &PgPool,
+    fields: &str,
+    id: i16
+) -> Result<T, Error> {
+// pub async fn get(pool: &PgPool, id: i16) -> Result<Asset, Error> {
+    sqlx::query_as::<_, T>(
         r#"SELECT
             $1::int2 AS "id!: i16", pa.project_id AS "project_id", f.path AS "path", pa.order AS "order"
         FROM project_assets pa
         JOIN files f ON f.id = pa.file_id
         WHERE pa.id = $1"#,
-        id
     )
+    .bind(id)
     .fetch_one(pool)
     .await
+    // sqlx::query_as!(
+    //     Asset,
+    //     id
+    // )
+    // .fetch_one(pool)
+    // .await
 }
 
 pub async fn exists(pool: &PgPool, project_id: i16, asset_id: i16) -> bool {
@@ -46,6 +58,27 @@ pub async fn exists(pool: &PgPool, project_id: i16, asset_id: i16) -> bool {
     .fetch_one(pool)
     .await
     .is_ok()
+}
+
+pub async fn get_available_slots(pool: impl sqlx::Executor<'_, Database = sqlx::Postgres>, project_id: i16) -> Vec<i16> {
+    let rows = sqlx::query!(r#"SELECT "order" FROM project_assets WHERE project_id = $1"#, project_id)
+        .fetch_all(pool)
+        .await
+        .unwrap();
+
+    let mut available_slots = vec![0, 1, 2, 3, 4];
+
+    println!("Rows : {:?}", rows);
+
+    for row in &rows {
+        if let Some(index) = available_slots
+            .iter()
+            .position(|x| x == &row.order) {
+                available_slots.remove(index);
+            }
+    }
+
+    available_slots
 }
 
 pub async fn get_all(pool: &PgPool, project_id: i16) -> Vec<super::Asset> {
@@ -65,7 +98,7 @@ pub async fn get_all(pool: &PgPool, project_id: i16) -> Vec<super::Asset> {
 }
 
 pub async fn insert(
-    pool: &PgPool,
+    pool: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
     project_id: i16,
     file_id: i32,
     order: i16,

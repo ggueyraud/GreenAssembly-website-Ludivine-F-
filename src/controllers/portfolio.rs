@@ -473,7 +473,7 @@ pub async fn insert_project(
                 }
 
                 // Handle assets
-                let mut i = 1;
+                let mut i = 0;
                 for file in &form.files {
                     let name = {
                         use slugmin::slugify;
@@ -498,7 +498,6 @@ pub async fn insert_project(
                     )
                     .is_err()
                     {
-                        // TODO : rollback
                         return HttpResponse::BadRequest().finish();
                     }
 
@@ -517,7 +516,7 @@ pub async fn insert_project(
                     )
                     .await
                     .unwrap();
-                    services::projects::assets::insert(&pool, id, file_id, i)
+                    services::projects::assets::insert(pool.get_ref(), id, file_id, i)
                         .await
                         .unwrap();
 
@@ -552,7 +551,8 @@ pub struct ProjectUpdateForm {
     #[serde(default)]
     categories: Patch<Option<Vec<i16>>>,
     #[serde(default, skip_serializing)]
-    assets: Patch<Vec<ProjectUpdateAssetForm>>,
+    // assets: Patch<Vec<ProjectUpdateAssetForm>>,
+    assets: Patch<Vec<String>>,
     #[serde(skip_serializing)]
     files: Option<Vec<actix_extract_multipart::File>>,
 }
@@ -597,6 +597,7 @@ pub async fn update_project(
     }
 
     let mut transaction = pool.begin().await.unwrap();
+    let mut images_to_delete = vec![];
 
     services::projects::detach_categories(transaction.deref_mut(), id).await;
     if let Patch::Value(categories) = &form.categories {
@@ -646,12 +647,39 @@ pub async fn update_project(
 
     if let Patch::Value(assets) = &form.assets {
         for asset in assets {
-            if let Some(true) = asset.to_delete {
-                services::projects::assets::delete(transaction.deref_mut(), asset.id).await;
-            } else {
-                if let Some(order) = asset.order {
-                    services::projects::assets::update(transaction.deref_mut(), asset.id, order).await;
-                }
+            match serde_json::from_str::<ProjectUpdateAssetForm>(asset) {
+                Ok(asset) => {
+                    if let Some(true) = asset.to_delete {
+                        #[derive(sqlx::FromRow)]
+                        struct Asset {
+                            path: String
+                        }
+
+                        match services::projects::assets::get::<Asset>(&pool, "path", asset.id).await {
+                            Ok(asset) => {
+                                let filename = asset.path.split('.').collect::<Vec<_>>();
+                                let filename = filename.get(0).unwrap();
+
+                                images_to_delete.append(&mut [
+                                    format!("./uploads/mobile/{}", asset.path),
+                                    format!("./uploads/mobile/{}.webp", filename),
+                                    format!("./uploads/{}", asset.path),
+                                    format!("./uploads/{}.webp", filename),
+                                ].to_vec());
+                            },
+                            Err(_) => return HttpResponse::InternalServerError().finish()
+                        }
+
+                        services::projects::assets::delete(transaction.deref_mut(), asset.id).await;
+                    } else {
+                        if let Some(order) = asset.order {
+                            if let Err(_) = services::projects::assets::update(transaction.deref_mut(), asset.id, order).await {
+                                return HttpResponse::InternalServerError().finish()
+                            }
+                        }
+                    }
+                },
+                Err(_) => return HttpResponse::BadRequest().finish()
             }
         }
     }
@@ -660,7 +688,56 @@ pub async fn update_project(
         if services::projects::assets::count(&pool, id).await >= 5 {
             // cant insert more assets
         } else {
+            let mut available_slots = services::projects::assets::get_available_slots(transaction.deref_mut(), id).await;
+            println!("Available slots : {:?}", available_slots);
+            
+            for file in files {
+                let name = {
+                    use slugmin::slugify;
 
+                    slugify(&format!(
+                        "{}_{}",
+                        file.name(),
+                        chrono::Utc::now().timestamp()
+                    ))
+                };
+                let image = match image::load_from_memory(file.data()) {
+                    Ok(image) => image,
+                    Err(_) => return HttpResponse::BadRequest().finish(),
+                };
+
+                if crate::utils::image::create_images(
+                    &image,
+                    &name,
+                    Some((500, 500)),
+                    Some((700, 700)),
+                )
+                .is_err()
+                {
+                    return HttpResponse::BadRequest().finish();
+                }
+
+                let file_id = services::files::insert(
+                    pool.get_ref(),
+                    Some(file.name()),
+                    &format!(
+                        "{}.{}",
+                        &name.clone(),
+                        if image.color().has_alpha() {
+                            "png"
+                        } else {
+                            "jpg"
+                        }
+                    ),
+                )
+                .await
+                .unwrap();
+                services::projects::assets::insert(pool.get_ref(), id, file_id, available_slots[0])
+                    .await
+                    .unwrap();
+
+                available_slots.remove(0);
+            }
         }
     }
 
@@ -679,6 +756,9 @@ pub async fn update_project(
     }
 
     transaction.commit().await.unwrap();
+
+    println!("Remove files {:?}", images_to_delete);
+    crate::utils::image::remove_files(&images_to_delete);
 
     HttpResponse::Ok().finish()
 }
@@ -779,26 +859,35 @@ async fn delete_asset(
     web::Path((project_id, asset_id)): web::Path<(i16, i16)>,
     session: Identity,
 ) -> HttpResponse {
-    if session.identity().is_some() {
-        if services::projects::assets::exists(&pool, project_id, asset_id).await {
-            if let Ok(asset) = services::projects::assets::get(&pool, asset_id).await {
-                // TODO : remove all differents file formats
+    if session.identity().is_none() {
+        return HttpResponse::Unauthorized().finish()
+    }
 
-                let path = format!("./uploads/{}", asset.path);
-                let path = Path::new(&path);
-
-                if path.exists() {
-                    std::fs::remove_file(path).unwrap();
-                }
-
-                return HttpResponse::Ok().finish();
-            }
-        }
-
+    if !services::projects::assets::exists(&pool, project_id, asset_id).await {
         return HttpResponse::NotFound().finish();
     }
 
-    HttpResponse::Unauthorized().finish()
+    #[derive(sqlx::FromRow)]
+    struct Asset {
+        path: String
+    }
+
+    match services::projects::assets::get::<Asset>(&pool, "f.path", asset_id).await {
+        Ok(asset) => {
+            // TODO : remove all differents file formats
+        
+            let path = format!("./uploads/{}", asset.path);
+            let path = Path::new(&path);
+        
+            if path.exists() {
+                std::fs::remove_file(path).unwrap();
+            }
+        
+            return HttpResponse::Ok().finish();
+
+        },
+        Err(_) => HttpResponse::InternalServerError().finish()
+    }
 }
 
 #[cfg(test)]

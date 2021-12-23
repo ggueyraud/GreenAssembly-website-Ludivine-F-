@@ -49,8 +49,8 @@ CREATE TABLE project_assets (
         ON DELETE CASCADE,
     file_id INT NOT NULL
         REFERENCES files (id),
-    "order" SMALLINT NOT NULL,
-    UNIQUE (project_id, "order")
+    "order" SMALLINT NOT NULL
+    -- UNIQUE (project_id, "order")
 );
 
 DROP TABLE IF EXISTS videos CASCADE;

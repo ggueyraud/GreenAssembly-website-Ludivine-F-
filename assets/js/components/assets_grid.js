@@ -44,6 +44,7 @@ export class DropZone {
 
     clear() {
         // this.input.value = '';
+        this.blob = null;
 
         this.container.classList.remove(is_filled_class);
 

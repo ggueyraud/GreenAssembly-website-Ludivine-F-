@@ -370,28 +370,49 @@ router.on('mount', () => {
                 // console.log(project_to_modify.assets)
                 console.log('--- Grid values ---');
                 console.log(assets_grid.value);
+                assets_grid.value.forEach(img => {
+                    if (typeof img === 'object' && img instanceof Blob) {
+                        body.append('files[]', img);
+                    }
+                    // console.log(typeof e, e instanceof Blob)
+                })
                 console.log('-------------------');
+                let assets_modified = [];
+
+                // return
 
                 for (const asset of project_to_modify.assets) {
-                    if (!assets_grid.value.includes(`/uploads/${asset.path}`)) {
+                    const path = `/uploads/${asset.path}`;
+                    let asset_modified = false;
+                    const asset_to_modify = { id: asset.id };
+
+                    if (!assets_grid.value.includes(path)) {
                         console.log(asset, 'removed')
-                        asset.to_delete = true;
+                        asset_to_modify.to_delete = true;
+                        asset_modified = true;
+                    } else {
+                        if (assets_grid.value.indexOf(path) !== asset.order) {
+                            asset_to_modify.order = assets_grid.value.indexOf(path);
+                            asset_modified = true
+                        }
                     }
 
-                    asset.order = assets_grid.value.indexOf(`/uploads/${asset.path}`);
+                    if (asset_modified) {
+                        assets_modified.push(asset_to_modify);
+                    }
                 }
 
+                console.log('Need to update assets ?', assets_modified);
 
+                if (assets_modified.length > 0) {
+                    for (const asset of assets_modified) {
+                        body.append('assets[]', JSON.stringify(asset));
+                    }
+                }
 
                 console.log(project_to_modify.assets)
 
-                // for (const asset of assets_grid.value) {
-                //     const existing_asset = project_to_modify.assets.find(existing_asset => existing_asset.path === `/uploads/${asset}`);
-                
-                //     if ()
-                // }
-
-                return;
+                // return;
                 let i = 0;
                 for (const _ of body.entries()) {
                     i += 1;
