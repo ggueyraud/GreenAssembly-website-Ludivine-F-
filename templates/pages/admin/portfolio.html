@@ -54,7 +54,7 @@
             <button type="button" class="btn btn__green btn--sm">Créer un projet</button>
         </div>
 
-        <ul class="card__body">
+        <ul class="card__body space_y_2">
             {% for project in projects %}
                 <li class="projects__item" data-id="{{ project.id }}">
                     <span>{{ project.name }}</span>
