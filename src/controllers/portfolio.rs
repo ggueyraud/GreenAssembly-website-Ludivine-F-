@@ -78,18 +78,23 @@ async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse
                 }
             }
 
-            let illustration = sqlx::query_as!(
+            let illustration = match sqlx::query_as!(
                 Illustration,
                 r#"SELECT
                         f.path AS "path", f.name AS "name"
                     FROM project_assets pa
                     JOIN files f ON f.id = pa.file_id
-                    WHERE pa.project_id = $1 AND pa.order = 1"#,
+                    WHERE pa.project_id = $1 AND pa.order = 0"#,
                 project.id
             )
             .fetch_one(pool.as_ref())
-            .await
-            .unwrap();
+            .await {
+                Ok(illustration) => illustration,
+                Err(e) => {
+                    eprintln!("{:?}", e);
+                    return Ok(HttpResponse::InternalServerError().finish())
+                }
+            };
 
             formatted_projects.push(ProjectTile {
                 name: project.name.clone(),
