@@ -47,7 +47,7 @@ pub async fn insert(pool: &PgPool, name: &str) -> Result<i16, Error> {
 use serde_json::Value;
 use std::collections::HashMap;
 
-pub async fn update_2(
+pub async fn partial_update(
     pool: &PgPool,
     id: i16,
     fields: HashMap<String, serde_json::Value>,
@@ -77,9 +77,7 @@ pub async fn update_2(
                 Value::String(value) => {
                     query = query.bind(value.as_str());
                 }
-                _ => {
-                    println!("3");
-                }
+                _ => (),
             }
         }
 
@@ -89,22 +87,6 @@ pub async fn update_2(
     }
 
     Ok(false)
-}
-
-pub async fn update(pool: &PgPool, id: i16, name: &str, order: i16) -> Result<bool, Error> {
-    let res = sqlx::query!(
-        r#"UPDATE project_categories SET
-            name = $1,
-            "order" = $2
-        WHERE id = $3"#,
-        name,
-        order,
-        id
-    )
-    .execute(pool)
-    .await?;
-
-    Ok(res.rows_affected() == 1)
 }
 
 pub async fn delete(pool: &PgPool, id: i16) -> bool {

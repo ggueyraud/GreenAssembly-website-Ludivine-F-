@@ -43,8 +43,6 @@ pub fn extract_fields(form: &impl Serialize) -> std::collections::HashMap<String
         match obj {
             Value::String(_) => {
                 let value = obj.as_str().unwrap();
-                println!("{}", value);
-                println!("{:?}", value == "Null");
 
                 if value == "Null" {
                     need_updated_fields.insert(name.to_string(), Value::Null);

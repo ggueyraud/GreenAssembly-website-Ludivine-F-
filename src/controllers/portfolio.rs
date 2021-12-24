@@ -1,6 +1,5 @@
 use super::metrics;
 use crate::{services, utils::patch::Patch};
-use actix_extract_multipart::*;
 use actix_identity::Identity;
 use actix_web::{delete, get, patch, post, put, web, Error, HttpRequest, HttpResponse};
 use ammonia::Builder;
@@ -8,7 +7,7 @@ use askama_actix::{Template, TemplateIntoResponse};
 use chrono::Datelike;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
-use std::{collections::HashSet, ops::DerefMut, path::Path};
+use std::{collections::HashSet, ops::DerefMut};
 
 #[get("")]
 async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
@@ -91,10 +90,7 @@ async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse
             .await
             {
                 Ok(illustration) => illustration,
-                Err(e) => {
-                    eprintln!("{:?}", e);
-                    return Ok(HttpResponse::InternalServerError().finish());
-                }
+                Err(_) => return Ok(HttpResponse::InternalServerError().finish()),
             };
 
             formatted_projects.push(ProjectTile {
@@ -250,10 +246,7 @@ pub async fn get_project(
                 "categories": categories
             }))
         }
-        Err(e) => {
-            eprintln!("{:?}", e);
-            HttpResponse::InternalServerError().finish()
-        }
+        Err(_) => HttpResponse::InternalServerError().finish(),
     }
 }
 
@@ -334,7 +327,7 @@ async fn update_category(
             return HttpResponse::BadRequest().finish();
         }
 
-        return match services::projects::categories::update_2(
+        return match services::projects::categories::partial_update(
             &pool,
             id,
             crate::utils::patch::extract_fields(&*form),
@@ -342,10 +335,7 @@ async fn update_category(
         .await
         {
             Ok(_) => return HttpResponse::Ok().finish(),
-            Err(e) => {
-                eprintln!("{:?}", e);
-                HttpResponse::InternalServerError().finish()
-            }
+            Err(e) => HttpResponse::InternalServerError().finish(),
         };
     }
 
@@ -479,8 +469,7 @@ pub async fn insert_project(
                 }
 
                 // Handle assets
-                let mut i = 0;
-                for file in &form.files {
+                for (i, file) in form.files.iter().enumerate() {
                     let name = {
                         use slugmin::slugify;
 
@@ -496,7 +485,6 @@ pub async fn insert_project(
                     };
 
                     if crate::utils::image::create_images(
-                        // file.data(),
                         &image,
                         &name,
                         Some((500, 500)),
@@ -522,11 +510,9 @@ pub async fn insert_project(
                     )
                     .await
                     .unwrap();
-                    services::projects::assets::insert(pool.get_ref(), id, file_id, i)
+                    services::projects::assets::insert(pool.get_ref(), id, file_id, i as i16)
                         .await
                         .unwrap();
-
-                    i += 1;
                 }
 
                 HttpResponse::Created().json(id)
@@ -606,23 +592,20 @@ pub async fn update_project(
     let mut images_to_delete = vec![];
 
     services::projects::detach_categories(transaction.deref_mut(), id).await;
-    if let Patch::Value(categories) = &form.categories {
-        if let Some(categories) = &categories {
-            for category_id in categories {
-                if !services::projects::categories::exists(&pool, *category_id).await {
-                    return HttpResponse::NotFound().finish();
-                } else {
-                    if services::projects::link_to_category(
-                        transaction.deref_mut(),
-                        id,
-                        *category_id,
-                    )
-                    .await
-                    .is_err()
-                    {
-                        return HttpResponse::InternalServerError().finish();
-                    }
-                }
+
+    if let Patch::Value(Some(categories)) = &form.categories {
+        for category_id in categories {
+            if !services::projects::categories::exists(&pool, *category_id).await {
+                return HttpResponse::NotFound().finish();
+            } else if services::projects::link_to_category(
+                transaction.deref_mut(),
+                id,
+                *category_id,
+            )
+            .await
+            .is_err()
+            {
+                return HttpResponse::InternalServerError().finish();
             }
         }
     }
@@ -682,17 +665,16 @@ pub async fn update_project(
                         }
 
                         services::projects::assets::delete(transaction.deref_mut(), asset.id).await;
-                    } else {
-                        if let Some(order) = asset.order {
-                            if let Err(_) = services::projects::assets::update(
-                                transaction.deref_mut(),
-                                asset.id,
-                                order,
-                            )
-                            .await
-                            {
-                                return HttpResponse::InternalServerError().finish();
-                            }
+                    } else if let Some(order) = asset.order {
+                        if services::projects::assets::update(
+                            transaction.deref_mut(),
+                            asset.id,
+                            order,
+                        )
+                        .await
+                        .is_err()
+                        {
+                            return HttpResponse::InternalServerError().finish();
                         }
                     }
                 }
@@ -707,7 +689,6 @@ pub async fn update_project(
         } else {
             let mut available_slots =
                 services::projects::assets::get_available_slots(transaction.deref_mut(), id).await;
-            println!("Available slots : {:?}", available_slots);
 
             for file in files {
                 let name = {
@@ -763,19 +744,15 @@ pub async fn update_project(
 
     fields_need_update.remove("categories");
 
-    // if services::projects::partial_update(transaction.deref_mut(), id, fields_need_update).await.is_err() {
-    //     return HttpResponse::InternalServerError().finish()
-    // }
-
-    match services::projects::partial_update(transaction.deref_mut(), id, fields_need_update).await
+    if services::projects::partial_update(transaction.deref_mut(), id, fields_need_update)
+        .await
+        .is_err()
     {
-        Ok(_) => (),
-        Err(e) => println!("{:?}", e),
+        return HttpResponse::InternalServerError().finish();
     }
 
     transaction.commit().await.unwrap();
 
-    println!("Remove files {:?}", images_to_delete);
     crate::utils::image::remove_files(&images_to_delete);
 
     HttpResponse::Ok().finish()
@@ -817,100 +794,6 @@ async fn delete_project(
     crate::utils::image::remove_files(&files_to_delete);
 
     HttpResponse::Ok().finish()
-}
-
-#[derive(Deserialize)]
-pub struct AssetForm {
-    // TODO : remplace with video
-    file: File,
-    name: Option<String>,
-    order: i16,
-    is_visible: bool,
-}
-
-impl AssetForm {
-    fn sanitize(&mut self) {
-        if let Some(name) = &mut self.name {
-            *name = name.trim().to_string();
-        }
-    }
-
-    fn is_valid(&mut self) -> bool {
-        self.sanitize();
-
-        self.order > 0
-    }
-}
-
-#[derive(Deserialize)]
-pub struct UpdateAssetForm {
-    name: Option<String>,
-    order: i16,
-}
-
-#[patch("/projects/{project_id}/assets/{asset_id}")]
-async fn update_asset(
-    pool: web::Data<PgPool>,
-    session: Identity,
-    web::Path((project_id, asset_id)): web::Path<(i16, i16)>,
-    form: web::Form<UpdateAssetForm>,
-) -> HttpResponse {
-    if session.identity().is_some() {
-        if services::projects::assets::exists(&pool, project_id, asset_id).await {
-            match sqlx::query!(
-                "CALL update_asset($1, $2, $3)",
-                asset_id,
-                form.order,
-                form.name
-            )
-            .execute(pool.as_ref())
-            .await
-            {
-                Ok(_) => return HttpResponse::Ok().finish(),
-                _ => return HttpResponse::InternalServerError().finish(),
-            }
-        }
-
-        return HttpResponse::NotFound().finish();
-    }
-
-    HttpResponse::Unauthorized().finish()
-}
-
-#[delete("/projects/{project_id}/assets/{asset_id}")]
-async fn delete_asset(
-    pool: web::Data<PgPool>,
-    web::Path((project_id, asset_id)): web::Path<(i16, i16)>,
-    session: Identity,
-) -> HttpResponse {
-    if session.identity().is_none() {
-        return HttpResponse::Unauthorized().finish();
-    }
-
-    if !services::projects::assets::exists(&pool, project_id, asset_id).await {
-        return HttpResponse::NotFound().finish();
-    }
-
-    #[derive(sqlx::FromRow)]
-    struct Asset {
-        path: String,
-    }
-
-    match services::projects::assets::get::<Asset>(&pool, "f.path", asset_id).await {
-        Ok(asset) => {
-            // TODO : remove all differents file formats
-
-            let path = format!("./uploads/{}", asset.path);
-            let path = Path::new(&path);
-
-            if path.exists() {
-                std::fs::remove_file(path).unwrap();
-            }
-
-            return HttpResponse::Ok().finish();
-        }
-        Err(_) => HttpResponse::InternalServerError().finish(),
-    }
 }
 
 #[cfg(test)]

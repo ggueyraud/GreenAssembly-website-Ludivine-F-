@@ -80,10 +80,7 @@ pub async fn portfolio(id: Identity, pool: web::Data<PgPool>) -> Result<HttpResp
                 }
                 .into_response();
             }
-            Err(e) => {
-                eprintln!("{:?}", e);
-                return Ok(HttpResponse::InternalServerError().finish());
-            }
+            Err(_) => return Ok(HttpResponse::InternalServerError().finish()),
         }
     }
 

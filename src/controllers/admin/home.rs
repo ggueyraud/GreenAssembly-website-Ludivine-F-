@@ -2,8 +2,6 @@ use actix_extract_multipart::{File, Multipart};
 use actix_identity::Identity;
 use actix_web::{patch, Error, HttpResponse};
 use serde::Deserialize;
-use std::io::Write;
-use webp::Encoder;
 
 #[derive(Deserialize)]
 pub struct HomeImage {
@@ -25,7 +23,7 @@ async fn edit_image(id: Identity, data: Multipart<HomeImage>) -> Result<HttpResp
     }
 
     let file_data = data.image.data();
-    let image = image::load_from_memory(&file_data).unwrap();
+    let image = image::load_from_memory(file_data).unwrap();
     let name = "index";
 
     const MAX_MOBILE: (u32, u32) = (500, 500);

@@ -269,17 +269,14 @@ async fn show_article(
 
             BlogArticle {
                 article,
-                category: category,
+                category,
                 categories,
                 year: chrono::Utc::now().year(),
                 metric_token: token,
             }
             .into_response()
         }
-        Err(e) => {
-            eprintln!("{:?}", e);
-            Ok(HttpResponse::InternalServerError().finish())
-        }
+        Err(_) => Ok(HttpResponse::InternalServerError().finish()),
     }
 }
 
@@ -847,7 +844,6 @@ async fn update_article(
             // If content doesnt has id anymore so the image has been deleted
             if !content.contains(&image.id.to_string()) {
                 services::blog::articles::images::delete(transaction.deref_mut(), image.id).await;
-                println!("{} doesn't exist anymore !", image.id);
                 let filename = image.path.split('.').collect::<Vec<_>>();
                 let filename = filename.get(0).unwrap();
 

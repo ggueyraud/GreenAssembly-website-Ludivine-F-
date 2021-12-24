@@ -29,12 +29,12 @@ async fn edit_links(
     let http_regex = Regex::new(r"^https?://(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$").unwrap();
 
     if let Some(url) = &links.creations {
-        if url != "" && !http_regex.is_match(url) {
+        if !url.is_empty() && !http_regex.is_match(url) {
             return Ok(HttpResponse::BadRequest().finish());
         }
     }
     if let Some(url) = &links.shootings {
-        if url != "" && !http_regex.is_match(url) {
+        if !url.is_empty() && !http_regex.is_match(url) {
             return Ok(HttpResponse::BadRequest().finish());
         }
     }
