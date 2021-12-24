@@ -88,11 +88,12 @@ async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse
                 project.id
             )
             .fetch_one(pool.as_ref())
-            .await {
+            .await
+            {
                 Ok(illustration) => illustration,
                 Err(e) => {
                     eprintln!("{:?}", e);
-                    return Ok(HttpResponse::InternalServerError().finish())
+                    return Ok(HttpResponse::InternalServerError().finish());
                 }
             };
 
@@ -217,7 +218,7 @@ pub async fn get_project(
     struct Asset {
         id: i16,
         path: String,
-        order: usize
+        order: usize,
     }
 
     let (project, assets, categories) = futures::join!(
@@ -657,34 +658,45 @@ pub async fn update_project(
                     if let Some(true) = asset.to_delete {
                         #[derive(sqlx::FromRow)]
                         struct Asset {
-                            path: String
+                            path: String,
                         }
 
-                        match services::projects::assets::get::<Asset>(&pool, "path", asset.id).await {
+                        match services::projects::assets::get::<Asset>(&pool, "path", asset.id)
+                            .await
+                        {
                             Ok(asset) => {
                                 let filename = asset.path.split('.').collect::<Vec<_>>();
                                 let filename = filename.get(0).unwrap();
 
-                                images_to_delete.append(&mut [
-                                    format!("./uploads/mobile/{}", asset.path),
-                                    format!("./uploads/mobile/{}.webp", filename),
-                                    format!("./uploads/{}", asset.path),
-                                    format!("./uploads/{}.webp", filename),
-                                ].to_vec());
-                            },
-                            Err(_) => return HttpResponse::InternalServerError().finish()
+                                images_to_delete.append(
+                                    &mut [
+                                        format!("./uploads/mobile/{}", asset.path),
+                                        format!("./uploads/mobile/{}.webp", filename),
+                                        format!("./uploads/{}", asset.path),
+                                        format!("./uploads/{}.webp", filename),
+                                    ]
+                                    .to_vec(),
+                                );
+                            }
+                            Err(_) => return HttpResponse::InternalServerError().finish(),
                         }
 
                         services::projects::assets::delete(transaction.deref_mut(), asset.id).await;
                     } else {
                         if let Some(order) = asset.order {
-                            if let Err(_) = services::projects::assets::update(transaction.deref_mut(), asset.id, order).await {
-                                return HttpResponse::InternalServerError().finish()
+                            if let Err(_) = services::projects::assets::update(
+                                transaction.deref_mut(),
+                                asset.id,
+                                order,
+                            )
+                            .await
+                            {
+                                return HttpResponse::InternalServerError().finish();
                             }
                         }
                     }
-                },
-                Err(_) => return HttpResponse::BadRequest().finish()
+                }
+                Err(_) => return HttpResponse::BadRequest().finish(),
             }
         }
     }
@@ -693,9 +705,10 @@ pub async fn update_project(
         if services::projects::assets::count(&pool, id).await >= 5 {
             // cant insert more assets
         } else {
-            let mut available_slots = services::projects::assets::get_available_slots(transaction.deref_mut(), id).await;
+            let mut available_slots =
+                services::projects::assets::get_available_slots(transaction.deref_mut(), id).await;
             println!("Available slots : {:?}", available_slots);
-            
+
             for file in files {
                 let name = {
                     use slugmin::slugify;
@@ -775,31 +788,30 @@ async fn delete_project(
     session: Identity,
 ) -> HttpResponse {
     if session.identity().is_none() {
-        return HttpResponse::Unauthorized().finish()
+        return HttpResponse::Unauthorized().finish();
     }
 
     if !services::projects::exists(&pool, id).await {
-        return HttpResponse::NotFound().finish()
+        return HttpResponse::NotFound().finish();
     }
 
     let assets = services::projects::assets::get_all(&pool, id).await;
     let mut files_to_delete = vec![];
 
-    assets
-        .iter()
-        .for_each(|asset| {
-            let filename = asset.path.split('.').collect::<Vec<_>>();
-            let filename = filename.get(0).unwrap();
+    assets.iter().for_each(|asset| {
+        let filename = asset.path.split('.').collect::<Vec<_>>();
+        let filename = filename.get(0).unwrap();
 
-            files_to_delete.append(
-                &mut [
-                    format!("./uploads/mobile/{}", asset.path),
-                    format!("./uploads/mobile/{}.webp", filename),
-                    format!("./uploads/{}", asset.path),
-                    format!("./uploads/{}.webp", filename),
-                ].to_vec()
-            );
-        });
+        files_to_delete.append(
+            &mut [
+                format!("./uploads/mobile/{}", asset.path),
+                format!("./uploads/mobile/{}.webp", filename),
+                format!("./uploads/{}", asset.path),
+                format!("./uploads/{}.webp", filename),
+            ]
+            .to_vec(),
+        );
+    });
 
     services::projects::delete(&pool, id).await;
     crate::utils::image::remove_files(&files_to_delete);
@@ -872,7 +884,7 @@ async fn delete_asset(
     session: Identity,
 ) -> HttpResponse {
     if session.identity().is_none() {
-        return HttpResponse::Unauthorized().finish()
+        return HttpResponse::Unauthorized().finish();
     }
 
     if !services::projects::assets::exists(&pool, project_id, asset_id).await {
@@ -881,24 +893,23 @@ async fn delete_asset(
 
     #[derive(sqlx::FromRow)]
     struct Asset {
-        path: String
+        path: String,
     }
 
     match services::projects::assets::get::<Asset>(&pool, "f.path", asset_id).await {
         Ok(asset) => {
             // TODO : remove all differents file formats
-        
+
             let path = format!("./uploads/{}", asset.path);
             let path = Path::new(&path);
-        
+
             if path.exists() {
                 std::fs::remove_file(path).unwrap();
             }
-        
-            return HttpResponse::Ok().finish();
 
-        },
-        Err(_) => HttpResponse::InternalServerError().finish()
+            return HttpResponse::Ok().finish();
+        }
+        Err(_) => HttpResponse::InternalServerError().finish(),
     }
 }
 

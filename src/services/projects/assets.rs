@@ -28,9 +28,9 @@ pub async fn get<
 >(
     pool: &PgPool,
     fields: &str,
-    id: i16
+    id: i16,
 ) -> Result<T, Error> {
-// pub async fn get(pool: &PgPool, id: i16) -> Result<Asset, Error> {
+    // pub async fn get(pool: &PgPool, id: i16) -> Result<Asset, Error> {
     sqlx::query_as::<_, T>(
         r#"SELECT
             $1::int2 AS "id!: i16", pa.project_id AS "project_id", f.path AS "path", pa.order AS "order"
@@ -60,22 +60,26 @@ pub async fn exists(pool: &PgPool, project_id: i16, asset_id: i16) -> bool {
     .is_ok()
 }
 
-pub async fn get_available_slots(pool: impl sqlx::Executor<'_, Database = sqlx::Postgres>, project_id: i16) -> Vec<i16> {
-    let rows = sqlx::query!(r#"SELECT "order" FROM project_assets WHERE project_id = $1"#, project_id)
-        .fetch_all(pool)
-        .await
-        .unwrap();
+pub async fn get_available_slots(
+    pool: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
+    project_id: i16,
+) -> Vec<i16> {
+    let rows = sqlx::query!(
+        r#"SELECT "order" FROM project_assets WHERE project_id = $1"#,
+        project_id
+    )
+    .fetch_all(pool)
+    .await
+    .unwrap();
 
     let mut available_slots = vec![0, 1, 2, 3, 4];
 
     println!("Rows : {:?}", rows);
 
     for row in &rows {
-        if let Some(index) = available_slots
-            .iter()
-            .position(|x| x == &row.order) {
-                available_slots.remove(index);
-            }
+        if let Some(index) = available_slots.iter().position(|x| x == &row.order) {
+            available_slots.remove(index);
+        }
     }
 
     available_slots
@@ -121,7 +125,7 @@ pub async fn insert(
 pub async fn update(
     pool: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
     id: i16,
-    order: i16
+    order: i16,
 ) -> Result<bool, Error> {
     let res = sqlx::query!(
         r#"UPDATE project_assets SET
@@ -136,10 +140,7 @@ pub async fn update(
     Ok(res.rows_affected() == 1)
 }
 
-pub async fn delete(
-    pool: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
-    id: i16
-) -> bool {
+pub async fn delete(pool: impl sqlx::Executor<'_, Database = sqlx::Postgres>, id: i16) -> bool {
     sqlx::query!("DELETE FROM project_assets WHERE id = $1", id)
         .execute(pool)
         .await
