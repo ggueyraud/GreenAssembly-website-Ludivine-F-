@@ -1,6 +1,6 @@
 use actix_extract_multipart::{File, Multipart};
 use actix_identity::Identity;
-use actix_web::{patch, Error, HttpResponse};
+use actix_web::{patch, HttpResponse};
 use serde::Deserialize;
 
 #[derive(Deserialize)]
