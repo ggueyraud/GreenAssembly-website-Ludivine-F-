@@ -430,96 +430,98 @@ pub async fn insert_project(
     mut form: actix_extract_multipart::Multipart<ProjectAddForm>,
     session: Identity,
 ) -> HttpResponse {
-    if session.identity().is_some() {
-        if !form.is_valid().await {
-            return HttpResponse::BadRequest().finish();
-        }
+    if session.identity().is_none() {
+        return HttpResponse::Unauthorized().finish()
+    }
 
-        // Check if specified categories exist
-        if let Some(categories) = &form.infos.categories {
-            for category_id in categories {
-                if !services::projects::categories::exists(&pool, *category_id).await {
-                    return HttpResponse::NotFound().finish();
-                }
+    if !form.is_valid().await {
+        return HttpResponse::BadRequest().finish();
+    }
+
+    // Check if specified categories exist
+    if let Some(categories) = &form.infos.categories {
+        for category_id in categories {
+            if !services::projects::categories::exists(&pool, *category_id).await {
+                return HttpResponse::NotFound().finish();
             }
         }
+    }
 
-        return match services::projects::insert(
-            &pool,
-            &form.infos.name,
-            form.infos.description.as_deref(),
-            &form.infos.content,
-        )
-        .await
-        {
-            Ok(id) => {
-                // Categories
-                if let Some(categories) = &form.infos.categories {
-                    let mut categories_fut = vec![];
+    return match services::projects::insert(
+        &pool,
+        &form.infos.name,
+        form.infos.description.as_deref(),
+        &form.infos.content,
+    )
+    .await
+    {
+        Ok(id) => {
+            // Categories
+            if let Some(categories) = &form.infos.categories {
+                let mut categories_fut = vec![];
 
-                    for category_id in categories {
-                        categories_fut.push(services::projects::link_to_category(
-                            pool.as_ref(),
-                            id,
-                            *category_id,
-                        ));
-                    }
-
-                    futures::future::join_all(categories_fut).await;
+                for category_id in categories {
+                    categories_fut.push(services::projects::link_to_category(
+                        pool.as_ref(),
+                        id,
+                        *category_id,
+                    ));
                 }
 
-                // Handle assets
-                for (i, file) in form.files.iter().enumerate() {
-                    let name = {
-                        use slugmin::slugify;
+                futures::future::join_all(categories_fut).await;
+            }
 
-                        slugify(&format!(
-                            "{}_{}",
-                            file.name(),
-                            chrono::Utc::now().timestamp()
-                        ))
-                    };
-                    let image = match image::load_from_memory(file.data()) {
-                        Ok(image) => image,
-                        Err(_) => return HttpResponse::BadRequest().finish(),
-                    };
+            // Handle assets
+            for (i, file) in form.files.iter().enumerate() {
+                let name = {
+                    use slugmin::slugify;
 
-                    if crate::utils::image::create_images(
-                        &image,
-                        &name,
-                        Some((500, 500)),
-                        Some((700, 700)),
-                    )
-                    .is_err()
-                    {
-                        return HttpResponse::BadRequest().finish();
-                    }
+                    slugify(&format!(
+                        "{}_{}",
+                        file.name(),
+                        chrono::Utc::now().timestamp()
+                    ))
+                };
+                let image = match image::load_from_memory(file.data()) {
+                    Ok(image) => image,
+                    Err(_) => return HttpResponse::BadRequest().finish(),
+                };
 
-                    let file_id = services::files::insert(
-                        pool.get_ref(),
-                        Some(file.name()),
-                        &format!(
-                            "{}.{}",
-                            &name.clone(),
-                            if image.color().has_alpha() {
-                                "png"
-                            } else {
-                                "jpg"
-                            }
-                        ),
-                    )
+                if crate::utils::image::create_images(
+                    &image,
+                    &name,
+                    Some((500, 500)),
+                    Some((700, 700)),
+                )
+                .is_err()
+                {
+                    return HttpResponse::BadRequest().finish();
+                }
+
+                let file_id = services::files::insert(
+                    pool.get_ref(),
+                    Some(file.name()),
+                    &format!(
+                        "{}.{}",
+                        &name.clone(),
+                        if image.color().has_alpha() {
+                            "png"
+                        } else {
+                            "jpg"
+                        }
+                    ),
+                )
+                .await
+                .unwrap();
+                services::projects::assets::insert(pool.get_ref(), id, file_id, i as i16)
                     .await
                     .unwrap();
-                    services::projects::assets::insert(pool.get_ref(), id, file_id, i as i16)
-                        .await
-                        .unwrap();
-                }
-
-                HttpResponse::Created().json(id)
             }
-            _ => HttpResponse::InternalServerError().finish(),
-        };
-    }
+
+            HttpResponse::Created().json(id)
+        }
+        _ => HttpResponse::InternalServerError().finish(),
+    };
 
     HttpResponse::Unauthorized().finish()
 }
