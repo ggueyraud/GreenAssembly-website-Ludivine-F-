@@ -39,6 +39,7 @@ export class DropZone {
 
     setImage(image) {
         this.image.setAttribute('src', image);
+        this.image.setAttribute('draggable', true);
         this.container.classList.add(is_filled_class);
     }
 
@@ -84,8 +85,6 @@ export default class AssetsGrid {
 
             drop_zone
                 .on('clear', () => {
-                    console.log('limit', this.#limit, this.#items[this.#limit])
-                    // console.log('clear', this.#limit);
                     this.#items[this.#limit].input.setAttribute('disabled', true);
                     this.#limit--;
 
@@ -111,8 +110,10 @@ export default class AssetsGrid {
                 });
 
             // Events initialization
-            // drop_zone.container.addEventListener('dragstart', e => this.#dragged_element = e.target, false);
-            drop_zone.container.addEventListener('dragstart', e => this.#dragged_element = drop_zone, false);
+            drop_zone.container.addEventListener('dragstart', () => {
+                console.log('dragstart')
+                this.#dragged_element = drop_zone
+            }, false);
             drop_zone.container.addEventListener(
                 'drop',
                 e => {
@@ -129,8 +130,6 @@ export default class AssetsGrid {
                         const src = drop_zone.image.getAttribute('src');
 
                         this.#fire('move', [this.#dragged_element, drop_zone]);
-
-                        console.log('src', src);
 
                         if (src) {
                             // console.log('Blob values', this.#dragged_element, drop_zone);

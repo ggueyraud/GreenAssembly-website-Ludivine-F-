@@ -33,7 +33,13 @@ const delete_project = (el, id) => Swal.fire({
     .then(res => {
         if (res.isConfirmed) {
             del(`/api/portfolio/projects/${id}`)
-                .then(() => el.remove())
+                .then(() => {
+                    el.remove();
+
+                    if (project_to_modify) {
+                        add_project_modal.close();
+                    }
+                })
                 .catch(swal_error)
         }
     });
@@ -179,11 +185,6 @@ router.on('mount', () => {
         .forEach(item => {
             const project = projects.find(project => project.id == item.dataset.id);
 
-            // const content_el = item.querySelector('.projects__item__content');
-            // content_el.innerHTML = DOMPurify.sanitize(content_el.innerHTML, {
-            //     ALLOWED_TAGS: []
-            // });
-
             // Update button
             item
                 .querySelector('.projects__item__actions .text_blue')
@@ -193,25 +194,21 @@ router.on('mount', () => {
                 });
 
             // Delete button
-            item.querySelector('.projects__item__actions .text_error').addEventListener('click', () => delete_project());
+            item
+                .querySelector('.projects__item__actions .text_error')
+                .addEventListener('click', () => delete_project(item, item.dataset.id));
 
             const time = item.querySelector('time');
             time.innerText = formatDistance(new Date(time.getAttribute('datetime')), new Date(), { addSuffix: true, locale: fr });
         });
 
-    const add_project = ({id, name, description, content, date}, after = true) => {
-        const project = document.createElement('div');
-        project.classList.add('projects__item');
+    const add_project = (project, after = true) => {
+        const project_container = document.createElement('li');
+        project_container.classList.add('projects__item');
+        project_container.dataset.id = project.id;
 
-        const project_title = document.createElement('div');
-        project_title.classList.add('projects__item__title');
-        project_title.innerText = name;
-
-        const project_content = document.createElement('div');
-        project_content.classList.add('projects__item__content');
-        project_content.innerText = DOMPurify.sanitize(content, {
-            ALLOWED_TAGS: []
-        });
+        const project_title = document.createElement('span');
+        project_title.innerText = project.name;
 
         const project_actions = document.createElement('div');
         project_actions.classList.add('projects__item__actions');
@@ -236,26 +233,25 @@ router.on('mount', () => {
         project_actions.appendChild(update_btn);
         project_actions.appendChild(delete_btn);
 
-        const project_footer = document.createElement('div');
-        project_footer.classList.add('projects__item__footer');
-        // project_footer.innerText = formatRelative(, { locale: fr });
-        project_footer.innerText = formatDistance(new Date(date), new Date(), { addSuffix: true, locale: fr });
+        const project_creation_date = document.createElement('time');
+        project_creation_date.setAttribute('datetime', new Date(project.date));
+        project_creation_date.innerText = formatDistance(new Date(project.date), new Date(), { addSuffix: true, locale: fr });
 
-        project.appendChild(project_title);
-        project.appendChild(project_content);
-        project.appendChild(project_actions);
-        project.appendChild(project_footer);
+        project_container.appendChild(project_title);
+        // project_container.appendChild(project_content);
+        project_container.appendChild(project_actions);
+        project_container.appendChild(project_creation_date);
 
         if (after) {
-            projects_container.appendChild(project);
+            projects_container.appendChild(project_container);
         } else {
-            projects_container.prepend(project)
+            projects_container.prepend(project_container)
         }
     }
 
     // Categories
     categories_container = document.querySelector('#categories .card__body');
-    projects_container = document.querySelector('.projects');
+    projects_container = document.querySelector('#projects .card__body');
     
     const new_category_input = document.querySelector('[name=new_category_name]');
     
@@ -613,6 +609,12 @@ router.on('mount', () => {
             assets_grid.clear();
             editor.setContents([]);
             project_fv.clear();
+        });
+    add_project_modal
+        .modal
+        .querySelector('.modal__dialog__footer :first-child')
+        .addEventListener('click', () => {
+            delete_project(document.querySelector(`#projects [data-id="${project_to_modify.id}"]`), project_to_modify.id)
         });
     
     valid_crop_btn

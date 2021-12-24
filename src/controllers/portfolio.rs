@@ -769,30 +769,37 @@ async fn delete_project(
     web::Path(id): web::Path<i16>,
     session: Identity,
 ) -> HttpResponse {
-    if session.identity().is_some() {
-        if services::projects::exists(&pool, id).await {
-            let assets = services::projects::assets::get_all(&pool, id).await;
-
-            assets.iter().for_each(|asset| {
-                // TODO : remove all differents file formats
-
-                let path = format!("./uploads/{}", asset.path);
-                let path = Path::new(&path);
-
-                if path.exists() {
-                    std::fs::remove_file(path).unwrap();
-                }
-            });
-
-            services::projects::delete(&pool, id).await;
-
-            return HttpResponse::Ok().finish();
-        }
-
-        return HttpResponse::NotFound().finish();
+    if session.identity().is_none() {
+        return HttpResponse::Unauthorized().finish()
     }
 
-    HttpResponse::Unauthorized().finish()
+    if !services::projects::exists(&pool, id).await {
+        return HttpResponse::NotFound().finish()
+    }
+
+    let assets = services::projects::assets::get_all(&pool, id).await;
+    let mut files_to_delete = vec![];
+
+    assets
+        .iter()
+        .for_each(|asset| {
+            let filename = asset.path.split('.').collect::<Vec<_>>();
+            let filename = filename.get(0).unwrap();
+
+            files_to_delete.append(
+                &mut [
+                    format!("./uploads/mobile/{}", asset.path),
+                    format!("./uploads/mobile/{}.webp", filename),
+                    format!("./uploads/{}", asset.path),
+                    format!("./uploads/{}.webp", filename),
+                ].to_vec()
+            );
+        });
+
+    services::projects::delete(&pool, id).await;
+    crate::utils::image::remove_files(&files_to_delete);
+
+    HttpResponse::Ok().finish()
 }
 
 #[derive(Deserialize)]
