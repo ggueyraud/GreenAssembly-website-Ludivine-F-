@@ -1,6 +1,7 @@
 import 'router';
 
 let all_projects;
+const { router } = window;
 
 const sort = id => {
     const container = document.querySelector('#aaa');
@@ -50,7 +51,7 @@ const sort = id => {
     }, 250)
 }
 
-window.router.on('mount', () => {
+router.on('mount', () => {
     all_projects = [...document.querySelectorAll('.project')];
     
     document

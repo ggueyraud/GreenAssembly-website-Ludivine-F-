@@ -1,5 +1,5 @@
 import Carousel, { CarouselPagination, CarouselTouch } from 'carousel';
-import lightbox, { init } from '@js/components/lightbox';
+import lightbox from '@js/components/lightbox';
 import 'router';
 
 window.router.on('mount', () => {
@@ -15,4 +15,5 @@ window.router.on('mount', () => {
         }
     });
     carousel.use([CarouselTouch, CarouselPagination]);
+    console.log(carousel);
 });

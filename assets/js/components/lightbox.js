@@ -34,9 +34,13 @@ export default selector => {
             element.addEventListener('click', e => {
                 e.preventDefault();
 
-                lightbox.classList.add('lightbox--active');
-                img.src = element.src;
-                body.style.overflow = 'hidden';
+                if (lightbox.classList.contains('lightbox--active')) {
+                    hide(lightbox);
+                } else {
+                    lightbox.classList.add('lightbox--active');
+                    img.src = element.src;
+                    body.style.overflow = 'hidden';
+                }
             })
         });
 }
