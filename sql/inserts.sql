@@ -8,6 +8,7 @@ INSERT INTO pages (title, identifier, description) VALUES
 
 INSERT INTO page_chunks (page_id, identifier, content) VALUES
 (1, 'profile_picture', '{"path": ""}'),
+(3, 'link', '{"link": "https://player.vimeo.com/video/422216336?h=88fda9d15b&title=0&byline=0&portrait=0"}'),
 (4, 'link_creations', '{"value": ""}'),
 (4, 'link_shootings', '{"value": ""}');
 

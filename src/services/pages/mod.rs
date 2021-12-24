@@ -1,5 +1,7 @@
 use sqlx::{Error, FromRow, PgPool};
 
+pub mod chunks;
+
 #[derive(FromRow)]
 pub struct Page {
     pub id: i16,

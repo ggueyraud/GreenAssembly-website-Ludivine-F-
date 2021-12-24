@@ -1,0 +1,25 @@
+{% extends "back_office.html" %}
+
+{% block title %}Motion design{% endblock %}
+
+{% block head %}
+    <script src="/js/admin/settings.js" async></script>
+    <link rel="stylesheet" href="/css/pages/admin/settings.css" />
+{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card__header">
+            <h1>Motion design</h1>
+        </div>
+
+        <form name="settings" class="card__body">
+            <label for="link">Lien vidéo showreel (vimeo)</label>
+            <input type="url" name="link" id="link" value="{{ link }}" />
+
+            <div class="flex justify_end mt_2">
+                <button type="submit" class="btn btn__blue btn--sm">Modifier</button>
+            </div>
+        </form>
+    </div>
+{% endblock %}

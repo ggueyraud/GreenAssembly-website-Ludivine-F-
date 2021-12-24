@@ -11,6 +11,7 @@ pub mod metrics;
 pub mod my_little_plus;
 pub mod portfolio;
 pub mod user;
+pub mod motion_design;
 
 #[get("/")]
 pub async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
@@ -34,39 +35,6 @@ pub async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResp
         }
 
         return Index {
-            title: page.title,
-            description: page.description,
-            year: chrono::Utc::now().year(),
-            metric_token: token,
-        }
-        .into_response();
-    }
-
-    Ok(HttpResponse::InternalServerError().finish())
-}
-
-#[get("/motion-design")]
-async fn motion_design(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
-    if let Ok(page) = services::pages::get(&pool, "motion-design").await {
-        let metric_id = metrics::add(&pool, &req, services::metrics::BelongsTo::Page(page.id)).await;
-
-        let mut token: Option<String> = None;
-        if let Ok(Some(id)) = metric_id {
-            if let Ok(metric_token) = services::metrics::tokens::add(&pool, id).await {
-                token = Some(metric_token.to_string());
-            }
-        }
-
-        #[derive(Template)]
-        #[template(path = "pages/motion_design.html")]
-        struct MotionDesign {
-            title: String,
-            description: Option<String>,
-            year: i32,
-            metric_token: Option<String>,
-        }
-
-        return MotionDesign {
             title: page.title,
             description: page.description,
             year: chrono::Utc::now().year(),
