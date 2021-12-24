@@ -48,10 +48,7 @@ pub async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResp
 #[get("/motion-design")]
 async fn motion_design(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
     if let Ok(page) = services::pages::get(&pool, "motion-design").await {
-        let (metric_id, videos) = futures::join!(
-            metrics::add(&pool, &req, services::metrics::BelongsTo::Page(page.id)),
-            services::videos::get_all(&pool)
-        );
+        let metric_id = metrics::add(&pool, &req, services::metrics::BelongsTo::Page(page.id)).await;
 
         let mut token: Option<String> = None;
         if let Ok(Some(id)) = metric_id {
@@ -63,7 +60,6 @@ async fn motion_design(req: HttpRequest, pool: web::Data<PgPool>) -> Result<Http
         #[derive(Template)]
         #[template(path = "pages/motion_design.html")]
         struct MotionDesign {
-            videos: Vec<services::videos::Video>,
             title: String,
             description: Option<String>,
             year: i32,
@@ -71,7 +67,6 @@ async fn motion_design(req: HttpRequest, pool: web::Data<PgPool>) -> Result<Http
         }
 
         return MotionDesign {
-            videos,
             title: page.title,
             description: page.description,
             year: chrono::Utc::now().year(),

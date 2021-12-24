@@ -6,4 +6,3 @@ pub mod my_little_plus;
 pub mod pages;
 pub mod projects;
 pub mod user;
-pub mod videos;
