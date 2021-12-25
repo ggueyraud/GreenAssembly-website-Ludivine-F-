@@ -22,7 +22,7 @@ export default class Modal {
         if (header) {
             const close_btn = document.createElement('button');
             close_btn.type = 'button';
-            close_btn.innerHTML = `<svg class="icon icon--sm" height="18px">
+            close_btn.innerHTML = `<svg class="icon icon--sm">
                 <use xlink:href="/icons.svg#close"></use>
             </svg>`;
             close_btn.title = 'Fermer la fenêtre';

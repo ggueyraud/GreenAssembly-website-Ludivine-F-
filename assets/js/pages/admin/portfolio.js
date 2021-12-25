@@ -215,7 +215,7 @@ router.on('mount', () => {
 
         const update_btn = document.createElement('button');
         update_btn.classList.add('text_blue');
-        update_btn.innerHTML = `<svg class="icon" height="20px">
+        update_btn.innerHTML = `<svg class="icon icon--sm">
             <use xlink:href="/dashboard_icons.svg#edit"></use>
         </svg>`;
         update_btn.addEventListener('click', () => {
@@ -225,7 +225,7 @@ router.on('mount', () => {
 
         const delete_btn = document.createElement('button');
         delete_btn.classList.add('text_error');
-        delete_btn.innerHTML = `<svg class="icon" height="20px">
+        delete_btn.innerHTML = `<svg class="icon icon--sm">
             <use xlink:href="/dashboard_icons.svg#delete"></use>
         </svg>`;
         delete_btn.addEventListener('click', () => delete_project());
@@ -338,7 +338,7 @@ router.on('mount', () => {
         .on('send', async e => {
             const submit_value = project_form_submit.innerHTML;
             project_form_submit.setAttribute('disabled', true);
-            project_form_submit.innerHTML = `<svg class="icon icon--rotate icon--sm mr_2" height="18px">
+            project_form_submit.innerHTML = `<svg class="icon icon--rotate icon--sm mr_2">
                 <use xlink:href="/dashboard_icons.svg#redo"></use>
             </svg> Envoi en cours..`;
     
