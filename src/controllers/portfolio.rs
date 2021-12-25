@@ -335,7 +335,7 @@ async fn update_category(
         .await
         {
             Ok(_) => return HttpResponse::Ok().finish(),
-            Err(e) => HttpResponse::InternalServerError().finish(),
+            Err(_) => HttpResponse::InternalServerError().finish(),
         };
     }
 
@@ -521,9 +521,7 @@ pub async fn insert_project(
             HttpResponse::Created().json(id)
         }
         _ => HttpResponse::InternalServerError().finish(),
-    };
-
-    HttpResponse::Unauthorized().finish()
+    }
 }
 
 #[derive(Deserialize, Debug)]
