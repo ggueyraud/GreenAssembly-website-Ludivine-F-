@@ -25,9 +25,6 @@ fn webp_thumbnail(image: &DynamicImage, size: (u32, u32), path: &str) -> Result<
     match Encoder::from_image(&image.resize(size.0, size.1, image::imageops::CatmullRom)) {
         Ok(encoder) => {
             let image_webp = encoder.encode(80.0);
-            // let image_webp =
-            //     Encoder::from_image(&image.resize(size.0, size.1, image::imageops::CatmullRom))
-            //         .encode(100.0);
             let v = image_webp.iter().copied().collect::<Vec<u8>>();
 
             match std::fs::File::create(path) {
@@ -46,82 +43,6 @@ fn webp_thumbnail(image: &DynamicImage, size: (u32, u32), path: &str) -> Result<
             e,
         ))),
     }
-}
-
-pub fn create_images(
-    image: &DynamicImage,
-    name: &str,
-    max_mobile: Option<(u32, u32)>,
-    max_desktop: Option<(u32, u32)>,
-) -> Result<Vec<String>, ImageError> {
-    let max_mobile = max_mobile.unwrap_or((500, 500));
-    let max_desktop = max_desktop.unwrap_or((700, 700));
-    let mut paths: Vec<String> = vec![];
-    let mut new_name: String;
-    let has_alpha = image.color().has_alpha();
-
-    new_name = format!(
-        "./uploads/mobile/{}.{}",
-        name,
-        if has_alpha { "png" } else { "jpg" }
-    );
-    if let Err(e) = thumbnail(
-        &image,
-        max_mobile,
-        &new_name,
-        if has_alpha {
-            ImageFormat::Png
-        } else {
-            ImageFormat::Jpeg
-        },
-    ) {
-        remove_files(&paths);
-
-        return Err(e);
-    }
-    paths.push(new_name);
-
-    new_name = format!(
-        "./uploads/{}.{}",
-        name,
-        if has_alpha { "png" } else { "jpg" }
-    );
-    if let Err(e) = thumbnail(
-        &image,
-        max_desktop,
-        &new_name,
-        if has_alpha {
-            ImageFormat::Png
-        } else {
-            ImageFormat::Jpeg
-        },
-    ) {
-        remove_files(&paths);
-
-        return Err(e);
-    }
-    paths.push(new_name);
-
-    // Create webp format
-    // for mobile
-    new_name = format!("./uploads/mobile/{}.webp", name);
-    if let Err(e) = webp_thumbnail(&image, max_mobile, &new_name) {
-        remove_files(&paths);
-
-        return Err(e);
-    }
-    paths.push(new_name);
-
-    // for desktop
-    new_name = format!("./uploads/{}.webp", name);
-    if let Err(e) = webp_thumbnail(&image, max_desktop, &new_name) {
-        remove_files(&paths);
-
-        return Err(e);
-    }
-    paths.push(new_name);
-
-    Ok(paths)
 }
 
 pub struct Uploader {
