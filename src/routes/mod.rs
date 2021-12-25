@@ -14,8 +14,8 @@ pub fn config(cfg: &mut web::ServiceConfig) {
         .service(controllers::metrics::log)
         .service(
             web::scope("/portfolio")
-            .service(controllers::portfolio::index)
-            .service(controllers::portfolio::view_project)
+                .service(controllers::portfolio::index)
+                .service(controllers::portfolio::view_project),
         )
         .service(
             web::scope("/blog")

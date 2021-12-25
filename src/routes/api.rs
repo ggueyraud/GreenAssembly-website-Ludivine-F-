@@ -31,12 +31,9 @@ pub fn config(cfg: &mut web::ServiceConfig) {
             )
             .service(
                 web::scope("/my_little_plus")
-                    .service(controllers::api::update_little_plus_informations)
+                    .service(controllers::api::update_little_plus_informations),
             )
-            .service(
-                web::scope("/contact")
-                    .service(controllers::api::contact)
-            )
+            .service(web::scope("/contact").service(controllers::api::contact))
             .service(web::scope("/home").service(controllers::api::update_home_informations)),
     );
 }

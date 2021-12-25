@@ -2,10 +2,11 @@ use crate::services;
 use actix_web::{get, web, Error, HttpRequest, HttpResponse};
 use askama_actix::{Template, TemplateIntoResponse};
 use chrono::Datelike;
+use serde::Deserialize;
 use sqlx::PgPool;
 
-pub mod api;
 pub mod admin;
+pub mod api;
 pub mod blog;
 pub mod metrics;
 pub mod portfolio;
@@ -48,67 +49,64 @@ pub async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResp
 #[get("/mes-petits-plus")]
 async fn my_little_plus(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
     if let Ok(page) = services::pages::get(&pool, "mes-petits-plus").await {
-        let (metric_id, links) = futures::join!(
+        #[derive(sqlx::FromRow)]
+        struct Chunk {
+            content: serde_json::Value,
+        }
+
+        #[derive(Deserialize)]
+        struct ChunkData {
+            value: Option<String>,
+        }
+
+        match futures::join!(
             metrics::add(&pool, &req, services::metrics::BelongsTo::Page(page.id)),
-            services::my_little_plus::get_links(&pool)
-        );
+            services::pages::chunks::get::<Chunk>(&pool, "content", "link_creations"),
+            services::pages::chunks::get::<Chunk>(&pool, "content", "link_shootings")
+        ) {
+            (Ok(metric_id), Ok(creations), Ok(shootings)) => {
+                let creations = match serde_json::from_value::<ChunkData>(creations.content) {
+                    Ok(data) => data.value,
+                    Err(_) => return Ok(HttpResponse::InternalServerError().finish()),
+                };
+                let shootings = match serde_json::from_value::<ChunkData>(shootings.content) {
+                    Ok(data) => data.value,
+                    Err(_) => return Ok(HttpResponse::InternalServerError().finish()),
+                };
 
-        let mut token: Option<String> = None;
-        if let Ok(Some(id)) = metric_id {
-            if let Ok(metric_token) = services::metrics::tokens::add(&pool, id).await {
-                token = Some(metric_token.to_string());
-            }
-        }
-
-        let creations = match &links {
-            Some(val) => {
-                if let Some(link) = &val.creations {
-                    if !link.is_empty() {
-                        val.creations.clone()
-                    } else {
-                        None
+                let mut token: Option<String> = None;
+                if let Some(id) = metric_id {
+                    if let Ok(metric_token) = services::metrics::tokens::add(&pool, id).await {
+                        token = Some(metric_token.to_string());
                     }
-                } else {
-                    None
                 }
-            }
-            None => None,
-        };
-        let shootings = match &links {
-            Some(val) => {
-                if let Some(link) = &val.shootings {
-                    if !link.is_empty() {
-                        val.shootings.clone()
-                    } else {
-                        None
-                    }
-                } else {
-                    None
-                }
-            }
-            None => None,
-        };
 
-        #[derive(Template)]
-        #[template(path = "pages/my-little-plus.html")]
-        struct MyLittlePlus {
-            title: String,
-            description: Option<String>,
-            year: i32,
-            metric_token: Option<String>,
-            creations_link: Option<String>,
-            shootings_link: Option<String>,
+                #[derive(Template)]
+                #[template(path = "pages/my-little-plus.html")]
+                struct MyLittlePlus {
+                    title: String,
+                    description: Option<String>,
+                    year: i32,
+                    metric_token: Option<String>,
+                    creations_link: Option<String>,
+                    shootings_link: Option<String>,
+                }
+
+                return MyLittlePlus {
+                    title: page.title,
+                    description: page.description,
+                    year: chrono::Utc::now().year(),
+                    metric_token: token,
+                    creations_link: creations,
+                    shootings_link: shootings,
+                }
+                .into_response();
+            }
+            _ => return Ok(HttpResponse::InternalServerError().finish()),
         }
 
-        return MyLittlePlus {
-            title: page.title,
-            description: page.description,
-            year: chrono::Utc::now().year(),
-            metric_token: token,
-            creations_link: creations,
-            shootings_link: shootings,
-        }
-        .into_response();
+        // if let Ok((metric_id, creations, shootings)) =  {
+        // }
     }
 
     Ok(HttpResponse::InternalServerError().finish())
@@ -122,7 +120,7 @@ async fn motion_design(req: HttpRequest, pool: web::Data<PgPool>) -> Result<Http
             content: serde_json::Value,
         }
 
-        #[derive(serde::Deserialize)]
+        #[derive(Deserialize)]
         struct ChunkData {
             link: String,
         }
@@ -130,9 +128,12 @@ async fn motion_design(req: HttpRequest, pool: web::Data<PgPool>) -> Result<Http
         if let Ok(chunk) = services::pages::chunks::get::<Chunk>(&pool, "content", "link").await {
             if let Ok(data) = serde_json::from_value::<ChunkData>(chunk.content) {
                 let mut token: Option<String> = None;
-                if let Ok(Some(id)) =
-                    crate::controllers::metrics::add(&pool, &req, services::metrics::BelongsTo::Page(page.id))
-                        .await
+                if let Ok(Some(id)) = crate::controllers::metrics::add(
+                    &pool,
+                    &req,
+                    services::metrics::BelongsTo::Page(page.id),
+                )
+                .await
                 {
                     if let Ok(metric_token) = services::metrics::tokens::add(&pool, id).await {
                         token = Some(metric_token.to_string());
@@ -267,17 +268,17 @@ mod tests {
         assert!(resp.status().is_success());
     }
 
-    #[actix_rt::test]
-    async fn test_index() {
-        dotenv().ok();
+    // #[actix_rt::test]
+    // async fn test_index() {
+    //     dotenv().ok();
 
-        let pool = create_pool().await.unwrap();
-        let mut app = test::init_service(App::new().data(pool.clone()).service(super::index)).await;
-        let resp = test::TestRequest::get()
-            .uri("/")
-            .send_request(&mut app)
-            .await;
+    //     let pool = create_pool().await.unwrap();
+    //     let mut app = test::init_service(App::new().data(pool.clone()).service(super::index)).await;
+    //     let resp = test::TestRequest::get()
+    //         .uri("/")
+    //         .send_request(&mut app)
+    //         .await;
 
-        assert!(resp.status().is_success());
-    }
+    //     assert!(resp.status().is_success());
+    // }
 }

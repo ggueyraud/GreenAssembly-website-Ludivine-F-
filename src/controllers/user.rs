@@ -1,6 +1,7 @@
 use crate::services;
 use actix_identity::Identity;
 use actix_web::{get, post, web, HttpRequest, HttpResponse};
+use regex::Regex;
 use serde::Deserialize;
 use sqlx::PgPool;
 
@@ -16,8 +17,6 @@ pub async fn login(
     mut form: web::Form<LoginForm>,
     id: Identity,
 ) -> HttpResponse {
-    use regex::Regex;
-
     form.email = form.email.trim().to_string();
     form.password = form.password.trim().to_string();
 
@@ -100,8 +99,6 @@ pub async fn lost_password(
     pool: web::Data<PgPool>,
     mut form: web::Form<LostPasswordForm>,
 ) -> HttpResponse {
-    use regex::Regex;
-
     form.email = form.email.trim().to_string();
 
     let ip = if cfg!(debug_assertions) {
@@ -189,8 +186,6 @@ pub async fn password_recovery(
     pool: web::Data<PgPool>,
     mut form: web::Form<PasswordRecoveryForm>,
 ) -> HttpResponse {
-    use regex::Regex;
-
     form.password = form.password.trim().to_owned();
 
     println!("{} - {}", form.password, form.password.len());
@@ -207,8 +202,8 @@ pub async fn password_recovery(
 }
 
 #[get("/logout")]
-pub async fn logout(id: Identity) -> HttpResponse {
-    id.forget();
+pub async fn logout(session: Identity) -> HttpResponse {
+    session.forget();
 
     HttpResponse::Found().header("location", "/admin").finish()
 }

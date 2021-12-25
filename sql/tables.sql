@@ -34,12 +34,6 @@ CREATE TABLE files (
     path VARCHAR(255) NOT NULL
 );
 
-DROP TABLE IF EXISTS my_little_plus_links CASCADE;
-CREATE TABLE my_little_plus_links (
-    creations VARCHAR(128),
-    shootings VARCHAR(128)
-);
-
 -- TODO : implement a trigger when delete to recalculate order
 DROP TABLE IF EXISTS project_assets CASCADE;
 CREATE TABLE project_assets (

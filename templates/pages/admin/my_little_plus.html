@@ -18,7 +18,7 @@
             <input
                 type="text"
                 id="creations_input"
-                name="creations_input"
+                name="creations"
                 {% match creations %}
                     {% when Some with (creations) %}
                         value="{{ creations }}"
@@ -29,7 +29,7 @@
             <input
                 type="text"
                 id="shootings_input"
-                name="shootings_input"
+                name="shootings"
                 {% match shootings %}
                     {% when Some with (shootings) %}
                         value="{{ shootings }}"

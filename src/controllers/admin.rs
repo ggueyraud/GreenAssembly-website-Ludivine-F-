@@ -1,10 +1,10 @@
+use crate::services;
 use actix_identity::Identity;
 use actix_web::{get, web, Error, HttpResponse};
 use askama_actix::{Template, TemplateIntoResponse};
 use chrono::{DateTime, Utc};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
-use crate::services;
 
 mod filters {
     pub fn rfc3339(date: &chrono::DateTime<chrono::Utc>) -> ::askama::Result<String> {
@@ -13,8 +13,8 @@ mod filters {
 }
 
 #[get("")]
-pub async fn index(id: Identity) -> Result<HttpResponse, Error> {
-    if id.identity().is_some() {
+pub async fn index(session: Identity) -> Result<HttpResponse, Error> {
+    if session.identity().is_some() {
         #[derive(Template)]
         #[template(path = "pages/admin/index.html")]
         struct Dashboard;
@@ -49,7 +49,7 @@ pub async fn home_page(id: Identity) -> Result<HttpResponse, Error> {
 #[get("/portfolio")]
 pub async fn portfolio(session: Identity, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
     if session.identity().is_none() {
-        return Ok(HttpResponse::Found().header("location", "/admin").finish())
+        return Ok(HttpResponse::Found().header("location", "/admin").finish());
     }
 
     #[derive(sqlx::FromRow, Serialize)]
@@ -90,7 +90,7 @@ pub async fn motion_design(
     pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, Error> {
     if session.identity().is_none() {
-        return Ok(HttpResponse::Found().header("location", "/admin").finish())
+        return Ok(HttpResponse::Found().header("location", "/admin").finish());
     }
 
     #[derive(Template)]
@@ -111,7 +111,7 @@ pub async fn motion_design(
 
     if let Ok(chunk) = services::pages::chunks::get::<Chunk>(&pool, "content", "link").await {
         if let Ok(data) = serde_json::from_value::<ChunkData>(chunk.content) {
-            return MotionDesign { link: data.link }.into_response()
+            return MotionDesign { link: data.link }.into_response();
         }
     }
 
@@ -119,30 +119,60 @@ pub async fn motion_design(
 }
 
 #[get("/my_little_plus")]
-pub async fn my_little_plus(pool: web::Data<PgPool>, session: Identity) -> Result<HttpResponse, Error> {
+pub async fn my_little_plus(
+    pool: web::Data<PgPool>,
+    session: Identity,
+) -> Result<HttpResponse, Error> {
     if session.identity().is_none() {
-        return Ok(HttpResponse::Found().header("location", "/admin").finish())
+        return Ok(HttpResponse::Found().header("location", "/admin").finish());
     }
 
-    let links = services::my_little_plus::get_links(&pool).await.unwrap();
-
-    #[derive(Template)]
-    #[template(path = "pages/admin/my_little_plus.html")]
-    struct MyLittlePlus {
-        creations: Option<String>,
-        shootings: Option<String>
+    #[derive(sqlx::FromRow)]
+    struct Chunk {
+        content: serde_json::Value,
     }
 
-    MyLittlePlus {
-        creations: links.creations,
-        shootings: links.shootings
-    }.into_response()
+    #[derive(Deserialize)]
+    struct ChunkData {
+        value: Option<String>,
+    }
+
+    let links = futures::try_join!(
+        services::pages::chunks::get::<Chunk>(&pool, "content", "link_creations"),
+        services::pages::chunks::get::<Chunk>(&pool, "content", "link_shootings")
+    );
+
+    if let Ok((link_creations, link_shootings)) = links {
+        let creations = match serde_json::from_value::<ChunkData>(link_creations.content) {
+            Ok(data) => data.value,
+            Err(_) => return Ok(HttpResponse::InternalServerError().finish()),
+        };
+        let shootings = match serde_json::from_value::<ChunkData>(link_shootings.content) {
+            Ok(data) => data.value,
+            Err(_) => return Ok(HttpResponse::InternalServerError().finish()),
+        };
+
+        #[derive(Template)]
+        #[template(path = "pages/admin/my_little_plus.html")]
+        struct MyLittlePlus {
+            creations: Option<String>,
+            shootings: Option<String>,
+        }
+
+        return MyLittlePlus {
+            creations,
+            shootings,
+        }
+        .into_response();
+    }
+
+    Ok(HttpResponse::InternalServerError().finish())
 }
 
 #[get("/blog")]
 async fn blog(session: Identity, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
     if session.identity().is_none() {
-        return Ok(HttpResponse::Found().header("location", "/admin").finish())
+        return Ok(HttpResponse::Found().header("location", "/admin").finish());
     }
 
     #[derive(sqlx::FromRow, Serialize)]

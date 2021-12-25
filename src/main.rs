@@ -141,8 +141,6 @@ async fn main() -> std::io::Result<()> {
             ))
             .configure(routes::config)
             .configure(routes::api::config)
-            .configure(routes::portfolio::config)
-            .configure(routes::blog::config)
             .configure(routes::user::config)
             .configure(routes::admin::config)
             .service(serve_upload_file)

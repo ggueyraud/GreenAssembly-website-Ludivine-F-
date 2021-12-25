@@ -2,8 +2,8 @@ use crate::{services, utils::patch::Patch};
 use actix_identity::Identity;
 use actix_web::{delete, get, patch, post, put, web, HttpResponse};
 use ammonia::Builder;
-use sqlx::PgPool;
 use serde::{Deserialize, Serialize};
+use sqlx::PgPool;
 use std::{collections::HashSet, ops::DerefMut};
 
 #[get("/projects/{id}")]
@@ -200,14 +200,14 @@ pub async fn insert_project(
     form.name = form.name.trim().to_string();
 
     if form.name.len() > 120 {
-        return HttpResponse::BadRequest().finish()
+        return HttpResponse::BadRequest().finish();
     }
 
     if let Some(description) = &mut form.description {
         *description = description.trim().to_string();
 
         if description.len() > 320 {
-            return HttpResponse::BadRequest().finish()
+            return HttpResponse::BadRequest().finish();
         }
     }
 
@@ -228,7 +228,7 @@ pub async fn insert_project(
         .to_string();
 
     if form.content.len() < 30 {
-        return HttpResponse::BadRequest().finish()
+        return HttpResponse::BadRequest().finish();
     }
 
     // Check if specified categories exist

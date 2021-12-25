@@ -1,6 +1,6 @@
 use super::metrics;
 use crate::services;
-use actix_web::{web, Error, get, HttpRequest, HttpResponse};
+use actix_web::{get, web, Error, HttpRequest, HttpResponse};
 use askama_actix::{Template, TemplateIntoResponse};
 use chrono::Datelike;
 use sqlx::PgPool;

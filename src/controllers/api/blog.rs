@@ -186,7 +186,7 @@ async fn delete_category(
     }
 
     if services::blog::categories::exists(&pool, id).await {
-        return HttpResponse::NotFound().finish()
+        return HttpResponse::NotFound().finish();
     }
 
     services::blog::categories::delete(&pool, id).await;
@@ -325,9 +325,10 @@ async fn insert_article(
                     }
                 ),
             )
-            .await {
+            .await
+            {
                 Ok(file_id) => file_id,
-                Err(_) => return HttpResponse::InternalServerError().finish()
+                Err(_) => return HttpResponse::InternalServerError().finish(),
             };
 
             file_id
@@ -374,11 +375,11 @@ async fn insert_article(
                 match image::load_from_memory(image.data()) {
                     Ok(image) => {
                         let name = format!("{}_{}_{}", id, i, chrono::Utc::now().timestamp());
-    
+
                         if uploader.handle(&image, &name, None, None).is_err() {
                             return HttpResponse::InternalServerError().finish();
                         }
-    
+
                         if let Ok(file_id) = services::files::insert(
                             transaction.deref_mut(),
                             None,
@@ -402,17 +403,19 @@ async fn insert_article(
                             .await
                             {
                                 Ok(id) => {
-                                    content =
-                                        content.replacen(&format!("[[{}]]", i), &format!("[[{}]]", id), 1);
+                                    content = content.replacen(
+                                        &format!("[[{}]]", i),
+                                        &format!("[[{}]]", id),
+                                        1,
+                                    );
                                 }
                                 Err(_) => return HttpResponse::InternalServerError().finish(),
                             }
                         } else {
                             return HttpResponse::InternalServerError().finish();
                         };
-    
-                    },
-                    Err(_) => return HttpResponse::InternalServerError().finish()
+                    }
+                    Err(_) => return HttpResponse::InternalServerError().finish(),
                 };
             }
         }
@@ -424,13 +427,9 @@ async fn insert_article(
         );
         fields_to_update.insert(String::from("content"), Value::String(content));
 
-        if services::blog::articles::partial_update(
-            transaction.deref_mut(),
-            id,
-            fields_to_update,
-        )
-        .await
-        .is_err()
+        if services::blog::articles::partial_update(transaction.deref_mut(), id, fields_to_update)
+            .await
+            .is_err()
         {
             return HttpResponse::InternalServerError().finish();
         }
@@ -614,16 +613,21 @@ async fn update_article(
                     } else {
                         return HttpResponse::InternalServerError().finish();
                     };
-        
-                    match services::blog::articles::images::insert(transaction.deref_mut(), id, file_id)
-                        .await
+
+                    match services::blog::articles::images::insert(
+                        transaction.deref_mut(),
+                        id,
+                        file_id,
+                    )
+                    .await
                     {
                         Ok(id) => {
-                            content = content.replacen(&format!("[[{}]]", i), &format!("[[{}]]", id), 1);
+                            content =
+                                content.replacen(&format!("[[{}]]", i), &format!("[[{}]]", id), 1);
                         }
                         Err(_) => return HttpResponse::InternalServerError().finish(),
                     }
-                },
+                }
                 Err(_) => {
                     return HttpResponse::InternalServerError().finish();
                 }
@@ -696,7 +700,7 @@ async fn update_article(
                 fields_need_update
                     .insert(String::from("cover_id"), serde_json::Value::from(file_id));
             }
-            Err(_) => return HttpResponse::InternalServerError().finish()
+            Err(_) => return HttpResponse::InternalServerError().finish(),
         }
     }
 
@@ -734,7 +738,7 @@ async fn delete_article(
     }
 
     if !services::blog::articles::exists(&pool, id).await {
-        return HttpResponse::NotFound().finish()
+        return HttpResponse::NotFound().finish();
     }
 
     #[derive(FromRow)]

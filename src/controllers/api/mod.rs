@@ -1,9 +1,10 @@
-use actix_identity::Identity;
-use actix_web::{put, patch, post, web, HttpResponse};
-use sqlx::PgPool;
-use serde::Deserialize;
-use actix_extract_multipart::{File, Multipart};
 use crate::utils::{image::Uploader, patch::Patch};
+use actix_extract_multipart::{File, Multipart};
+use actix_identity::Identity;
+use actix_web::{patch, post, put, web, HttpResponse};
+use regex::Regex;
+use serde::Deserialize;
+use sqlx::PgPool;
 
 pub mod blog;
 pub mod portfolio;
@@ -43,7 +44,10 @@ pub struct HomeImage {
 }
 
 #[patch("/image")]
-pub async fn update_home_informations(session: Identity, data: Multipart<HomeImage>) -> HttpResponse {
+pub async fn update_home_informations(
+    session: Identity,
+    data: Multipart<HomeImage>,
+) -> HttpResponse {
     if session.identity().is_none() {
         return HttpResponse::Unauthorized().finish();
     }
@@ -54,51 +58,81 @@ pub async fn update_home_informations(session: Identity, data: Multipart<HomeIma
         return HttpResponse::BadRequest().finish();
     }
 
-    match image::load_from_memory(data.image.data()) {
-        Ok(image) => {
-            if uploader
-                .handle(&image, "index", None, Some((1000, 1000)))
-                .is_err()
-            {
-                return HttpResponse::BadRequest().finish();
-            }
+    if let Ok(image) = image::load_from_memory(data.image.data()) {
+        if uploader
+            .handle(&image, "index", None, Some((1000, 1000)))
+            .is_err()
+        {
+            return HttpResponse::BadRequest().finish();
         }
-        Err(_) => return HttpResponse::InternalServerError().finish(),
+
+        uploader.clear();
+
+        return HttpResponse::Ok().finish();
     }
 
-    uploader.clear();
+    HttpResponse::InternalServerError().finish()
+}
 
-    HttpResponse::Ok().finish()
+#[derive(Deserialize)]
+pub struct FormUpdateLittlePlus {
+    pub creations: Option<String>,
+    pub shootings: Option<String>,
 }
 
 #[patch("/links")]
 async fn update_little_plus_informations(
     pool: web::Data<PgPool>,
-    id: Identity,
-    links: web::Json<crate::services::my_little_plus::Links>,
+    session: Identity,
+    links: web::Json<FormUpdateLittlePlus>,
 ) -> HttpResponse {
-    if id.identity().is_none() {
-        return HttpResponse::Forbidden().finish()
+    if session.identity().is_none() {
+        return HttpResponse::Unauthorized().finish();
     }
 
-    use regex::Regex;
     let http_regex = Regex::new(r"^https?://(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$").unwrap();
+    let mut fut = vec![];
 
     if let Some(url) = &links.creations {
-        if !url.is_empty() && !http_regex.is_match(url) {
-            return HttpResponse::BadRequest().finish()
+        if http_regex.is_match(url) {
+            fut.push(
+                sqlx::query!(
+                    r#"UPDATE page_chunks
+                    SET content['value'] = $1
+                    WHERE identifier = 'link_creations' AND page_id = 4"#,
+                    serde_json::Value::String((*url).clone())
+                )
+                .execute(pool.as_ref()),
+            );
+        } else {
+            return HttpResponse::BadRequest().finish();
         }
     }
     if let Some(url) = &links.shootings {
-        if !url.is_empty() && !http_regex.is_match(url) {
-            return HttpResponse::BadRequest().finish()
+        if http_regex.is_match(url) {
+            fut.push(
+                sqlx::query!(
+                    r#"UPDATE page_chunks
+                    SET content['value'] = $1
+                    WHERE identifier = 'link_shootings' AND page_id = 4"#,
+                    serde_json::Value::String((*url).clone())
+                )
+                .execute(pool.as_ref()),
+            );
+        } else {
+            return HttpResponse::BadRequest().finish();
         }
     }
 
-    match crate::services::my_little_plus::edit_links(&pool, &links).await {
+    match futures::future::try_join_all(fut).await {
         Ok(_) => HttpResponse::Ok().finish(),
-        Err(_) => HttpResponse::InternalServerError().finish()
+        Err(_) => HttpResponse::InternalServerError().finish(),
     }
+
+    // match crate::services::my_little_plus::edit_links(&pool, &links).await {
+    //     Ok(_) => HttpResponse::Ok().finish(),
+    //     Err(_) => HttpResponse::InternalServerError().finish()
+    // }
 }
 
 #[derive(serde::Deserialize, serde::Serialize)]
@@ -168,7 +202,6 @@ pub struct ContactForm {
 pub async fn contact(mut form: web::Form<ContactForm>) -> HttpResponse {
     use lettre::{SmtpClient, Transport};
     use lettre_email::EmailBuilder;
-    use regex::Regex;
 
     // Trim form fields
     form.firstname = form.firstname.trim().to_string();
