@@ -4,10 +4,6 @@ use askama_actix::{Template, TemplateIntoResponse};
 use chrono::{DateTime, Utc};
 use serde::Serialize;
 use sqlx::PgPool;
-
-pub mod home;
-pub mod my_little_plus;
-pub mod settings;
 use crate::services;
 
 mod filters {
@@ -123,16 +119,24 @@ pub async fn motion_design(
 }
 
 #[get("/my_little_plus")]
-pub async fn my_little_plus_page(session: Identity) -> Result<HttpResponse, Error> {
+pub async fn my_little_plus(pool: web::Data<PgPool>, session: Identity) -> Result<HttpResponse, Error> {
     if session.identity().is_none() {
         return Ok(HttpResponse::Found().header("location", "/admin").finish())
     }
 
+    let links = services::my_little_plus::get_links(&pool).await.unwrap();
+
     #[derive(Template)]
     #[template(path = "pages/admin/my_little_plus.html")]
-    struct MyLittlePlus;
+    struct MyLittlePlus {
+        creations: Option<String>,
+        shootings: Option<String>
+    }
 
-    MyLittlePlus {}.into_response()
+    MyLittlePlus {
+        creations: links.creations,
+        shootings: links.shootings
+    }.into_response()
 }
 
 #[get("/blog")]
@@ -180,6 +184,26 @@ async fn blog(session: Identity, pool: web::Data<PgPool>) -> Result<HttpResponse
         articles,
     }
     .into_response()
+}
+
+#[get("/parametres")]
+pub async fn settings(session: Identity, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
+    if session.identity().is_none() {
+        return Ok(HttpResponse::Found().header("location", "/admin").finish());
+    }
+
+    #[derive(Template)]
+    #[template(path = "pages/admin/settings.html")]
+    struct Setting {
+        // categories: Vec<services::projects::Category>,
+    // projects: Vec<services::projects::Project>,
+    }
+
+    return Setting {
+        // categories,
+        // projects,
+    }
+    .into_response();
 }
 
 #[cfg(test)]

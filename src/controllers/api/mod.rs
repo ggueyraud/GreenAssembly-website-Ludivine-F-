@@ -1,46 +1,161 @@
-use super::metrics;
-use crate::services;
-use actix_web::{get, post, web, Error, HttpRequest, HttpResponse};
-use askama_actix::{Template, TemplateIntoResponse};
-use chrono::Datelike;
-use serde::Deserialize;
+use actix_identity::Identity;
+use actix_web::{put, patch, post, web, HttpResponse};
 use sqlx::PgPool;
+use serde::Deserialize;
+use actix_extract_multipart::{File, Multipart};
+use crate::utils::{image::Uploader, patch::Patch};
 
-#[get("/contact")]
-async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
-    if let Ok(page) = services::pages::get(&pool, "contact").await {
-        let mut token: Option<String> = None;
+pub mod blog;
+pub mod portfolio;
 
-        if let Ok(Some(id)) =
-            metrics::add(&pool, &req, services::metrics::BelongsTo::Page(page.id)).await
-        {
-            if let Ok(metric_token) = services::metrics::tokens::add(&pool, id).await {
-                token = Some(metric_token.to_string());
-            }
-        }
-
-        #[derive(Template)]
-        #[template(path = "pages/contact.html")]
-        struct Contact {
-            title: String,
-            description: Option<String>,
-            year: i32,
-            metric_token: Option<String>,
-        }
-
-        return Contact {
-            title: page.title,
-            description: page.description,
-            year: chrono::Utc::now().year(),
-            metric_token: token,
-        }
-        .into_response();
-    }
-
-    Ok(HttpResponse::InternalServerError().finish())
+#[derive(Deserialize)]
+pub struct UpdateForm {
+    link: String,
 }
 
-#[derive(Deserialize, Debug)]
+#[put("")]
+pub async fn update_motion_design_informations(
+    session: Identity,
+    form: web::Json<UpdateForm>,
+    pool: web::Data<PgPool>,
+) -> HttpResponse {
+    if session.identity().is_none() {
+        return HttpResponse::Unauthorized().finish();
+    }
+
+    match sqlx::query!(
+        r#"UPDATE page_chunks
+        SET content['link'] = $1
+        WHERE identifier = 'link' AND page_id = 3"#,
+        serde_json::Value::String(form.link.clone()),
+    )
+    .execute(pool.as_ref())
+    .await
+    {
+        Ok(_) => HttpResponse::Ok().finish(),
+        Err(_) => HttpResponse::InternalServerError().finish(),
+    }
+}
+
+#[derive(Deserialize)]
+pub struct HomeImage {
+    pub image: File,
+}
+
+#[patch("/image")]
+pub async fn update_home_informations(session: Identity, data: Multipart<HomeImage>) -> HttpResponse {
+    if session.identity().is_none() {
+        return HttpResponse::Unauthorized().finish();
+    }
+
+    let mut uploader = crate::utils::image::Uploader::new();
+
+    if !&["image/jpeg", "image/png", "image/webp"].contains(&data.image.file_type().as_str()) {
+        return HttpResponse::BadRequest().finish();
+    }
+
+    match image::load_from_memory(data.image.data()) {
+        Ok(image) => {
+            if uploader
+                .handle(&image, "index", None, Some((1000, 1000)))
+                .is_err()
+            {
+                return HttpResponse::BadRequest().finish();
+            }
+        }
+        Err(_) => return HttpResponse::InternalServerError().finish(),
+    }
+
+    uploader.clear();
+
+    HttpResponse::Ok().finish()
+}
+
+#[patch("/links")]
+async fn update_little_plus_informations(
+    pool: web::Data<PgPool>,
+    id: Identity,
+    links: web::Json<crate::services::my_little_plus::Links>,
+) -> HttpResponse {
+    if id.identity().is_none() {
+        return HttpResponse::Forbidden().finish()
+    }
+
+    use regex::Regex;
+    let http_regex = Regex::new(r"^https?://(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$").unwrap();
+
+    if let Some(url) = &links.creations {
+        if !url.is_empty() && !http_regex.is_match(url) {
+            return HttpResponse::BadRequest().finish()
+        }
+    }
+    if let Some(url) = &links.shootings {
+        if !url.is_empty() && !http_regex.is_match(url) {
+            return HttpResponse::BadRequest().finish()
+        }
+    }
+
+    match crate::services::my_little_plus::edit_links(&pool, &links).await {
+        Ok(_) => HttpResponse::Ok().finish(),
+        Err(_) => HttpResponse::InternalServerError().finish()
+    }
+}
+
+#[derive(serde::Deserialize, serde::Serialize)]
+pub struct UpdateParametersForm {
+    #[serde(skip_serializing)]
+    logo: Patch<File>,
+    #[serde(skip_serializing)]
+    favicon: Patch<File>,
+    background_color: Patch<String>,
+    title_color: Patch<String>,
+    text_color: Patch<String>,
+}
+
+#[patch("")]
+pub async fn update_settings(
+    session: Identity,
+    pool: web::Data<PgPool>,
+    form: Multipart<UpdateParametersForm>,
+) -> HttpResponse {
+    if session.identity().is_none() {
+        return HttpResponse::Unauthorized().finish();
+    }
+
+    let mut uploader = Uploader::new();
+
+    if let Patch::Value(logo) = &form.logo {
+        match image::load_from_memory(logo.data()) {
+            Ok(image) => {
+                // if uploader
+                //     .handle(&image, "logo", Some(()))
+                //     .is_err() {
+                //         return HttpResponse::BadRequest().finish()
+                //     }
+            }
+            Err(_) => return HttpResponse::InternalServerError().finish(),
+        }
+    }
+
+    if let Patch::Value(favicon) = &form.favicon {
+        match image::load_from_memory(favicon.data()) {
+            Ok(favicon) => {
+                // if uploader
+                //     .handle(&favicon, "favicon", Some((64, 64)), Some(()))
+                //     .is_err() {
+                //         return HttpResponse::BadRequest().finish()
+                //     }
+            }
+            Err(_) => return HttpResponse::InternalServerError().finish(),
+        }
+    }
+
+    let mut fields_need_update = crate::utils::patch::extract_fields(&*form);
+
+    HttpResponse::Ok().finish()
+}
+
+#[derive(serde::Deserialize, Debug)]
 pub struct ContactForm {
     firstname: String,
     lastname: String,
@@ -50,7 +165,7 @@ pub struct ContactForm {
 }
 
 #[post("/contact")]
-async fn post(mut form: web::Form<ContactForm>) -> HttpResponse {
+pub async fn contact(mut form: web::Form<ContactForm>) -> HttpResponse {
     use lettre::{SmtpClient, Transport};
     use lettre_email::EmailBuilder;
     use regex::Regex;
@@ -118,20 +233,6 @@ mod tests {
     use crate::create_pool;
     use actix_web::{test, App};
     use dotenv::dotenv;
-
-    #[actix_rt::test]
-    async fn test_index() {
-        dotenv().ok();
-
-        let pool = create_pool().await.unwrap();
-        let mut app = test::init_service(App::new().data(pool.clone()).service(super::index)).await;
-        let resp = test::TestRequest::get()
-            .uri("/contact")
-            .send_request(&mut app)
-            .await;
-
-        assert!(resp.status().is_success());
-    }
 
     #[actix_rt::test]
     async fn test_form_valid_data() {

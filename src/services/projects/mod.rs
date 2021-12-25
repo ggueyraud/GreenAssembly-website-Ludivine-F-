@@ -136,16 +136,8 @@ pub async fn get_spe<
     Ok(res)
 }
 
-// #[derive(Deserialize, Debug)]
-// pub struct ProjectInformations {
-//     pub name: String,
-//     pub description: Option<String>,
-//     pub content: String,
-// }
-
 pub async fn insert(
     pool: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
-    // pool: &PgPool,
     name: &str,
     description: Option<&str>,
     content: &str,

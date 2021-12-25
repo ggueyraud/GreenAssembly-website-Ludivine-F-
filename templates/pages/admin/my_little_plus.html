@@ -15,9 +15,27 @@
 
         <div class="card__body">
             <label for="creations_input">Découvrir mes créations</label>
-            <input type="text" id="creations_input" name="creations_input">
+            <input
+                type="text"
+                id="creations_input"
+                name="creations_input"
+                {% match creations %}
+                    {% when Some with (creations) %}
+                        value="{{ creations }}"
+                    {% when None %}
+                {% endmatch %}
+            />
             <label for="shootings_input">Découvrir mes shooting</label>
-            <input type="text" id="shootings_input" name="shootings_input">
+            <input
+                type="text"
+                id="shootings_input"
+                name="shootings_input"
+                {% match shootings %}
+                    {% when Some with (shootings) %}
+                        value="{{ shootings }}"
+                    {% when None %}
+                {% endmatch %}
+            />
         </div>
 
         <div id="success_message" class="success_message">
