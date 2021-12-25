@@ -26,6 +26,10 @@ pub fn config(cfg: &mut web::ServiceConfig) {
                     .service(controllers::blog::delete_article),
             )
             .service(
+                web::scope("/motion-design")
+                    .service(controllers::motion_design::update_informations)
+            )
+            .service(
                 web::scope("/my_little_plus")
                     .service(controllers::admin::my_little_plus::edit_links)
                     .service(controllers::admin::my_little_plus::get_links),

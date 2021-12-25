@@ -27,7 +27,8 @@ module.exports = {
         'admin/portfolio': `${entry_path}/admin/portfolio.js`,
         'admin/my_little_plus': `${entry_path}/admin/my_little_plus.js`,
         'admin/settings': `${entry_path}/admin/settings.js`,
-        'admin/blog': `${entry_path}/admin/blog.js`
+        'admin/blog': `${entry_path}/admin/blog.js`,
+        'admin/motion_design': `${entry_path}/admin/motion_design.js`
     },
     watch: process.env.NODE_ENV === 'development',
     watchOptions: {

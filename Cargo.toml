@@ -11,7 +11,7 @@ env_logger = "0.9.0"
 lettre = "0.9.6"
 lettre_email = "0.9.4"
 regex = "1.5.4"
-sqlx = { version = "0.5.7", features = ["macros", "postgres", "chrono", "runtime-async-std-native-tls", "uuid"] }
+sqlx = { version = "0.5.7", features = ["macros", "postgres", "chrono", "runtime-async-std-native-tls", "uuid", "json"] }
 rustls = "0.18.1"
 askama = { version = "0.10.5", features = ["serde-json", "with-actix-web"] }
 actix-web = { version = "3.3.3", features = ["rustls"] }

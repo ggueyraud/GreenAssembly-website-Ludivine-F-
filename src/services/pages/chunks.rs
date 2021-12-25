@@ -1,4 +1,4 @@
-use sqlx::{Error, FromRow, PgPool};
+use sqlx::{Error, PgPool};
 
 pub async fn get<
     T: std::marker::Unpin + std::marker::Send + for<'c> sqlx::FromRow<'c, sqlx::postgres::PgRow>,
@@ -14,8 +14,16 @@ pub async fn get<
 
 // pub async fn update(
 //     pool: &PgPool,
-//     id: i16,
+//     identifier: &str,
+//     page_id: i16,
 //     content: String
 // ) -> Result<bool, Error> {
+//     let res = sqlx::query!(
+//         "UPDATE page_chunks SET content = jsonb_set(content, 'link', '$1') WHERE identifier = $2 AND page_id",
+//         content
+//     )
+//     .execute(pool)
+//     .await?;
 
+//     Ok(res.rows_affected)
 // }

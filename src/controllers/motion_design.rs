@@ -1,4 +1,4 @@
-use actix_web::{HttpRequest, HttpResponse, web, get, Error};
+use actix_web::{HttpRequest, HttpResponse, web, get, put, Error};
 use askama_actix::{Template, TemplateIntoResponse};
 use sqlx::PgPool;
 use crate::services;
@@ -59,15 +59,25 @@ pub async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResp
 }
 
 #[derive(serde::Deserialize)]
-struct UpdateForm {
+pub struct UpdateForm {
     link: String
 }
 
-#[get("/motion-design")]
-async fn update_informations(session: Identity, form: web::Json<UpdateForm>, pool: web::Data<PgPool>) -> HttpResponse {
+#[put("")]
+pub async fn update_informations(session: Identity, form: web::Json<UpdateForm>, pool: web::Data<PgPool>) -> HttpResponse {
     if session.identity().is_none() {
         return HttpResponse::Unauthorized().finish()
     }
-    
-    return HttpResponse::InternalServerError().finish()
+
+    match sqlx::query!(
+        r#"UPDATE page_chunks
+        SET content['link'] = $1
+        WHERE identifier = 'link' AND page_id = 3"#,
+        serde_json::Value::String(form.link.clone()),
+    )
+        .execute(pool.as_ref())
+        .await {
+            Ok(_) => HttpResponse::Ok().finish(),
+            Err(_) => HttpResponse::InternalServerError().finish()
+        }
 }

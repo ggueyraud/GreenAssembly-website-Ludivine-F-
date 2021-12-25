@@ -8,7 +8,7 @@ import Modal from '../../components/modal';
 import DOMPurify from 'dompurify'
 import { formatDistance } from 'date-fns'
 import { fr } from 'date-fns/locale';
-import swal_error, { data_removed } from '@js/utils/swal_error';
+import swal_error from '@js/utils/swal_error';
 import Cropper from 'cropperjs';
 import AssetsGrid, { is_filled_class } from '@js/components/assets_grid';
 import 'router';
