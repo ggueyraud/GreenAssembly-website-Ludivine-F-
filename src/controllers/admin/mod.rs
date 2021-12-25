@@ -51,41 +51,41 @@ pub async fn home_page(id: Identity) -> Result<HttpResponse, Error> {
 }
 
 #[get("/portfolio")]
-pub async fn portfolio(id: Identity, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
-    if id.identity().is_some() {
-        #[derive(sqlx::FromRow, Serialize)]
-        struct Project {
-            id: i16,
-            name: String,
-            description: Option<String>,
-            date: DateTime<Utc>,
-        }
-
-        let (categories, projects) = futures::join!(
-            services::projects::categories::get_all(&pool, None),
-            services::projects::get_all_spe::<Project>(&pool, "id, name, description, date", None)
-        );
-
-        match projects {
-            Ok(projects) => {
-                #[derive(Template)]
-                #[template(path = "pages/admin/portfolio.html")]
-                struct Portfolio {
-                    categories: Vec<services::projects::Category>,
-                    projects: Vec<Project>,
-                }
-
-                return Portfolio {
-                    categories,
-                    projects,
-                }
-                .into_response();
-            }
-            Err(_) => return Ok(HttpResponse::InternalServerError().finish()),
-        }
+pub async fn portfolio(session: Identity, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
+    if session.identity().is_none() {
+        return Ok(HttpResponse::Found().header("location", "/admin").finish())
     }
 
-    Ok(HttpResponse::Found().header("location", "/admin").finish())
+    #[derive(sqlx::FromRow, Serialize)]
+    struct Project {
+        id: i16,
+        name: String,
+        description: Option<String>,
+        date: DateTime<Utc>,
+    }
+
+    let (categories, projects) = futures::join!(
+        services::projects::categories::get_all(&pool, None),
+        services::projects::get_all_spe::<Project>(&pool, "id, name, description, date", None)
+    );
+
+    match projects {
+        Ok(projects) => {
+            #[derive(Template)]
+            #[template(path = "pages/admin/portfolio.html")]
+            struct Portfolio {
+                categories: Vec<services::projects::Category>,
+                projects: Vec<Project>,
+            }
+
+            return Portfolio {
+                categories,
+                projects,
+            }
+            .into_response();
+        }
+        Err(_) => return Ok(HttpResponse::InternalServerError().finish()),
+    }
 }
 
 #[get("/motion-design")]
@@ -94,7 +94,7 @@ pub async fn motion_design(
     pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, Error> {
     if session.identity().is_none() {
-        return Ok(HttpResponse::Unauthorized().finish());
+        return Ok(HttpResponse::Found().header("location", "/admin").finish())
     }
 
     #[derive(Template)]
@@ -113,79 +113,73 @@ pub async fn motion_design(
         link: String,
     }
 
-    match services::pages::chunks::get::<Chunk>(&pool, "content", "link").await {
-        Ok(chunk) => match serde_json::from_value::<ChunkData>(chunk.content) {
-            Ok(data) => MotionDesign { link: data.link }.into_response(),
-            Err(_) => Ok(HttpResponse::InternalServerError().finish()),
-        },
-        Err(_) => Ok(HttpResponse::InternalServerError().finish()),
+    if let Ok(chunk) = services::pages::chunks::get::<Chunk>(&pool, "content", "link").await {
+        if let Ok(data) = serde_json::from_value::<ChunkData>(chunk.content) {
+            return MotionDesign { link: data.link }.into_response()
+        }
     }
+
+    Ok(HttpResponse::InternalServerError().finish())
 }
 
 #[get("/my_little_plus")]
-pub async fn my_little_plus_page(id: Identity) -> Result<HttpResponse, Error> {
-    if id.identity().is_some() {
-        #[derive(Template)]
-        #[template(path = "pages/admin/my_little_plus.html")]
-        struct MyLittlePlus;
-
-        return MyLittlePlus {}.into_response();
+pub async fn my_little_plus_page(session: Identity) -> Result<HttpResponse, Error> {
+    if session.identity().is_none() {
+        return Ok(HttpResponse::Found().header("location", "/admin").finish())
     }
 
     #[derive(Template)]
-    #[template(path = "pages/admin/login.html")]
-    struct Login;
+    #[template(path = "pages/admin/my_little_plus.html")]
+    struct MyLittlePlus;
 
-    Login {}.into_response()
+    MyLittlePlus {}.into_response()
 }
 
 #[get("/blog")]
-async fn blog(id: Identity, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
-    if id.identity().is_some() {
-        #[derive(sqlx::FromRow, Serialize)]
-        struct Category {
-            id: i16,
-            name: String,
-        }
-
-        #[derive(sqlx::FromRow, Serialize, Debug)]
-        struct Article {
-            id: i16,
-            category_id: Option<i16>,
-            title: String,
-            description: Option<String>,
-            date: DateTime<Utc>,
-        }
-
-        #[derive(Template)]
-        #[template(path = "pages/admin/blog.html")]
-        struct Blog {
-            categories: Vec<Category>,
-            articles: Vec<Article>,
-        }
-
-        let (categories, articles) = futures::join!(
-            services::blog::categories::get_all::<Category>(&pool, "id, name", None, None),
-            // TODO : refactor function to prevent test none
-            services::blog::articles::get_all::<Article>(
-                &pool,
-                "ba.id, category_id, title, description, date",
-                None,
-                None,
-                None
-            )
-        );
-
-        println!("{:?}", articles);
-
-        return Blog {
-            categories,
-            articles,
-        }
-        .into_response();
+async fn blog(session: Identity, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
+    if session.identity().is_none() {
+        return Ok(HttpResponse::Found().header("location", "/admin").finish())
     }
 
-    Ok(HttpResponse::Found().header("location", "/admin").finish())
+    #[derive(sqlx::FromRow, Serialize)]
+    struct Category {
+        id: i16,
+        name: String,
+    }
+
+    #[derive(sqlx::FromRow, Serialize, Debug)]
+    struct Article {
+        id: i16,
+        category_id: Option<i16>,
+        title: String,
+        description: Option<String>,
+        date: DateTime<Utc>,
+    }
+
+    #[derive(Template)]
+    #[template(path = "pages/admin/blog.html")]
+    struct Blog {
+        categories: Vec<Category>,
+        articles: Vec<Article>,
+    }
+
+    let (categories, articles) = futures::join!(
+        services::blog::categories::get_all::<Category>(&pool, "id, name", None, None),
+        // TODO : refactor function to prevent test none
+        services::blog::articles::get_all::<Article>(
+            &pool,
+            "ba.id, category_id, title, description, date",
+            None,
+            None,
+            None
+        )
+    );
+
+    Blog {
+        categories,
+        articles,
+    }
+    .into_response()
 }
 
 #[cfg(test)]

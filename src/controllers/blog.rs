@@ -458,12 +458,12 @@ async fn delete_category(
     }
 
     if services::blog::categories::exists(&pool, id).await {
-        services::blog::categories::delete(&pool, id).await;
-
-        return HttpResponse::Ok().finish();
+        return HttpResponse::NotFound().finish()
     }
 
-    HttpResponse::NotFound().finish()
+    services::blog::categories::delete(&pool, id).await;
+
+    return HttpResponse::Ok().finish();
 }
 
 #[get("/articles/{id}")]
@@ -541,6 +541,7 @@ pub struct NewArticleForm {
     pictures: Option<Vec<actix_extract_multipart::File>>,
 }
 
+// TODO : review this route
 #[post("/articles")]
 async fn insert_article(
     pool: web::Data<PgPool>,
@@ -581,10 +582,10 @@ async fn insert_article(
                 .handle(&image, &name, Some((500, 250)), Some((700, 350)))
                 .is_err()
             {
-                return HttpResponse::BadRequest().finish();
+                return HttpResponse::InternalServerError().finish();
             }
 
-            let file_id = services::files::insert(
+            let file_id = match services::files::insert(
                 transaction.deref_mut(),
                 None,
                 &format!(
@@ -597,12 +598,14 @@ async fn insert_article(
                     }
                 ),
             )
-            .await
-            .unwrap();
+            .await {
+                Ok(file_id) => file_id,
+                Err(_) => return HttpResponse::InternalServerError().finish()
+            };
 
             file_id
         }
-        Err(_) => return HttpResponse::BadRequest().finish(),
+        Err(_) => return HttpResponse::InternalServerError().finish(),
     };
 
     let mut allowed_tags = std::collections::HashSet::<&str>::new();
@@ -619,7 +622,7 @@ async fn insert_article(
         .clean(form.content.trim())
         .to_string();
 
-    match services::blog::articles::insert(
+    if let Ok(id) = services::blog::articles::insert(
         transaction.deref_mut(),
         form.category_id,
         cover_id,
@@ -631,91 +634,85 @@ async fn insert_article(
     )
     .await
     {
-        Ok(id) => {
-            let mut content = form.content.clone();
+        let mut content = form.content.clone();
 
-            if let Some(pictures) = &form.pictures {
-                for (i, image) in pictures.iter().enumerate() {
-                    if !&["image/png", "image/jpeg"].contains(&image.file_type().as_str())
-                        || image.len() > 2000000
-                    {
-                        return HttpResponse::BadRequest().finish();
-                    }
-
-                    let image = match image::load_from_memory(image.data()) {
-                        Ok(image) => image,
-                        Err(_) => {
-                            return HttpResponse::BadRequest().finish();
-                        }
-                    };
-
-                    let name = format!("{}_{}_{}", id, i, chrono::Utc::now().timestamp());
-
-                    if uploader.handle(&image, &name, None, None).is_err() {
-                        return HttpResponse::BadRequest().finish();
-                    }
-
-                    let file_id = if let Ok(id) = services::files::insert(
-                        transaction.deref_mut(),
-                        None,
-                        &format!(
-                            "{}.{}",
-                            name,
-                            if image.color().has_alpha() {
-                                "png"
-                            } else {
-                                "jpg"
-                            }
-                        ),
-                    )
-                    .await
-                    {
-                        id
-                    } else {
-                        return HttpResponse::InternalServerError().finish();
-                    };
-
-                    match services::blog::articles::images::insert(
-                        transaction.deref_mut(),
-                        id,
-                        file_id,
-                    )
-                    .await
-                    {
-                        Ok(id) => {
-                            content =
-                                content.replacen(&format!("[[{}]]", i), &format!("[[{}]]", id), 1);
-                        }
-                        Err(_) => return HttpResponse::InternalServerError().finish(),
-                    }
+        if let Some(pictures) = &form.pictures {
+            for (i, image) in pictures.iter().enumerate() {
+                if !&["image/png", "image/jpeg"].contains(&image.file_type().as_str())
+                    || image.len() > 2000000
+                {
+                    return HttpResponse::BadRequest().finish();
                 }
+
+                match image::load_from_memory(image.data()) {
+                    Ok(image) => {
+                        let name = format!("{}_{}_{}", id, i, chrono::Utc::now().timestamp());
+    
+                        if uploader.handle(&image, &name, None, None).is_err() {
+                            return HttpResponse::InternalServerError().finish();
+                        }
+    
+                        if let Ok(file_id) = services::files::insert(
+                            transaction.deref_mut(),
+                            None,
+                            &format!(
+                                "{}.{}",
+                                name,
+                                if image.color().has_alpha() {
+                                    "png"
+                                } else {
+                                    "jpg"
+                                }
+                            ),
+                        )
+                        .await
+                        {
+                            match services::blog::articles::images::insert(
+                                transaction.deref_mut(),
+                                id,
+                                file_id,
+                            )
+                            .await
+                            {
+                                Ok(id) => {
+                                    content =
+                                        content.replacen(&format!("[[{}]]", i), &format!("[[{}]]", id), 1);
+                                }
+                                Err(_) => return HttpResponse::InternalServerError().finish(),
+                            }
+                        } else {
+                            return HttpResponse::InternalServerError().finish();
+                        };
+    
+                    },
+                    Err(_) => return HttpResponse::InternalServerError().finish()
+                };
             }
-
-            let mut fields_to_update = HashMap::new();
-            fields_to_update.insert(
-                String::from("uri"),
-                Value::String(slugify(&format!("{}-{}", form.title, id))),
-            );
-            fields_to_update.insert(String::from("content"), Value::String(content));
-
-            if services::blog::articles::partial_update(
-                transaction.deref_mut(),
-                id,
-                fields_to_update,
-            )
-            .await
-            .is_err()
-            {
-                return HttpResponse::InternalServerError().finish();
-            }
-
-            transaction.commit().await.unwrap();
-
-            uploader.clear();
-
-            return HttpResponse::Created().json(id);
         }
-        Err(e) => println!("{}", e),
+
+        let mut fields_to_update = HashMap::new();
+        fields_to_update.insert(
+            String::from("uri"),
+            Value::String(slugify(&format!("{}-{}", form.title, id))),
+        );
+        fields_to_update.insert(String::from("content"), Value::String(content));
+
+        if services::blog::articles::partial_update(
+            transaction.deref_mut(),
+            id,
+            fields_to_update,
+        )
+        .await
+        .is_err()
+        {
+            return HttpResponse::InternalServerError().finish();
+        }
+
+        transaction.commit().await.unwrap();
+
+        uploader.clear();
+
+        return HttpResponse::Created().json(id);
     }
 
     HttpResponse::InternalServerError().finish()
@@ -741,6 +738,7 @@ pub struct UpdateArticleForm {
     pictures: Patch<Option<Vec<actix_extract_multipart::File>>>,
 }
 
+// TODO : review this route
 #[patch("/articles/{id}")]
 async fn update_article(
     pool: web::Data<PgPool>,
@@ -1031,6 +1029,10 @@ async fn delete_article(
         return HttpResponse::Unauthorized().finish();
     }
 
+    if !services::blog::articles::exists(&pool, id).await {
+        return HttpResponse::NotFound().finish()
+    }
+
     #[derive(FromRow)]
     struct Article {
         cover_id: i32,
@@ -1041,53 +1043,51 @@ async fn delete_article(
         path: String,
     }
 
-    if services::blog::articles::exists(&pool, id).await {
-        let (article, images) = futures::join!(
-            services::blog::articles::get::<Article>(&pool, "cover_id", id),
-            services::blog::articles::images::get_all(&pool, id)
-        );
-        let mut images_to_delete = vec![];
+    let (article, images) = futures::join!(
+        services::blog::articles::get::<Article>(&pool, "cover_id", id),
+        services::blog::articles::images::get_all(&pool, id)
+    );
+    let mut images_to_delete = vec![];
 
-        if let Ok(article) = article {
-            if let Ok(file) = services::files::get::<File>(&pool, article.cover_id, "path").await {
-                let cover_file_name = file.path.split('.').collect::<Vec<_>>();
-                let cover_file_name = cover_file_name.get(0).unwrap();
+    if let Ok(article) = article {
+        if let Ok(file) = services::files::get::<File>(&pool, article.cover_id, "path").await {
+            let cover_file_name = file.path.split('.').collect::<Vec<_>>();
+            let cover_file_name = cover_file_name.get(0).unwrap();
+
+            images_to_delete.append(
+                &mut [
+                    format!("./uploads/mobile/{}", file.path),
+                    format!("./uploads/mobile/{}.webp", cover_file_name),
+                    format!("./uploads/{}", file.path),
+                    format!("./uploads/{}.webp", cover_file_name),
+                ]
+                .to_vec(),
+            );
+
+            for image in &images {
+                let file_name = image.path.split('.').collect::<Vec<_>>();
+                let file_name = file_name.get(0).unwrap();
 
                 images_to_delete.append(
                     &mut [
-                        format!("./uploads/mobile/{}", file.path),
-                        format!("./uploads/mobile/{}.webp", cover_file_name),
-                        format!("./uploads/{}", file.path),
-                        format!("./uploads/{}.webp", cover_file_name),
+                        format!("./uploads/mobile/{}", image.path),
+                        format!("./uploads/mobile/{}.webp", file_name),
+                        format!("./uploads/{}", image.path),
+                        format!("./uploads/{}.webp", file_name),
                     ]
                     .to_vec(),
                 );
-
-                for image in &images {
-                    let file_name = image.path.split('.').collect::<Vec<_>>();
-                    let file_name = file_name.get(0).unwrap();
-
-                    images_to_delete.append(
-                        &mut [
-                            format!("./uploads/mobile/{}", image.path),
-                            format!("./uploads/mobile/{}.webp", file_name),
-                            format!("./uploads/{}", image.path),
-                            format!("./uploads/{}.webp", file_name),
-                        ]
-                        .to_vec(),
-                    );
-                }
-
-                services::blog::articles::delete(&pool, id).await;
-
-                crate::utils::image::remove_files(&images_to_delete);
-
-                return HttpResponse::Ok().finish();
             }
+
+            services::blog::articles::delete(&pool, id).await;
+
+            crate::utils::image::remove_files(&images_to_delete);
+
+            return HttpResponse::Ok().finish();
         }
     }
 
-    HttpResponse::NotFound().finish()
+    HttpResponse::InternalServerError().finish()
 }
 
 #[cfg(test)]

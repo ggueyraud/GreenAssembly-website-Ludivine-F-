@@ -18,45 +18,38 @@ pub async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResp
             link: String,
         }
 
-        let link = if let Ok(chunk) =
-            services::pages::chunks::get::<Chunk>(&pool, "content", "link").await
-        {
+        if let Ok(chunk) = services::pages::chunks::get::<Chunk>(&pool, "content", "link").await {
             if let Ok(data) = serde_json::from_value::<ChunkData>(chunk.content) {
-                data.link
-            } else {
-                return Ok(HttpResponse::InternalServerError().finish());
+                let mut token: Option<String> = None;
+                if let Ok(Some(id)) =
+                    super::metrics::add(&pool, &req, services::metrics::BelongsTo::Page(page.id))
+                        .await
+                {
+                    if let Ok(metric_token) = services::metrics::tokens::add(&pool, id).await {
+                        token = Some(metric_token.to_string());
+                    }
+                }
+
+                #[derive(Template)]
+                #[template(path = "pages/motion_design.html")]
+                struct MotionDesign {
+                    title: String,
+                    description: Option<String>,
+                    year: i32,
+                    metric_token: Option<String>,
+                    link: String,
+                }
+
+                return MotionDesign {
+                    title: page.title,
+                    description: page.description,
+                    year: chrono::Utc::now().year(),
+                    metric_token: token,
+                    link: data.link,
+                }
+                .into_response();
             }
-        } else {
-            return Ok(HttpResponse::InternalServerError().finish());
-        };
-
-        let mut token: Option<String> = None;
-        if let Ok(Some(id)) =
-            super::metrics::add(&pool, &req, services::metrics::BelongsTo::Page(page.id)).await
-        {
-            if let Ok(metric_token) = services::metrics::tokens::add(&pool, id).await {
-                token = Some(metric_token.to_string());
-            }
         }
-
-        #[derive(Template)]
-        #[template(path = "pages/motion_design.html")]
-        struct MotionDesign {
-            title: String,
-            description: Option<String>,
-            year: i32,
-            metric_token: Option<String>,
-            link: String,
-        }
-
-        return MotionDesign {
-            title: page.title,
-            description: page.description,
-            year: chrono::Utc::now().year(),
-            metric_token: token,
-            link,
-        }
-        .into_response();
     }
 
     Ok(HttpResponse::InternalServerError().finish())
