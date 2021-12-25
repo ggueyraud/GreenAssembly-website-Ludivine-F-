@@ -25,6 +25,7 @@ pub async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResp
                 token = Some(metric_token.to_string());
             }
         }
+
         #[derive(Template)]
         #[template(path = "pages/index.html")]
         struct Index {
@@ -48,16 +49,36 @@ pub async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResp
 
 #[get("/mentions-legales")]
 async fn legals(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
-    #[derive(Template)]
-    #[template(path = "pages/legals.html")]
-    struct Legals {
-        year: i32,
+    if let Ok(page) = services::pages::get(&pool, "mentions-legales").await {
+        let mut token: Option<String> = None;
+
+        if let Ok(Some(id)) =
+            metrics::add(&pool, &req, services::metrics::BelongsTo::Page(page.id)).await
+        {
+            if let Ok(metric_token) = services::metrics::tokens::add(&pool, id).await {
+                token = Some(metric_token.to_string());
+            }
+        }
+
+        #[derive(Template)]
+        #[template(path = "pages/legals.html")]
+        struct Legals {
+            title: String,
+            description: Option<String>,
+            year: i32,
+            metric_token: Option<String>,
+        }
+
+        return Legals {
+            title: page.title,
+            description: page.description,
+            year: chrono::Utc::now().year(),
+            metric_token: token
+        }
+        .into_response()
     }
 
-    Legals {
-        year: chrono::Utc::now().year(),
-    }
-    .into_response()
+    Ok(HttpResponse::InternalServerError().finish())
 }
 
 #[cfg(test)]

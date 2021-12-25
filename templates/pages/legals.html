@@ -1,9 +1,23 @@
 {% extends "front_office.html" %}
 
-{% block title %}Mentions légales{% endblock %}
+{% block title %}{{ title }}{% endblock %}
 
 {% block head %}
+    {% match description %}
+        {% when Some with (description) %}
+            <meta name="description" content="{{ description }}" />
+        {% when None %}
+    {% endmatch %}
+
     <link rel="stylesheet" href="/css/pages/legals.css" />
+
+    {% match metric_token %}
+        {% when Some with (token) %}
+            <script>
+                localStorage.setItem("METRIC_TOKEN", "{{ token }}");
+            </script>
+        {% when None %}
+    {% endmatch %}
 {% endblock %}
 
 {% block content %}
