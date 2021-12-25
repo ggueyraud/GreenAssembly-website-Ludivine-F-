@@ -447,8 +447,11 @@ pub async fn insert_project(
         }
     }
 
+    let mut uploader = crate::utils::image::Uploader::new();
+    let mut transaction = pool.begin().await.unwrap();
+
     return match services::projects::insert(
-        &pool,
+        transaction.deref_mut(),
         &form.infos.name,
         form.infos.description.as_deref(),
         &form.infos.content,
@@ -458,17 +461,18 @@ pub async fn insert_project(
         Ok(id) => {
             // Categories
             if let Some(categories) = &form.infos.categories {
-                let mut categories_fut = vec![];
-
                 for category_id in categories {
-                    categories_fut.push(services::projects::link_to_category(
-                        pool.as_ref(),
+                    if services::projects::link_to_category(
+                        transaction.deref_mut(),
                         id,
                         *category_id,
-                    ));
+                    )
+                    .await
+                    .is_err()
+                    {
+                        return HttpResponse::InternalServerError().finish();
+                    };
                 }
-
-                futures::future::join_all(categories_fut).await;
             }
 
             // Handle assets
@@ -482,42 +486,51 @@ pub async fn insert_project(
                         chrono::Utc::now().timestamp()
                     ))
                 };
-                let image = match image::load_from_memory(file.data()) {
-                    Ok(image) => image,
-                    Err(_) => return HttpResponse::BadRequest().finish(),
-                };
-
-                if crate::utils::image::create_images(
-                    &image,
-                    &name,
-                    Some((500, 500)),
-                    Some((700, 700)),
-                )
-                .is_err()
-                {
-                    return HttpResponse::BadRequest().finish();
-                }
-
-                let file_id = services::files::insert(
-                    pool.get_ref(),
-                    Some(file.name()),
-                    &format!(
-                        "{}.{}",
-                        &name.clone(),
-                        if image.color().has_alpha() {
-                            "png"
-                        } else {
-                            "jpg"
+                match image::load_from_memory(file.data()) {
+                    Ok(image) => {
+                        if uploader
+                            .handle(&image, &name, Some((500, 500)), Some((700, 700)))
+                            .is_err()
+                        {
+                            return HttpResponse::InternalServerError().finish();
                         }
-                    ),
-                )
-                .await
-                .unwrap();
-                services::projects::assets::insert(pool.get_ref(), id, file_id, i as i16)
-                    .await
-                    .unwrap();
+
+                        match services::files::insert(
+                            transaction.deref_mut(),
+                            Some(file.name()),
+                            &format!(
+                                "{}.{}",
+                                &name.clone(),
+                                if image.color().has_alpha() {
+                                    "png"
+                                } else {
+                                    "jpg"
+                                }
+                            ),
+                        )
+                        .await
+                        {
+                            Ok(file_id) => {
+                                if services::projects::assets::insert(
+                                    transaction.deref_mut(),
+                                    id,
+                                    file_id,
+                                    i as i16,
+                                )
+                                .await
+                                .is_err()
+                                {
+                                    return HttpResponse::InternalServerError().finish();
+                                }
+                            }
+                            Err(_) => return HttpResponse::InternalServerError().finish(),
+                        }
+                    }
+                    Err(_) => return HttpResponse::InternalServerError().finish(),
+                }
             }
 
+            uploader.clear();
             HttpResponse::Created().json(id)
         }
         _ => HttpResponse::InternalServerError().finish(),
@@ -588,6 +601,7 @@ pub async fn update_project(
         form.description = Patch::Value(Some(description));
     }
 
+    let mut uploader = crate::utils::image::Uploader::new();
     let mut transaction = pool.begin().await.unwrap();
     let mut images_to_delete = vec![];
 
@@ -700,42 +714,51 @@ pub async fn update_project(
                         chrono::Utc::now().timestamp()
                     ))
                 };
-                let image = match image::load_from_memory(file.data()) {
-                    Ok(image) => image,
-                    Err(_) => return HttpResponse::BadRequest().finish(),
-                };
 
-                if crate::utils::image::create_images(
-                    &image,
-                    &name,
-                    Some((500, 500)),
-                    Some((700, 700)),
-                )
-                .is_err()
-                {
-                    return HttpResponse::BadRequest().finish();
-                }
-
-                let file_id = services::files::insert(
-                    pool.get_ref(),
-                    Some(file.name()),
-                    &format!(
-                        "{}.{}",
-                        &name.clone(),
-                        if image.color().has_alpha() {
-                            "png"
-                        } else {
-                            "jpg"
+                match image::load_from_memory(file.data()) {
+                    Ok(image) => {
+                        if uploader
+                            .handle(&image, &name, Some((500, 500)), Some((700, 700)))
+                            .is_err()
+                        {
+                            return HttpResponse::InternalServerError().finish();
                         }
-                    ),
-                )
-                .await
-                .unwrap();
-                services::projects::assets::insert(pool.get_ref(), id, file_id, available_slots[0])
-                    .await
-                    .unwrap();
 
-                available_slots.remove(0);
+                        match services::files::insert(
+                            pool.get_ref(),
+                            Some(file.name()),
+                            &format!(
+                                "{}.{}",
+                                &name.clone(),
+                                if image.color().has_alpha() {
+                                    "png"
+                                } else {
+                                    "jpg"
+                                }
+                            ),
+                        )
+                        .await
+                        {
+                            Ok(file_id) => {
+                                if services::projects::assets::insert(
+                                    pool.get_ref(),
+                                    id,
+                                    file_id,
+                                    available_slots[0],
+                                )
+                                .await
+                                .is_err()
+                                {
+                                    return HttpResponse::InternalServerError().finish();
+                                }
+
+                                available_slots.remove(0);
+                            }
+                            Err(_) => return HttpResponse::InternalServerError().finish(),
+                        }
+                    }
+                    Err(_) => return HttpResponse::InternalServerError().finish(),
+                }
             }
         }
     }
@@ -752,7 +775,7 @@ pub async fn update_project(
     }
 
     transaction.commit().await.unwrap();
-
+    uploader.clear();
     crate::utils::image::remove_files(&images_to_delete);
 
     HttpResponse::Ok().finish()

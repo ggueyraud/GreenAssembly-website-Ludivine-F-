@@ -144,7 +144,8 @@ pub async fn get_spe<
 // }
 
 pub async fn insert(
-    pool: &PgPool,
+    pool: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
+    // pool: &PgPool,
     name: &str,
     description: Option<&str>,
     content: &str,
