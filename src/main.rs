@@ -33,7 +33,7 @@ fn serve_file(req: &HttpRequest, path: &Path, cache_duration: i64) -> Result<Htt
         Ok(file) => {
             use chrono::{Duration, Local};
 
-            let mut response = file.into_response(&req)?;
+            let mut response = file.into_response(req)?;
             let now = Local::now() + Duration::days(cache_duration);
             let headers = response.headers_mut();
             headers.append(EXPIRES, HeaderValue::from_str(&now.to_rfc2822()).unwrap());

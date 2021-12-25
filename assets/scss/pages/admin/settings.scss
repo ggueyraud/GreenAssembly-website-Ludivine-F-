@@ -1,3 +1,4 @@
+@import 'style-box/base/grid';
 @import '../../components/drop_zone';
 
 [name="main"] {
@@ -5,5 +6,23 @@
 
     .card {
         height: 100%
+    }
+}
+
+#favicon {
+    display: flex;
+    flex-direction: column;
+
+    div:not(.drop_zone) {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex: 1
+    }
+
+    .drop_zone {
+        width: 64px;
+        height: 64px;
+        min-height: 64px;
     }
 }

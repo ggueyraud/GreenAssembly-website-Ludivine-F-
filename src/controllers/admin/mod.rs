@@ -7,6 +7,7 @@ use sqlx::PgPool;
 
 pub mod home;
 pub mod my_little_plus;
+pub mod settings;
 use crate::services;
 
 mod filters {
@@ -180,26 +181,6 @@ async fn blog(id: Identity, pool: web::Data<PgPool>) -> Result<HttpResponse, Err
         return Blog {
             categories,
             articles,
-        }
-        .into_response();
-    }
-
-    Ok(HttpResponse::Found().header("location", "/admin").finish())
-}
-
-#[get("/parametres")]
-pub async fn settings(id: Identity, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
-    if id.identity().is_some() {
-        #[derive(Template)]
-        #[template(path = "pages/admin/settings.html")]
-        struct Setting {
-            // categories: Vec<services::projects::Category>,
-        // projects: Vec<services::projects::Project>,
-        }
-
-        return Setting {
-            // categories,
-            // projects,
         }
         .into_response();
     }

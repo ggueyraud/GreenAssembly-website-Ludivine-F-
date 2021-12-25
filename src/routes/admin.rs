@@ -9,7 +9,7 @@ pub fn config(cfg: &mut web::ServiceConfig) {
             .service(controllers::admin::portfolio)
             .service(controllers::admin::motion_design)
             .service(controllers::admin::my_little_plus_page)
-            .service(controllers::admin::settings)
+            .service(controllers::admin::settings::index)
             .service(controllers::admin::blog),
     );
 }
