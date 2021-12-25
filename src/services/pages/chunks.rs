@@ -2,7 +2,11 @@ use sqlx::{Error, PgPool};
 
 pub async fn get<
     T: std::marker::Unpin + std::marker::Send + for<'c> sqlx::FromRow<'c, sqlx::postgres::PgRow>,
->(pool: &PgPool, fields: &str, identifier: &str) -> Result<T, Error> {
+>(
+    pool: &PgPool,
+    fields: &str,
+    identifier: &str,
+) -> Result<T, Error> {
     sqlx::query_as::<_, T>(&format!(
         "SELECT {} FROM page_chunks WHERE identifier = $1",
         fields

@@ -1,35 +1,39 @@
-use actix_web::{HttpRequest, HttpResponse, web, get, put, Error};
-use askama_actix::{Template, TemplateIntoResponse};
-use sqlx::PgPool;
 use crate::services;
-use chrono::Datelike;
 use actix_identity::Identity;
+use actix_web::{get, put, web, Error, HttpRequest, HttpResponse};
+use askama_actix::{Template, TemplateIntoResponse};
+use chrono::Datelike;
+use sqlx::PgPool;
 
 #[get("/motion-design")]
 pub async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
     if let Ok(page) = services::pages::get(&pool, "motion-design").await {
         #[derive(sqlx::FromRow)]
         struct Chunk {
-            content: serde_json::Value
+            content: serde_json::Value,
         }
 
         #[derive(serde::Deserialize)]
         struct ChunkData {
-            link: String
+            link: String,
         }
 
-        let link = if let Ok(chunk) = services::pages::chunks::get::<Chunk>(&pool, "content", "link").await {
+        let link = if let Ok(chunk) =
+            services::pages::chunks::get::<Chunk>(&pool, "content", "link").await
+        {
             if let Ok(data) = serde_json::from_value::<ChunkData>(chunk.content) {
                 data.link
             } else {
-                return Ok(HttpResponse::InternalServerError().finish())
+                return Ok(HttpResponse::InternalServerError().finish());
             }
         } else {
-            return Ok(HttpResponse::InternalServerError().finish())
+            return Ok(HttpResponse::InternalServerError().finish());
         };
 
         let mut token: Option<String> = None;
-        if let Ok(Some(id)) = super::metrics::add(&pool, &req, services::metrics::BelongsTo::Page(page.id)).await {
+        if let Ok(Some(id)) =
+            super::metrics::add(&pool, &req, services::metrics::BelongsTo::Page(page.id)).await
+        {
             if let Ok(metric_token) = services::metrics::tokens::add(&pool, id).await {
                 token = Some(metric_token.to_string());
             }
@@ -42,7 +46,7 @@ pub async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResp
             description: Option<String>,
             year: i32,
             metric_token: Option<String>,
-            link: String
+            link: String,
         }
 
         return MotionDesign {
@@ -50,7 +54,7 @@ pub async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResp
             description: page.description,
             year: chrono::Utc::now().year(),
             metric_token: token,
-            link
+            link,
         }
         .into_response();
     }
@@ -60,13 +64,17 @@ pub async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResp
 
 #[derive(serde::Deserialize)]
 pub struct UpdateForm {
-    link: String
+    link: String,
 }
 
 #[put("")]
-pub async fn update_informations(session: Identity, form: web::Json<UpdateForm>, pool: web::Data<PgPool>) -> HttpResponse {
+pub async fn update_informations(
+    session: Identity,
+    form: web::Json<UpdateForm>,
+    pool: web::Data<PgPool>,
+) -> HttpResponse {
     if session.identity().is_none() {
-        return HttpResponse::Unauthorized().finish()
+        return HttpResponse::Unauthorized().finish();
     }
 
     match sqlx::query!(
@@ -75,9 +83,10 @@ pub async fn update_informations(session: Identity, form: web::Json<UpdateForm>,
         WHERE identifier = 'link' AND page_id = 3"#,
         serde_json::Value::String(form.link.clone()),
     )
-        .execute(pool.as_ref())
-        .await {
-            Ok(_) => HttpResponse::Ok().finish(),
-            Err(_) => HttpResponse::InternalServerError().finish()
-        }
+    .execute(pool.as_ref())
+    .await
+    {
+        Ok(_) => HttpResponse::Ok().finish(),
+        Err(_) => HttpResponse::InternalServerError().finish(),
+    }
 }

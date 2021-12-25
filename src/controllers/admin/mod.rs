@@ -88,47 +88,37 @@ pub async fn portfolio(id: Identity, pool: web::Data<PgPool>) -> Result<HttpResp
 }
 
 #[get("/motion-design")]
-pub async fn motion_design(session: Identity, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
+pub async fn motion_design(
+    session: Identity,
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, Error> {
     if session.identity().is_none() {
-        return Ok(HttpResponse::Unauthorized().finish())
+        return Ok(HttpResponse::Unauthorized().finish());
     }
 
     #[derive(Template)]
     #[template(path = "pages/admin/motion_design.html")]
     struct MotionDesign {
-        link: String
+        link: String,
     }
 
     #[derive(sqlx::FromRow, Debug)]
     struct Chunk {
-        content: serde_json::Value
+        content: serde_json::Value,
     }
 
     #[derive(serde::Deserialize)]
     struct ChunkData {
-        link: String
+        link: String,
     }
 
     match services::pages::chunks::get::<Chunk>(&pool, "content", "link").await {
-        Ok(chunk) => {
-            println!("{:?}", chunk);
-            println!("{:?}", chunk.content.as_str());
-
-            if let Ok(data) = serde_json::from_value::<ChunkData>(chunk.content) {
-                return MotionDesign {
-                    link: data.link
-                }.into_response()
-            } else {
-                return Ok(HttpResponse::InternalServerError().finish())
-            }
-            // Ok(HttpResponse::Ok().finish())
+        Ok(chunk) => match serde_json::from_value::<ChunkData>(chunk.content) {
+            Ok(data) => MotionDesign { link: data.link }.into_response(),
+            Err(_) => Ok(HttpResponse::InternalServerError().finish()),
         },
-        Err(e) => {
-            println!("{:?}", e);
-            Ok(HttpResponse::InternalServerError().finish())
-        }
+        Err(_) => Ok(HttpResponse::InternalServerError().finish()),
     }
-
 }
 
 #[get("/my_little_plus")]

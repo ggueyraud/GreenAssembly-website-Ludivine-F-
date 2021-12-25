@@ -342,7 +342,8 @@ async fn insert_category(
     form.description = form
         .description
         .as_ref()
-        .and_then(|description| Some(description.trim().to_string()));
+        .as_ref()
+        .map(|description| description.trim().to_string());
 
     if let Ok(id) = services::blog::categories::insert(
         &pool,

@@ -8,10 +8,10 @@ pub mod admin;
 pub mod blog;
 pub mod contact;
 pub mod metrics;
+pub mod motion_design;
 pub mod my_little_plus;
 pub mod portfolio;
 pub mod user;
-pub mod motion_design;
 
 #[get("/")]
 pub async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
@@ -73,9 +73,9 @@ async fn legals(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpRespons
             title: page.title,
             description: page.description,
             year: chrono::Utc::now().year(),
-            metric_token: token
+            metric_token: token,
         }
-        .into_response()
+        .into_response();
     }
 
     Ok(HttpResponse::InternalServerError().finish())

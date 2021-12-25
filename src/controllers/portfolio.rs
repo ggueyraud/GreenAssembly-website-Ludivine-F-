@@ -431,7 +431,7 @@ pub async fn insert_project(
     session: Identity,
 ) -> HttpResponse {
     if session.identity().is_none() {
-        return HttpResponse::Unauthorized().finish()
+        return HttpResponse::Unauthorized().finish();
     }
 
     if !form.is_valid().await {
@@ -521,7 +521,7 @@ pub async fn insert_project(
             HttpResponse::Created().json(id)
         }
         _ => HttpResponse::InternalServerError().finish(),
-    }
+    };
 }
 
 #[derive(Deserialize, Debug)]
