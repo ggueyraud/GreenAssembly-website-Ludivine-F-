@@ -173,3 +173,10 @@ CREATE TABLE blog_article_images (
     file_id INT NOT NULL
         REFERENCES files (id)
 );
+
+DROP TABLE IF EXISTS settings CASCADE;
+CREATE TABLE settings (
+    background_color CHAR(7) NOT NULL,
+    title_color CHAR(7) NOT NULL,
+    text_color CHAR(7) NOT NULL
+);

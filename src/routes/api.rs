@@ -34,6 +34,7 @@ pub fn config(cfg: &mut web::ServiceConfig) {
                     .service(controllers::api::update_little_plus_informations),
             )
             .service(web::scope("/contact").service(controllers::api::contact))
-            .service(web::scope("/home").service(controllers::api::update_home_informations)),
+            .service(web::scope("/home").service(controllers::api::update_home_informations))
+            .service(web::scope("/settings").service(controllers::api::update_settings))
     );
 }

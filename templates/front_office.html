@@ -15,7 +15,8 @@
 
         {% block head %}{% endblock %}
     </head>
-    <body>
+
+    <body style="--background_color: {{ settings.background_color }}; --title_color: {{ settings.title_color }}; --text_color: {{ settings.text_color }}">
         <div class="container mx_auto">
             {% include "includes/navbar.html" %}
 

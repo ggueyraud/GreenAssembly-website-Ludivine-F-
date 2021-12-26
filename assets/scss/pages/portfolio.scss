@@ -15,7 +15,7 @@
 }
 
 h2 {
-    color: color(blue);
+    color: var(--title_color);
     margin-bottom: space(4);
     
     @include md {

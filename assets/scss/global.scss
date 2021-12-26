@@ -23,16 +23,16 @@
 
 html {
     body {
-        color: color('black');
+        color: var(--text_color);
         font-family: 'Urbanist', sans-serif;
-        background-color: color('white');
+        background-color: var(--background_color);
         font-size: 18px;
     }
 }
 
 h1 {
     font-family: "Quakiez";
-    color: color(blue);
+    color: var(--title_color);
     font-size: 4rem;
     line-height: 1;
     text-transform: inherit;

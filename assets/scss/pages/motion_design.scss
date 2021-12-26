@@ -17,7 +17,7 @@ h1, h2 {
 
 h2 {
     text-transform: uppercase;
-    color: color(blue);
+    color: var(--title_color);
     margin-bottom: space(5);
     @include text(3xl)
 }

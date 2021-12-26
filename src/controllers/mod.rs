@@ -13,34 +13,44 @@ pub mod portfolio;
 pub mod user;
 
 #[get("/")]
-pub async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
+async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
     if let Ok(page) = services::pages::get(&pool, "accueil").await {
         let mut token: Option<String> = None;
 
-        if let Ok(Some(id)) =
-            metrics::add(&pool, &req, services::metrics::BelongsTo::Page(page.id)).await
-        {
-            if let Ok(metric_token) = services::metrics::tokens::add(&pool, id).await {
-                token = Some(metric_token.to_string());
-            }
+        match futures::join!(
+            metrics::add(&pool, &req, services::metrics::BelongsTo::Page(page.id)),
+            services::settings::get(&pool)
+        ) {
+            (Ok(metric_id), Ok(settings)) => {
+                if let Ok(Some(id)) =
+                    metrics::add(&pool, &req, services::metrics::BelongsTo::Page(page.id)).await
+                {
+                    if let Ok(metric_token) = services::metrics::tokens::add(&pool, id).await {
+                        token = Some(metric_token.to_string());
+                    }
+                }
+        
+                #[derive(Template)]
+                #[template(path = "pages/index.html")]
+                struct Index {
+                    title: String,
+                    description: Option<String>,
+                    year: i32,
+                    metric_token: Option<String>,
+                    settings: services::settings::Settings
+                }
+        
+                return Index {
+                    title: page.title,
+                    description: page.description,
+                    year: chrono::Utc::now().year(),
+                    metric_token: token,
+                    settings
+                }
+                .into_response();
+            },
+            _ => ()
         }
-
-        #[derive(Template)]
-        #[template(path = "pages/index.html")]
-        struct Index {
-            title: String,
-            description: Option<String>,
-            year: i32,
-            metric_token: Option<String>,
-        }
-
-        return Index {
-            title: page.title,
-            description: page.description,
-            year: chrono::Utc::now().year(),
-            metric_token: token,
-        }
-        .into_response();
     }
 
     Ok(HttpResponse::InternalServerError().finish())
@@ -62,9 +72,10 @@ async fn my_little_plus(req: HttpRequest, pool: web::Data<PgPool>) -> Result<Htt
         match futures::join!(
             metrics::add(&pool, &req, services::metrics::BelongsTo::Page(page.id)),
             services::pages::chunks::get::<Chunk>(&pool, "content", "link_creations"),
-            services::pages::chunks::get::<Chunk>(&pool, "content", "link_shootings")
+            services::pages::chunks::get::<Chunk>(&pool, "content", "link_shootings"),
+            services::settings::get(&pool)
         ) {
-            (Ok(metric_id), Ok(creations), Ok(shootings)) => {
+            (Ok(metric_id), Ok(creations), Ok(shootings), Ok(settings)) => {
                 let creations = match serde_json::from_value::<ChunkData>(creations.content) {
                     Ok(data) => data.value,
                     Err(_) => return Ok(HttpResponse::InternalServerError().finish()),
@@ -90,6 +101,7 @@ async fn my_little_plus(req: HttpRequest, pool: web::Data<PgPool>) -> Result<Htt
                     metric_token: Option<String>,
                     creations_link: Option<String>,
                     shootings_link: Option<String>,
+                    settings: services::settings::Settings
                 }
 
                 return MyLittlePlus {
@@ -99,6 +111,7 @@ async fn my_little_plus(req: HttpRequest, pool: web::Data<PgPool>) -> Result<Htt
                     metric_token: token,
                     creations_link: creations,
                     shootings_link: shootings,
+                    settings
                 }
                 .into_response();
             }
@@ -125,40 +138,45 @@ async fn motion_design(req: HttpRequest, pool: web::Data<PgPool>) -> Result<Http
             link: String,
         }
 
-        if let Ok(chunk) = services::pages::chunks::get::<Chunk>(&pool, "content", "link").await {
-            if let Ok(data) = serde_json::from_value::<ChunkData>(chunk.content) {
-                let mut token: Option<String> = None;
-                if let Ok(Some(id)) = crate::controllers::metrics::add(
-                    &pool,
-                    &req,
-                    services::metrics::BelongsTo::Page(page.id),
-                )
-                .await
-                {
-                    if let Ok(metric_token) = services::metrics::tokens::add(&pool, id).await {
-                        token = Some(metric_token.to_string());
+        match futures::join!(
+            metrics::add(&pool, &req, services::metrics::BelongsTo::Page(page.id)),
+            services::pages::chunks::get::<Chunk>(&pool, "content", "link"),
+            services::settings::get(&pool)
+        ) {
+            (Ok(metric_id), Ok(chunk), Ok(settings)) => {
+                if let Ok(data) = serde_json::from_value::<ChunkData>(chunk.content) {
+                    let mut token: Option<String> = None;
+
+                    if let Some(id) = metric_id {
+                        if let Ok(metric_token) = services::metrics::tokens::add(&pool, id).await {
+                            token = Some(metric_token.to_string());
+                        }
                     }
+
+                    #[derive(Template)]
+                    #[template(path = "pages/motion_design.html")]
+                    struct MotionDesign {
+                        title: String,
+                        description: Option<String>,
+                        year: i32,
+                        metric_token: Option<String>,
+                        link: String,
+                        settings: services::settings::Settings
+                    }
+            
+                    return MotionDesign {
+                        title: page.title,
+                        description: page.description,
+                        year: chrono::Utc::now().year(),
+                        metric_token: token,
+                        link: data.link,
+                        settings
+                    }
+                    .into_response();
                 }
 
-                #[derive(Template)]
-                #[template(path = "pages/motion_design.html")]
-                struct MotionDesign {
-                    title: String,
-                    description: Option<String>,
-                    year: i32,
-                    metric_token: Option<String>,
-                    link: String,
-                }
-
-                return MotionDesign {
-                    title: page.title,
-                    description: page.description,
-                    year: chrono::Utc::now().year(),
-                    metric_token: token,
-                    link: data.link,
-                }
-                .into_response();
-            }
+            },
+            _ => ()
         }
     }
 
@@ -168,32 +186,36 @@ async fn motion_design(req: HttpRequest, pool: web::Data<PgPool>) -> Result<Http
 #[get("/contact")]
 async fn contact(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
     if let Ok(page) = services::pages::get(&pool, "contact").await {
-        let mut token: Option<String> = None;
-
-        if let Ok(Some(id)) =
-            metrics::add(&pool, &req, services::metrics::BelongsTo::Page(page.id)).await
-        {
-            if let Ok(metric_token) = services::metrics::tokens::add(&pool, id).await {
-                token = Some(metric_token.to_string());
+        if let (Ok(metric_id), Ok(settings)) = futures::join!(
+            metrics::add(&pool, &req, services::metrics::BelongsTo::Page(page.id)),
+            services::settings::get(&pool)
+        ) {
+            let mut token: Option<String> = None;
+            if let Some(id) = metric_id {
+                if let Ok(metric_token) = services::metrics::tokens::add(&pool, id).await {
+                    token = Some(metric_token.to_string());
+                }
             }
-        }
 
-        #[derive(Template)]
-        #[template(path = "pages/contact.html")]
-        struct Contact {
-            title: String,
-            description: Option<String>,
-            year: i32,
-            metric_token: Option<String>,
+            #[derive(Template)]
+            #[template(path = "pages/contact.html")]
+            struct Contact {
+                title: String,
+                description: Option<String>,
+                year: i32,
+                metric_token: Option<String>,
+                settings: services::settings::Settings
+            }
+    
+            return Contact {
+                title: page.title,
+                description: page.description,
+                year: chrono::Utc::now().year(),
+                metric_token: token,
+                settings
+            }
+            .into_response();
         }
-
-        return Contact {
-            title: page.title,
-            description: page.description,
-            year: chrono::Utc::now().year(),
-            metric_token: token,
-        }
-        .into_response();
     }
 
     Ok(HttpResponse::InternalServerError().finish())
@@ -202,32 +224,36 @@ async fn contact(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpRespon
 #[get("/mentions-legales")]
 async fn legals(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
     if let Ok(page) = services::pages::get(&pool, "mentions-legales").await {
-        let mut token: Option<String> = None;
-
-        if let Ok(Some(id)) =
-            metrics::add(&pool, &req, services::metrics::BelongsTo::Page(page.id)).await
-        {
-            if let Ok(metric_token) = services::metrics::tokens::add(&pool, id).await {
-                token = Some(metric_token.to_string());
+        if let (Ok(metric_id), Ok(settings)) = futures::join!(
+            metrics::add(&pool, &req, services::metrics::BelongsTo::Page(page.id)),
+            services::settings::get(&pool)
+        ) {
+            let mut token: Option<String> = None;
+            if let Some(id) = metric_id {
+                if let Ok(metric_token) = services::metrics::tokens::add(&pool, id).await {
+                    token = Some(metric_token.to_string());
+                }
             }
-        }
 
-        #[derive(Template)]
-        #[template(path = "pages/legals.html")]
-        struct Legals {
-            title: String,
-            description: Option<String>,
-            year: i32,
-            metric_token: Option<String>,
+            #[derive(Template)]
+            #[template(path = "pages/legals.html")]
+            struct Legals {
+                title: String,
+                description: Option<String>,
+                year: i32,
+                metric_token: Option<String>,
+                settings: services::settings::Settings
+            }
+    
+            return Legals {
+                title: page.title,
+                description: page.description,
+                year: chrono::Utc::now().year(),
+                metric_token: token,
+                settings
+            }
+            .into_response();
         }
-
-        return Legals {
-            title: page.title,
-            description: page.description,
-            year: chrono::Utc::now().year(),
-            metric_token: token,
-        }
-        .into_response();
     }
 
     Ok(HttpResponse::InternalServerError().finish())

@@ -43,9 +43,7 @@
 
         text-align: center;
         text-transform: uppercase;
-    }
-    h2 {
-        color: utilities.color(blue);
+        color: var(--title_color)
     }
     .description {
         margin-bottom: 0;

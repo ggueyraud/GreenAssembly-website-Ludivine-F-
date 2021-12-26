@@ -1,4 +1,4 @@
-use crate::utils::{image::Uploader, patch::Patch};
+use crate::{services, utils::{image::Uploader, patch::Patch}};
 use actix_extract_multipart::{File, Multipart};
 use actix_identity::Identity;
 use actix_web::{patch, post, put, web, HttpResponse};
@@ -135,14 +135,17 @@ async fn update_little_plus_informations(
     // }
 }
 
-#[derive(serde::Deserialize, serde::Serialize)]
+#[derive(serde::Deserialize, serde::Serialize, Debug)]
 pub struct UpdateParametersForm {
     #[serde(skip_serializing)]
     logo: Patch<File>,
     #[serde(skip_serializing)]
     favicon: Patch<File>,
+    #[serde(default)]
     background_color: Patch<String>,
+    #[serde(default)]
     title_color: Patch<String>,
+    #[serde(default)]
     text_color: Patch<String>,
 }
 
@@ -186,7 +189,15 @@ pub async fn update_settings(
 
     let mut fields_need_update = crate::utils::patch::extract_fields(&*form);
 
-    HttpResponse::Ok().finish()
+    println!("Form : {:?} | Fields need udpate : {:?}", *form, fields_need_update);
+
+    match services::settings::partial_update(pool.as_ref(), fields_need_update).await {
+        Ok(_) => HttpResponse::Ok().finish(),
+        Err(e) => {
+            eprintln!("{}", e);
+            HttpResponse::InternalServerError().finish()
+        }
+    }
 }
 
 #[derive(serde::Deserialize, Debug)]

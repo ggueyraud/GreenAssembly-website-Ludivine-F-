@@ -222,18 +222,30 @@ pub async fn settings(session: Identity, pool: web::Data<PgPool>) -> Result<Http
         return Ok(HttpResponse::Found().header("location", "/admin").finish());
     }
 
-    #[derive(Template)]
-    #[template(path = "pages/admin/settings.html")]
-    struct Setting {
-        // categories: Vec<services::projects::Category>,
-    // projects: Vec<services::projects::Project>,
+    match services::settings::get(&pool).await {
+        Ok(settings) => {
+            #[derive(Template)]
+            #[template(path = "pages/admin/settings.html")]
+            struct Setting {
+                background_color: String,
+                title_color: String,
+                text_color: String
+                // categories: Vec<services::projects::Category>,
+                // projects: Vec<services::projects::Project>,
+            }
+        
+            return Setting {
+                background_color: settings.background_color,
+                title_color: settings.title_color,
+                text_color: settings.text_color
+            }
+            .into_response();
+        },
+        Err(e) => {
+            eprintln!("{:?}", e);
+            Ok(HttpResponse::InternalServerError().finish())
+        }
     }
-
-    return Setting {
-        // categories,
-        // projects,
-    }
-    .into_response();
 }
 
 #[cfg(test)]

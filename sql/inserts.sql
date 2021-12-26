@@ -34,9 +34,5 @@ INSERT INTO blog_articles (category_id, cover_id, title, uri, is_published, is_s
 (2, 1, 'Les aventures de lulu partie 3', 'les-aventures-de-lulu-partie-3', true, true),
 (2, 1, 'Les aventures de lulu partie 3', 'les-aventures-de-lulu-partie-4', true, false);
 
-INSERT INTO blog_article_blocks (article_id, title, content, left_column, "order") VALUES
-(1, 'Lorem ipsum', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam id felis feugiat, rhoncus nisi nec, consequat elit. Duis velit nibh, hendrerit id lectus id, dapibus posuere sem. Pellentesque consequat tortor id vestibulum pellentesque. Sed et erat rutrum, congue ligula at, facilisis justo. Morbi felis elit, commodo sed rhoncus et, dignissim.', true, 1),
-(1, 'Dolor sit amet', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam id felis feugiat, rhoncus nisi nec, consequat elit. Duis velit nibh, hendrerit id lectus id, dapibus posuere sem. Pellentesque consequat tortor id vestibulum pellentesque. Sed et erat rutrum, congue ligula at, facilisis justo. Morbi felis elit, commodo sed rhoncus et, dignissim.', true, 2),
-(2, 'Lorem ipsum', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam id felis feugiat, rhoncus nisi nec, consequat elit. Duis velit nibh, hendrerit id lectus id, dapibus posuere sem. Pellentesque consequat tortor id vestibulum pellentesque. Sed et erat rutrum, congue ligula at, facilisis justo. Morbi felis elit, commodo sed rhoncus et, dignissim.', true, 1),
-(2, 'Lorem ipsum', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam id felis feugiat, rhoncus nisi nec, consequat elit. Duis velit nibh, hendrerit id lectus id, dapibus posuere sem. Pellentesque consequat tortor id vestibulum pellentesque. Sed et erat rutrum, congue ligula at, facilisis justo. Morbi felis elit, commodo sed rhoncus et, dignissim.', false, 1),
-(2, 'Lorem ipsum', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam id felis feugiat, rhoncus nisi nec, consequat elit. Duis velit nibh, hendrerit id lectus id, dapibus posuere sem. Pellentesque consequat tortor id vestibulum pellentesque. Sed et erat rutrum, congue ligula at, facilisis justo. Morbi felis elit, commodo sed rhoncus et, dignissim.', true, 2);
+INSERT INTO settings (background_color, title_color, text_color) VALUES
+('#ffffff', '#000000', '#000000');
