@@ -30,3 +30,12 @@
 input[type=color] {
     padding: 0
 }
+
+.drop_zone {
+    display: flex;
+    align-items: center;
+
+    input[type=file] {
+        z-index: 1
+    }
+}

@@ -8,7 +8,7 @@ import Quill from 'quill';
 import { formatDistance } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { base64_to_blob } from '../../utils/base642blob';
-import { DropZone } from '../../components/assets_grid';
+import { DropZone } from '@js/components/assets_grid';
 import swal_error, { data_removed } from '@js/utils/swal_error';
 
 const { router } = window;

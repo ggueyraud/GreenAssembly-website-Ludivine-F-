@@ -1,6 +1,7 @@
 @use 'style-box/abstracts/functions/utilities';
 
 .drop_zone {
+    $p: &;
     position: relative;
     background-color: #f5f8fa;
     border: 3px dashed #eef3f7;
@@ -62,5 +63,12 @@
         height: 100%;
         object-fit: cover;
         border-radius: 0.65rem;
+    }
+
+    img[src=""] #{$p} {
+        background-color: green;
+        // $p {
+
+        // }
     }
 }

@@ -60,7 +60,7 @@ pub async fn update_home_informations(
 
     if let Ok(image) = image::load_from_memory(data.image.data()) {
         if uploader
-            .handle(&image, "index", None, Some((1000, 1000)))
+            .handle(&image, "index", Some((500, 500)), Some((1000, 1000)), true)
             .is_err()
         {
             return HttpResponse::BadRequest().finish();
@@ -146,7 +146,7 @@ pub struct UpdateParametersForm {
     #[serde(default)]
     title_color: Patch<String>,
     #[serde(default)]
-    text_color: Patch<String>,
+    text_color: Option<String>
 }
 
 #[patch("")]
@@ -155,43 +155,53 @@ pub async fn update_settings(
     pool: web::Data<PgPool>,
     form: Multipart<UpdateParametersForm>,
 ) -> HttpResponse {
+    use std::io::prelude::*;
+
     if session.identity().is_none() {
         return HttpResponse::Unauthorized().finish();
     }
 
     let mut uploader = Uploader::new();
 
-    if let Patch::Value(logo) = &form.logo {
-        match image::load_from_memory(logo.data()) {
-            Ok(image) => {
-                // if uploader
-                //     .handle(&image, "logo", Some(()))
-                //     .is_err() {
-                //         return HttpResponse::BadRequest().finish()
-                //     }
-            }
-            Err(_) => return HttpResponse::InternalServerError().finish(),
-        }
+    match &form.logo {
+        Patch::Value(logo) => {
+            match std::fs::OpenOptions::new()
+                .write(true)
+                .create(true)
+                .truncate(true)
+                .open("./public/logo.svg") {
+                    Ok(mut file) => {
+                        if let Err(e) = file.write_all(&logo.data()) {
+                            println!("{:?}", e);
+                            return HttpResponse::InternalServerError().finish()
+                        }
+                    },
+                    _ => return HttpResponse::InternalServerError().finish()
+                }
+        },
+        _ => ()
     }
 
-    if let Patch::Value(favicon) = &form.favicon {
-        match image::load_from_memory(favicon.data()) {
-            Ok(favicon) => {
-                // if uploader
-                //     .handle(&favicon, "favicon", Some((64, 64)), Some(()))
-                //     .is_err() {
-                //         return HttpResponse::BadRequest().finish()
-                //     }
-            }
-            Err(_) => return HttpResponse::InternalServerError().finish(),
-        }
+    match &form.favicon {
+        Patch::Value(favicon) => {
+            match std::fs::OpenOptions::new()
+                .write(true)
+                .create(true)
+                .truncate(true)
+                .open("./public/favicon.svg") {
+                    Ok(mut file) => {
+                        if let Err(e) = file.write_all(&favicon.data()) {
+                            println!("{:?}", e);
+                            return HttpResponse::InternalServerError().finish()
+                        }
+                    },
+                    _ => return HttpResponse::InternalServerError().finish()
+                }
+        },
+        _ => ()
     }
 
-    let mut fields_need_update = crate::utils::patch::extract_fields(&*form);
-
-    println!("Form : {:?} | Fields need udpate : {:?}", *form, fields_need_update);
-
-    match services::settings::partial_update(pool.as_ref(), fields_need_update).await {
+    match services::settings::partial_update(pool.as_ref(), crate::utils::patch::extract_fields(&*form)).await {
         Ok(_) => HttpResponse::Ok().finish(),
         Err(e) => {
             eprintln!("{}", e);
