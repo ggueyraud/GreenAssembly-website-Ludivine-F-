@@ -12,6 +12,13 @@
 main {
     display: grid;
     gap: space(6);
+    grid-template-areas:    "header header header"
+                            "article article article"
+                            "know_more know_more know_more";
+
+    nav {
+        display: none;
+    }
 
     header {
         grid-area: header;
@@ -83,10 +90,21 @@ main {
     }
 
     @include lg {
+        nav {
+            display: block;
+        }
+
         grid-template-areas:    "header header header"
                                 "article article nav"
                                 "know_more know_more know_more";
-        //grid-template-columns: 1fr auto;
+                                //grid-template-columns: 1fr auto;
+                            }
+                            
+    @include xl {
+        grid-template-areas:    "header header header header"
+                                "article article article nav"
+                                "know_more know_more know_more know_more";
+
     }
 
     .know_more {
