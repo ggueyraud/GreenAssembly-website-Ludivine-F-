@@ -428,6 +428,7 @@ router.on('mount', () => {
             article_to_modify = null;
 
             article_cover_dropzone.clear();
+            article_cover_dropzone.input.value = null;
             // article_modal_container.querySelector('#left').innerHTML = '';
             // article_modal_container.querySelector('#right').innerHTML = '';
 
