@@ -65,35 +65,33 @@ CREATE TABLE pages (
     description VARCHAR(320)
 );
 
+DROP TABLE IF EXISTS metric_sessions CASCADE;
+CREATE TABLE metric_sessions (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    ip VARCHAR(120),
+    expiration_date TIMESTAMP WITH TIME ZONE DEFAULT NOW() + interval '30 minutes' NOT NULL
+);
+
 DROP TABLE IF EXISTS metrics CASCADE;
 CREATE TABLE metrics (
-    id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_id uuid REFERENCES metric_sessions (id) ON DELETE SET NULL,
     page_id SMALLINT
         REFERENCES pages (id)
-        ON DELETE SET NULL,
+        ON DELETE CASCADE,
     project_id SMALLINT
         REFERENCES projects (id)
         ON DELETE SET NULL,
-    post_id SMALLINT
+    article_id SMALLINT
         REFERENCES blog_articles (id)
         ON DELETE SET NULL,
-    ip VARCHAR(60),
+    ip VARCHAR(120),
     browser VARCHAR(20),
     os VARCHAR(20),
     device_type VARCHAR(20),
     referer VARCHAR(255),
     "date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     end_date TIMESTAMP WITH TIME ZONE
-);
-
-DROP TABLE IF EXISTS metric_tokens CASCADE;
-CREATE TABLE metric_tokens (
-    token uuid NOT NULL DEFAULT gen_random_uuid(),
-    metric_id INT NOT NULL
-        REFERENCES metrics (id)
-        ON DELETE CASCADE,
-    "date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    UNIQUE (token)
 );
 
 DROP TABLE IF EXISTS page_chunks CASCADE;
