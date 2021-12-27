@@ -11,7 +11,7 @@ const sort = id => {
     ], { duration: 250 });
 
     setTimeout(() => {
-        let projects = all_projects; //.map(project => project.outerHTML);
+        let projects = all_projects;
     
         if (id) {
             projects = projects.filter(project => {

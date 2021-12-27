@@ -2,8 +2,11 @@ import Carousel, { CarouselPagination, CarouselTouch } from 'carousel';
 import lightbox from '@js/components/lightbox';
 import 'router';
 
-window.router.on('mount', () => {
-    lightbox('img')
+const { router } = window;
+
+router.on('mount', () => {
+    lightbox('img');
+
     const carousel = new Carousel(document.querySelector('.carousel'), {
         breakpoints: {
             768: {
@@ -15,5 +18,4 @@ window.router.on('mount', () => {
         }
     });
     carousel.use([CarouselTouch, CarouselPagination]);
-    console.log(carousel);
 });

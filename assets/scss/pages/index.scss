@@ -95,7 +95,7 @@
             margin-right: 2rem;
             
             box-shadow: 0 0 15px #1C04FC;
-            background-color: utilities.color('white');
+            background-color: var(--background_title); //utilities.color('white');
             border-radius: 50px;
 
             .icon-wrapper {
