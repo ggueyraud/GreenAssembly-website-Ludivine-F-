@@ -38,7 +38,7 @@ export default selector => {
                     hide(lightbox);
                 } else {
                     lightbox.classList.add('lightbox--active');
-                    img.src = element.src;
+                    img.setAttribute('src', element.getAttribute('src'));
                     body.style.overflow = 'hidden';
                 }
             })
