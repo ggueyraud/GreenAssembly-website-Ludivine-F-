@@ -79,21 +79,27 @@ a {
 }
 
 .know_more {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    row-gap: space(4);
     margin-top: space(6);
 
-    @include md {
-        justify-content: space-between;
-        margin-top: space(14);
-        flex-direction: row;
+    .card__body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        row-gap: space(4);
+        flex-direction: column;
 
-        a.btn {
-            margin-top: 0
+        @include md {
+            justify-content: space-between;
+            flex-direction: row;
+    
+            a.btn {
+                margin-top: 0
+            }
         }
+    }
+    
+    @include md {
+        margin-top: space(14);
     }
 
     a.btn {
