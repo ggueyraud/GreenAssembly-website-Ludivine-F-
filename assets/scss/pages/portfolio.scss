@@ -81,8 +81,13 @@ a.special svg {
         picture {
             width: 100%;
             height: 100%;
-            object-fit: cover;
-            display: block;
+            display: flex;
+
+            img {
+                object-fit: cover; 
+                height: auto;
+                width:100%;
+            }
         }
 
         .details {
@@ -91,6 +96,8 @@ a.special svg {
             bottom: 0;
             background-color: color('white');
             padding: .5rem 1rem;
+            display: flex;
+            justify-content: space-between;
 
             h3 {
                 color: color(blue);
@@ -101,8 +108,8 @@ a.special svg {
             }
 
             span {
-                color: color('black');
-                background-color: #E5E5E5;
+                color: color('white');
+                background-color: color(blue);
                 border-radius: 10px;
                 font-size: .9rem;
             }

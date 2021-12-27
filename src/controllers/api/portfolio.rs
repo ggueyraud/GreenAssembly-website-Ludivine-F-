@@ -282,7 +282,7 @@ pub async fn insert_project(
                 match image::load_from_memory(file.data()) {
                     Ok(image) => {
                         if uploader
-                            .handle(&image, &name, Some((500, 500)), Some((700, 700)), true)
+                            .handle(&image, &name, Some((500, 500)), Some((800, 800)), true)
                             .is_err()
                         {
                             return HttpResponse::InternalServerError().finish();
@@ -512,7 +512,7 @@ pub async fn update_project(
                 match image::load_from_memory(file.data()) {
                     Ok(image) => {
                         if uploader
-                            .handle(&image, &name, Some((500, 500)), Some((700, 700)), true)
+                            .handle(&image, &name, Some((500, 500)), Some((800, 800)), true)
                             .is_err()
                         {
                             return HttpResponse::InternalServerError().finish();

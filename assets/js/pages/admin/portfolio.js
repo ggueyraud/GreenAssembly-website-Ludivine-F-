@@ -542,11 +542,11 @@ router.on('mount', () => {
         if (!cropper) {
             cropper = new Cropper(cropper_el, {
                 minCropBoxWidth: 320,
-                zoom(e) {
-                    if (e.detail.ratio <= 0.5 || e.detail.ratio >= 2.5) {
-                        e.preventDefault()
-                    }
-                }
+                // zoom(e) {
+                //     if (e.detail.ratio <= 0.5 || e.detail.ratio >= 2.5) {
+                //         e.preventDefault()
+                //     }
+                // }
             });
         }
     });

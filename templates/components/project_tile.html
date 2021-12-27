@@ -1,7 +1,7 @@
 <a
     data-categories="{% for category in categories %}{{ category.id }}{% if !loop.last %};{% endif %}{% endfor %}"
     href="/portfolio/{{ uri }}"
-    class="project col_span_2 row_span_2"
+    class="project"
 >
     <picture class="lazy">
         <source data-srcset="/uploads/{{ fallback_illustration.path }}" type="image/webp" />
