@@ -213,22 +213,22 @@ mod tests {
         assert!(resp.status().is_success());
     }
 
-    #[actix_rt::test]
-    async fn test_project() {
-        dotenv().ok();
+    // #[actix_rt::test]
+    // async fn test_project() {
+    //     dotenv().ok();
 
-        let pool = create_pool().await.unwrap();
-        let mut app = test::init_service(
-            App::new()
-                .data(pool.clone())
-                .service(web::scope("/portfolio").service(super::get_project)),
-        )
-        .await;
-        let resp = test::TestRequest::get()
-            .uri("/portfolio/lorem-1")
-            .send_request(&mut app)
-            .await;
+    //     let pool = create_pool().await.unwrap();
+    //     let mut app = test::init_service(
+    //         App::new()
+    //             .data(pool.clone())
+    //             .service(web::scope("/portfolio").service(super::get_project)),
+    //     )
+    //     .await;
+    //     let resp = test::TestRequest::get()
+    //         .uri("/portfolio/lorem-1")
+    //         .send_request(&mut app)
+    //         .await;
 
-        assert!(resp.status().is_success());
-    }
+    //     assert!(resp.status().is_success());
+    // }
 }

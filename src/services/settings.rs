@@ -2,7 +2,7 @@ use sqlx::{Error, PgPool};
 use std::collections::HashMap;
 use serde_json::Value;
 
-#[derive(sqlx::FromRow)]
+#[derive(sqlx::FromRow, Debug)]
 pub struct Settings {
     pub background_color: String,
     pub title_color: String,

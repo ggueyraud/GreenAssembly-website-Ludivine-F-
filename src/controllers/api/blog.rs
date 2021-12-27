@@ -809,300 +809,300 @@ mod tests {
     use dotenv::dotenv;
     use std::str::FromStr;
 
-    #[actix_rt::test]
-    async fn test_insert_category() {
-        dotenv().ok();
+    // #[actix_rt::test]
+    // async fn test_insert_category() {
+    //     dotenv().ok();
 
-        let pool = create_pool().await.unwrap();
-        let mut app = test::init_service(
-            App::new()
-                .wrap(IdentityService::new(
-                    CookieIdentityPolicy::new(&[0; 32])
-                        .name("auth-cookie")
-                        .secure(true),
-                ))
-                .data(pool.clone())
-                .service(web::scope("/api/blog").service(controllers::blog::insert_category))
-                .service(web::scope("/user").service(crate::controllers::user::login)),
-        )
-        .await;
+    //     let pool = create_pool().await.unwrap();
+    //     let mut app = test::init_service(
+    //         App::new()
+    //             .wrap(IdentityService::new(
+    //                 CookieIdentityPolicy::new(&[0; 32])
+    //                     .name("auth-cookie")
+    //                     .secure(true),
+    //             ))
+    //             .data(pool.clone())
+    //             .service(web::scope("/api/blog").service(controllers::blog::insert_category))
+    //             .service(web::scope("/user").service(crate::controllers::user::login)),
+    //     )
+    //     .await;
 
-        let res = test::TestRequest::post()
-            .uri("/user/login")
-            .set_form(&serde_json::json!({
-                "email": "hello@ludivinefarat.fr",
-                "password": "root"
-            }))
-            .send_request(&mut app)
-            .await;
-        let cookie = res.headers().get(http::header::SET_COOKIE);
+    //     let res = test::TestRequest::post()
+    //         .uri("/user/login")
+    //         .set_form(&serde_json::json!({
+    //             "email": "hello@ludivinefarat.fr",
+    //             "password": "root"
+    //         }))
+    //         .send_request(&mut app)
+    //         .await;
+    //     let cookie = res.headers().get(http::header::SET_COOKIE);
 
-        assert!(cookie.is_some());
-        assert!(res.status().is_success());
+    //     assert!(cookie.is_some());
+    //     assert!(res.status().is_success());
 
-        let res = test::TestRequest::post()
-            .uri("/api/blog/categories")
-            .cookie(Cookie::from_str(&cookie.unwrap().to_str().unwrap()).unwrap())
-            .set_form(&serde_json::json!({
-                "name": "Category 1",
-                "is_visible": false,
-                "is_seo": false
-            }))
-            .send_request(&mut app)
-            .await;
+    //     let res = test::TestRequest::post()
+    //         .uri("/api/blog/categories")
+    //         .cookie(Cookie::from_str(&cookie.unwrap().to_str().unwrap()).unwrap())
+    //         .set_form(&serde_json::json!({
+    //             "name": "Category 1",
+    //             "is_visible": false,
+    //             "is_seo": false
+    //         }))
+    //         .send_request(&mut app)
+    //         .await;
 
-        assert!(res.status().is_success());
-    }
+    //     assert!(res.status().is_success());
+    // }
 
-    #[actix_rt::test]
-    async fn test_insert_category_not_logged() {
-        dotenv().ok();
+    // #[actix_rt::test]
+    // async fn test_insert_category_not_logged() {
+    //     dotenv().ok();
 
-        let pool = create_pool().await.unwrap();
-        let mut app = test::init_service(
-            App::new()
-                .data(pool.clone())
-                .service(web::scope("/api/blog").service(controllers::blog::insert_category)),
-        )
-        .await;
+    //     let pool = create_pool().await.unwrap();
+    //     let mut app = test::init_service(
+    //         App::new()
+    //             .data(pool.clone())
+    //             .service(web::scope("/api/blog").service(controllers::blog::insert_category)),
+    //     )
+    //     .await;
 
-        let res = test::TestRequest::post()
-            .uri("/api/blog/categories")
-            .set_form(&serde_json::json!({
-                "name": "Category 1",
-                "is_visible": false,
-                "is_seo": false
-            }))
-            .send_request(&mut app)
-            .await;
+    //     let res = test::TestRequest::post()
+    //         .uri("/api/blog/categories")
+    //         .set_form(&serde_json::json!({
+    //             "name": "Category 1",
+    //             "is_visible": false,
+    //             "is_seo": false
+    //         }))
+    //         .send_request(&mut app)
+    //         .await;
 
-        assert_eq!(res.status(), http::StatusCode::UNAUTHORIZED);
-    }
+    //     assert_eq!(res.status(), http::StatusCode::UNAUTHORIZED);
+    // }
 
-    #[actix_rt::test]
-    async fn test_delete_category() {
-        dotenv().ok();
+    // #[actix_rt::test]
+    // async fn test_delete_category() {
+    //     dotenv().ok();
 
-        let pool = create_pool().await.unwrap();
-        let mut app = test::init_service(
-            App::new()
-                .wrap(IdentityService::new(
-                    CookieIdentityPolicy::new(&[0; 32])
-                        .name("auth-cookie")
-                        .secure(true),
-                ))
-                .data(pool.clone())
-                .service(
-                    web::scope("/api/blog")
-                        .service(controllers::blog::insert_category)
-                        .service(controllers::blog::delete_category),
-                )
-                .service(web::scope("/user").service(crate::controllers::user::login)),
-        )
-        .await;
+    //     let pool = create_pool().await.unwrap();
+    //     let mut app = test::init_service(
+    //         App::new()
+    //             .wrap(IdentityService::new(
+    //                 CookieIdentityPolicy::new(&[0; 32])
+    //                     .name("auth-cookie")
+    //                     .secure(true),
+    //             ))
+    //             .data(pool.clone())
+    //             .service(
+    //                 web::scope("/api/blog")
+    //                     .service(controllers::blog::insert_category)
+    //                     .service(controllers::blog::delete_category),
+    //             )
+    //             .service(web::scope("/user").service(crate::controllers::user::login)),
+    //     )
+    //     .await;
 
-        let res = test::TestRequest::post()
-            .uri("/user/login")
-            .set_form(&serde_json::json!({
-                "email": "hello@ludivinefarat.fr",
-                "password": "root"
-            }))
-            .send_request(&mut app)
-            .await;
-        let cookie = res.headers().get(http::header::SET_COOKIE);
+    //     let res = test::TestRequest::post()
+    //         .uri("/user/login")
+    //         .set_form(&serde_json::json!({
+    //             "email": "hello@ludivinefarat.fr",
+    //             "password": "root"
+    //         }))
+    //         .send_request(&mut app)
+    //         .await;
+    //     let cookie = res.headers().get(http::header::SET_COOKIE);
 
-        assert!(cookie.is_some());
-        assert!(res.status().is_success());
+    //     assert!(cookie.is_some());
+    //     assert!(res.status().is_success());
 
-        let res = test::TestRequest::post()
-            .uri("/api/blog/categories")
-            .cookie(Cookie::from_str(&cookie.unwrap().to_str().unwrap()).unwrap())
-            .set_form(&serde_json::json!({
-                "name": "Category 1",
-                "is_visible": false,
-                "is_seo": false
-            }))
-            .send_request(&mut app)
-            .await;
-        let id: i16 = test::read_body_json(res).await;
+    //     let res = test::TestRequest::post()
+    //         .uri("/api/blog/categories")
+    //         .cookie(Cookie::from_str(&cookie.unwrap().to_str().unwrap()).unwrap())
+    //         .set_form(&serde_json::json!({
+    //             "name": "Category 1",
+    //             "is_visible": false,
+    //             "is_seo": false
+    //         }))
+    //         .send_request(&mut app)
+    //         .await;
+    //     let id: i16 = test::read_body_json(res).await;
 
-        let res = test::TestRequest::delete()
-            .uri(&format!("/api/blog/categories/{}", id))
-            .cookie(Cookie::from_str(&cookie.unwrap().to_str().unwrap()).unwrap())
-            .send_request(&mut app)
-            .await;
+    //     let res = test::TestRequest::delete()
+    //         .uri(&format!("/api/blog/categories/{}", id))
+    //         .cookie(Cookie::from_str(&cookie.unwrap().to_str().unwrap()).unwrap())
+    //         .send_request(&mut app)
+    //         .await;
 
-        assert!(res.status().is_success());
-    }
+    //     assert!(res.status().is_success());
+    // }
 
-    #[actix_rt::test]
-    async fn test_delete_category_not_logged() {
-        dotenv().ok();
+    // #[actix_rt::test]
+    // async fn test_delete_category_not_logged() {
+    //     dotenv().ok();
 
-        let pool = create_pool().await.unwrap();
-        let mut app = test::init_service(
-            App::new()
-                .wrap(IdentityService::new(
-                    CookieIdentityPolicy::new(&[0; 32])
-                        .name("auth-cookie")
-                        .secure(true),
-                ))
-                .data(pool.clone())
-                .service(
-                    web::scope("/api/blog")
-                        .service(controllers::blog::insert_category)
-                        .service(controllers::blog::delete_category),
-                )
-                .service(web::scope("/user").service(crate::controllers::user::login)),
-        )
-        .await;
+    //     let pool = create_pool().await.unwrap();
+    //     let mut app = test::init_service(
+    //         App::new()
+    //             .wrap(IdentityService::new(
+    //                 CookieIdentityPolicy::new(&[0; 32])
+    //                     .name("auth-cookie")
+    //                     .secure(true),
+    //             ))
+    //             .data(pool.clone())
+    //             .service(
+    //                 web::scope("/api/blog")
+    //                     .service(controllers::blog::insert_category)
+    //                     .service(controllers::blog::delete_category),
+    //             )
+    //             .service(web::scope("/user").service(crate::controllers::user::login)),
+    //     )
+    //     .await;
 
-        let res = test::TestRequest::post()
-            .uri("/user/login")
-            .set_form(&serde_json::json!({
-                "email": "hello@ludivinefarat.fr",
-                "password": "root"
-            }))
-            .send_request(&mut app)
-            .await;
-        let cookie = res.headers().get(http::header::SET_COOKIE);
+    //     let res = test::TestRequest::post()
+    //         .uri("/user/login")
+    //         .set_form(&serde_json::json!({
+    //             "email": "hello@ludivinefarat.fr",
+    //             "password": "root"
+    //         }))
+    //         .send_request(&mut app)
+    //         .await;
+    //     let cookie = res.headers().get(http::header::SET_COOKIE);
 
-        assert!(cookie.is_some());
-        assert!(res.status().is_success());
+    //     assert!(cookie.is_some());
+    //     assert!(res.status().is_success());
 
-        let res = test::TestRequest::post()
-            .uri("/api/blog/categories")
-            .cookie(Cookie::from_str(&cookie.unwrap().to_str().unwrap()).unwrap())
-            .set_form(&serde_json::json!({
-                "name": "Category 1",
-                "is_visible": false,
-                "is_seo": false
-            }))
-            .send_request(&mut app)
-            .await;
-        let id: i16 = test::read_body_json(res).await;
+    //     let res = test::TestRequest::post()
+    //         .uri("/api/blog/categories")
+    //         .cookie(Cookie::from_str(&cookie.unwrap().to_str().unwrap()).unwrap())
+    //         .set_form(&serde_json::json!({
+    //             "name": "Category 1",
+    //             "is_visible": false,
+    //             "is_seo": false
+    //         }))
+    //         .send_request(&mut app)
+    //         .await;
+    //     let id: i16 = test::read_body_json(res).await;
 
-        let res = test::TestRequest::delete()
-            .uri(&format!("/api/blog/categories/{}", id))
-            .send_request(&mut app)
-            .await;
+    //     let res = test::TestRequest::delete()
+    //         .uri(&format!("/api/blog/categories/{}", id))
+    //         .send_request(&mut app)
+    //         .await;
 
-        assert_eq!(res.status(), http::StatusCode::UNAUTHORIZED);
-    }
+    //     assert_eq!(res.status(), http::StatusCode::UNAUTHORIZED);
+    // }
 
-    #[actix_rt::test]
-    async fn test_insert_article() {
-        use std::io::Read;
-        use std::io::Write;
+    // #[actix_rt::test]
+    // async fn test_insert_article() {
+    //     use std::io::Read;
+    //     use std::io::Write;
 
-        dotenv().ok();
+    //     dotenv().ok();
 
-        let pool = create_pool().await.unwrap();
+    //     let pool = create_pool().await.unwrap();
 
-        let mut app = test::init_service(
-            App::new()
-                .wrap(IdentityService::new(
-                    CookieIdentityPolicy::new(&[0; 32])
-                        .name("auth-cookie")
-                        .secure(true),
-                ))
-                .data(pool.clone())
-                .service(web::scope("/api/blog").service(controllers::blog::insert_article))
-                .service(web::scope("/user").service(crate::controllers::user::login)),
-        )
-        .await;
+    //     let mut app = test::init_service(
+    //         App::new()
+    //             .wrap(IdentityService::new(
+    //                 CookieIdentityPolicy::new(&[0; 32])
+    //                     .name("auth-cookie")
+    //                     .secure(true),
+    //             ))
+    //             .data(pool.clone())
+    //             .service(web::scope("/api/blog").service(controllers::blog::insert_article))
+    //             .service(web::scope("/user").service(crate::controllers::user::login)),
+    //     )
+    //     .await;
 
-        let res = test::TestRequest::post()
-            .uri("/user/login")
-            .set_form(&serde_json::json!({
-                "email": "hello@ludivinefarat.fr",
-                "password": "root"
-            }))
-            .send_request(&mut app)
-            .await;
-        let cookie = res.headers().get(http::header::SET_COOKIE);
+    //     let res = test::TestRequest::post()
+    //         .uri("/user/login")
+    //         .set_form(&serde_json::json!({
+    //             "email": "hello@ludivinefarat.fr",
+    //             "password": "root"
+    //         }))
+    //         .send_request(&mut app)
+    //         .await;
+    //     let cookie = res.headers().get(http::header::SET_COOKIE);
 
-        assert!(cookie.is_some());
-        assert!(res.status().is_success());
+    //     assert!(cookie.is_some());
+    //     assert!(res.status().is_success());
 
-        let mut data: Vec<u8> = Vec::new();
-        write!(data, "-----011000010111000001101001\r\nContent-Disposition: form-data; name=\"title\"\r\n\r\nLorem\r\n").unwrap();
-        write!(data, "-----011000010111000001101001\r\nContent-Disposition: form-data; name=\"cover\"; filename=\"index.png\"\r\nContent-Type: image/png\r\n\r\n").unwrap();
-        let mut f = std::fs::File::open("public/img/index.png").unwrap();
-        f.read_to_end(&mut data).unwrap();
-        write!(data, "\r\n").unwrap();
-        write!(data, "-----011000010111000001101001\r\nContent-Disposition: form-data; name=\"blocks[]\"\r\n\r\n");
-        write!(
-            data,
-            "{{\"title\":\"Lorem\",\"left_column\":true,\"order\":1}}\r\n"
-        )
-        .unwrap();
-        write!(data, "-----011000010111000001101001--").unwrap();
+    //     let mut data: Vec<u8> = Vec::new();
+    //     write!(data, "-----011000010111000001101001\r\nContent-Disposition: form-data; name=\"title\"\r\n\r\nLorem\r\n").unwrap();
+    //     write!(data, "-----011000010111000001101001\r\nContent-Disposition: form-data; name=\"cover\"; filename=\"index.png\"\r\nContent-Type: image/png\r\n\r\n").unwrap();
+    //     let mut f = std::fs::File::open("public/img/index.png").unwrap();
+    //     f.read_to_end(&mut data).unwrap();
+    //     write!(data, "\r\n").unwrap();
+    //     write!(data, "-----011000010111000001101001\r\nContent-Disposition: form-data; name=\"blocks[]\"\r\n\r\n");
+    //     write!(
+    //         data,
+    //         "{{\"title\":\"Lorem\",\"left_column\":true,\"order\":1}}\r\n"
+    //     )
+    //     .unwrap();
+    //     write!(data, "-----011000010111000001101001--").unwrap();
 
-        let cookie = Cookie::from_str(&cookie.unwrap().to_str().unwrap()).unwrap();
-        let res = test::TestRequest::post()
-            .uri("/api/blog/articles")
-            .cookie(cookie)
-            .set_payload(data)
-            .header(
-                header::CONTENT_TYPE,
-                header::HeaderValue::from_static(
-                    "multipart/form-data; boundary=---011000010111000001101001",
-                ),
-            )
-            .send_request(&mut app)
-            .await;
+    //     let cookie = Cookie::from_str(&cookie.unwrap().to_str().unwrap()).unwrap();
+    //     let res = test::TestRequest::post()
+    //         .uri("/api/blog/articles")
+    //         .cookie(cookie)
+    //         .set_payload(data)
+    //         .header(
+    //             header::CONTENT_TYPE,
+    //             header::HeaderValue::from_static(
+    //                 "multipart/form-data; boundary=---011000010111000001101001",
+    //             ),
+    //         )
+    //         .send_request(&mut app)
+    //         .await;
 
-        assert!(res.status().is_success());
-    }
+    //     assert!(res.status().is_success());
+    // }
 
-    #[actix_rt::test]
-    async fn test_insert_article_not_logged() {
-        use std::io::Read;
-        use std::io::Write;
+    // #[actix_rt::test]
+    // async fn test_insert_article_not_logged() {
+    //     use std::io::Read;
+    //     use std::io::Write;
 
-        dotenv().ok();
+    //     dotenv().ok();
 
-        let pool = create_pool().await.unwrap();
+    //     let pool = create_pool().await.unwrap();
 
-        let mut app = test::init_service(
-            App::new()
-                .wrap(IdentityService::new(
-                    CookieIdentityPolicy::new(&[0; 32])
-                        .name("auth-cookie")
-                        .secure(true),
-                ))
-                .data(pool.clone())
-                .service(web::scope("/api/blog").service(controllers::blog::insert_article)),
-        )
-        .await;
+    //     let mut app = test::init_service(
+    //         App::new()
+    //             .wrap(IdentityService::new(
+    //                 CookieIdentityPolicy::new(&[0; 32])
+    //                     .name("auth-cookie")
+    //                     .secure(true),
+    //             ))
+    //             .data(pool.clone())
+    //             .service(web::scope("/api/blog").service(controllers::blog::insert_article)),
+    //     )
+    //     .await;
 
-        let mut data: Vec<u8> = Vec::new();
-        write!(data, "-----011000010111000001101001\r\nContent-Disposition: form-data; name=\"title\"\r\n\r\nLorem\r\n").unwrap();
-        write!(data, "-----011000010111000001101001\r\nContent-Disposition: form-data; name=\"cover\"; filename=\"index.png\"\r\nContent-Type: image/png\r\n\r\n").unwrap();
-        let mut f = std::fs::File::open("public/img/index.png").unwrap();
-        f.read_to_end(&mut data).unwrap();
-        write!(data, "\r\n").unwrap();
-        write!(data, "-----011000010111000001101001\r\nContent-Disposition: form-data; name=\"blocks[]\"\r\n\r\n");
-        write!(
-            data,
-            "{{\"title\":\"Lorem\",\"left_column\":true,\"order\":1}}\r\n"
-        )
-        .unwrap();
-        write!(data, "-----011000010111000001101001--").unwrap();
+    //     let mut data: Vec<u8> = Vec::new();
+    //     write!(data, "-----011000010111000001101001\r\nContent-Disposition: form-data; name=\"title\"\r\n\r\nLorem\r\n").unwrap();
+    //     write!(data, "-----011000010111000001101001\r\nContent-Disposition: form-data; name=\"cover\"; filename=\"index.png\"\r\nContent-Type: image/png\r\n\r\n").unwrap();
+    //     let mut f = std::fs::File::open("public/img/index.png").unwrap();
+    //     f.read_to_end(&mut data).unwrap();
+    //     write!(data, "\r\n").unwrap();
+    //     write!(data, "-----011000010111000001101001\r\nContent-Disposition: form-data; name=\"blocks[]\"\r\n\r\n");
+    //     write!(
+    //         data,
+    //         "{{\"title\":\"Lorem\",\"left_column\":true,\"order\":1}}\r\n"
+    //     )
+    //     .unwrap();
+    //     write!(data, "-----011000010111000001101001--").unwrap();
 
-        let res = test::TestRequest::post()
-            .uri("/api/blog/articles")
-            .set_payload(data)
-            .header(
-                header::CONTENT_TYPE,
-                header::HeaderValue::from_static(
-                    "multipart/form-data; boundary=---011000010111000001101001",
-                ),
-            )
-            .send_request(&mut app)
-            .await;
+    //     let res = test::TestRequest::post()
+    //         .uri("/api/blog/articles")
+    //         .set_payload(data)
+    //         .header(
+    //             header::CONTENT_TYPE,
+    //             header::HeaderValue::from_static(
+    //                 "multipart/form-data; boundary=---011000010111000001101001",
+    //             ),
+    //         )
+    //         .send_request(&mut app)
+    //         .await;
 
-        assert_eq!(res.status(), http::StatusCode::UNAUTHORIZED);
-    }
+    //     assert_eq!(res.status(), http::StatusCode::UNAUTHORIZED);
+    // }
 }

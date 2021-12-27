@@ -301,66 +301,66 @@ mod tests {
     use actix_web::{test, App};
     use dotenv::dotenv;
 
-    #[actix_rt::test]
-    async fn test_form_valid_data() {
-        dotenv().ok();
+    // #[actix_rt::test]
+    // async fn test_form_valid_data() {
+    //     dotenv().ok();
 
-        let pool = create_pool().await.unwrap();
-        let mut app = test::init_service(App::new().data(pool.clone()).service(super::post)).await;
-        let resp = test::TestRequest::post()
-            .uri("/contact")
-            .set_form(&serde_json::json!({
-                "firstname": "Guillaume",
-                "lastname": "Gueyraud",
-                "phone_number": "0767656195",
-                "email": "contact@guillaume-gueyraud.fr",
-                "content": "Lorem ipsum dolor sit egestas."
-            }))
-            .send_request(&mut app)
-            .await;
+    //     let pool = create_pool().await.unwrap();
+    //     let mut app = test::init_service(App::new().data(pool.clone()).service(super::post)).await;
+    //     let resp = test::TestRequest::post()
+    //         .uri("/contact")
+    //         .set_form(&serde_json::json!({
+    //             "firstname": "Guillaume",
+    //             "lastname": "Gueyraud",
+    //             "phone_number": "0767656195",
+    //             "email": "contact@guillaume-gueyraud.fr",
+    //             "content": "Lorem ipsum dolor sit egestas."
+    //         }))
+    //         .send_request(&mut app)
+    //         .await;
 
-        assert!(resp.status().is_success());
-    }
+    //     assert!(resp.status().is_success());
+    // }
 
-    #[actix_rt::test]
-    async fn test_form_invalid_phone_number() {
-        dotenv().ok();
+    // #[actix_rt::test]
+    // async fn test_form_invalid_phone_number() {
+    //     dotenv().ok();
 
-        let pool = create_pool().await.unwrap();
-        let mut app = test::init_service(App::new().data(pool.clone()).service(super::post)).await;
-        let resp = test::TestRequest::post()
-            .uri("/contact")
-            .set_form(&serde_json::json!({
-                "firstname": "Guillaume",
-                "lastname": "Gueyraud",
-                "phone_number": "x0767656195",
-                "email": "contact@guillaume-gueyraud.fr",
-                "content": "Lorem ipsum dolor sit egestas."
-            }))
-            .send_request(&mut app)
-            .await;
+    //     let pool = create_pool().await.unwrap();
+    //     let mut app = test::init_service(App::new().data(pool.clone()).service(super::post)).await;
+    //     let resp = test::TestRequest::post()
+    //         .uri("/contact")
+    //         .set_form(&serde_json::json!({
+    //             "firstname": "Guillaume",
+    //             "lastname": "Gueyraud",
+    //             "phone_number": "x0767656195",
+    //             "email": "contact@guillaume-gueyraud.fr",
+    //             "content": "Lorem ipsum dolor sit egestas."
+    //         }))
+    //         .send_request(&mut app)
+    //         .await;
 
-        assert_eq!(resp.status(), 400);
-    }
+    //     assert_eq!(resp.status(), 400);
+    // }
 
-    #[actix_rt::test]
-    async fn test_form_invalid_email() {
-        dotenv().ok();
+    // #[actix_rt::test]
+    // async fn test_form_invalid_email() {
+    //     dotenv().ok();
 
-        let pool = create_pool().await.unwrap();
-        let mut app = test::init_service(App::new().data(pool.clone()).service(super::post)).await;
-        let resp = test::TestRequest::post()
-            .uri("/contact")
-            .set_form(&serde_json::json!({
-                "firstname": "Guillaume",
-                "lastname": "Gueyraud",
-                "phone_number": "+33767656195",
-                "email": "cont;act@guillaume-gueyraud.fr",
-                "content": "Lorem ipsum dolor sit egestas."
-            }))
-            .send_request(&mut app)
-            .await;
+    //     let pool = create_pool().await.unwrap();
+    //     let mut app = test::init_service(App::new().data(pool.clone()).service(super::post)).await;
+    //     let resp = test::TestRequest::post()
+    //         .uri("/contact")
+    //         .set_form(&serde_json::json!({
+    //             "firstname": "Guillaume",
+    //             "lastname": "Gueyraud",
+    //             "phone_number": "+33767656195",
+    //             "email": "cont;act@guillaume-gueyraud.fr",
+    //             "content": "Lorem ipsum dolor sit egestas."
+    //         }))
+    //         .send_request(&mut app)
+    //         .await;
 
-        assert_eq!(resp.status(), 400);
-    }
+    //     assert_eq!(resp.status(), 400);
+    // }
 }
