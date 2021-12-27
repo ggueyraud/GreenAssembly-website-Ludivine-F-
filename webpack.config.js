@@ -22,6 +22,7 @@ module.exports = {
         blog: `${entry_path}/blog.js`,
         project: `${entry_path}/project.js`,
         portfolio: `${entry_path}/portfolio.js`,
+        my_little_plus: `${entry_path}/my_little_plus.js`,
         'admin/login': `${entry_path}/admin/login.js`,
         'admin/home': `${entry_path}/admin/home.js`,
         'admin/portfolio': `${entry_path}/admin/portfolio.js`,

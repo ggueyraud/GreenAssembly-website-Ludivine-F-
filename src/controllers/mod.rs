@@ -93,7 +93,7 @@ async fn my_little_plus(req: HttpRequest, pool: web::Data<PgPool>) -> Result<Htt
                 }
 
                 #[derive(Template)]
-                #[template(path = "pages/my-little-plus.html")]
+                #[template(path = "pages/my_little_plus.html")]
                 struct MyLittlePlus {
                     title: String,
                     description: Option<String>,
@@ -117,9 +117,6 @@ async fn my_little_plus(req: HttpRequest, pool: web::Data<PgPool>) -> Result<Htt
             }
             _ => return Ok(HttpResponse::InternalServerError().finish()),
         }
-
-        // if let Ok((metric_id, creations, shootings)) =  {
-        // }
     }
 
     Ok(HttpResponse::InternalServerError().finish())
