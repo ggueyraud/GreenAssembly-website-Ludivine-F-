@@ -33,7 +33,7 @@
                 </p>
 
                 <div class="text_center md_text_left">
-                    <a href="/contact" class="btn btn__blue mt_5">
+                    <a o-follow="preload-once" href="/contact" class="btn btn__blue mt_5">
                         Me contacter
                         <svg class="icon ml_2" height="24px">
                             <use xlink:href="/icons.svg#paper_plane"></use>
@@ -42,14 +42,14 @@
                 </div>
             </div>
 
-            <img src="/img/slamming_message.gif" alt="Message qui claque" />
+            <img class="lazy" data-src="/img/slamming_message.gif" alt="Message qui claque" />
         </div>
 
         <div class="text_center flex flex_col items_center row_gap_4">
             <div style="padding:56.25% 0 0 0;position:relative; width: 100%">
                 <iframe src="{{ link }}" style="position:absolute;top:0;left:0;width:100%;height:100%;" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>
             </div>
-            <script src="https://player.vimeo.com/api/player.js"></script>
+            <script src="https://player.vimeo.com/api/player.js" async></script>
 
             <a href="https://vimeo.com/ludivinefarat" target="_blank" rel="noopener" class="uppercase btn btn__blue mt_2 md_mt_0">
                 Découvrir mon travail
@@ -83,7 +83,7 @@
         </div>
 
         <div class="grid grid_cols_1 md_grid_cols_2 col_gap_4 row_gap_8 items_center">
-            <img src="/img/hand_sewn_video.gif" alt="Vidéo cousue main" />
+            <img class="lazy" data-src="/img/hand_sewn_video.gif" alt="Vidéo cousue main" />
 
             <div>
                 <h2>Seconde après seconde, votre motion design s’anime.</h2>
@@ -104,7 +104,7 @@
                     <p>Animation vidéo, animation logos, montage vidéo, vidéo corporate, vidéo de présentation d’une offre commerciale, d’un produit.... n’attendez plus c’est pas là 👉</p>
                 </div>
             
-                <a href="/contact" class="btn btn__blue">
+                <a o-follow="preload-once" href="/contact" class="btn btn__blue">
                     Me contacter
                     <svg class="icon ml_2" height="24px">
                         <use xlink:href="/icons.svg#paper_plane"></use>

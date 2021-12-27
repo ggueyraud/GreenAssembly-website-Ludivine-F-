@@ -47,7 +47,7 @@
                 des design uniques.
             </p>
             <div class="links">
-                <a href="/contact" target="_blank" rel="noopener" class="uppercase btn btn__blue mt_2 md_mt_0">
+                <a href="/contact" o-follow="preload-once" class="uppercase btn btn__blue mt_2 md_mt_0">
                     Me contacter
                     <svg class="icon ml_2" height="24px">
                         <use xlink:href="/icons.svg#paper_plane"></use>
@@ -71,7 +71,7 @@
             <div class="links">
                 {% match creations_link %}
                     {% when Some with (link) %}
-                        <a href="{{ link }}" class="special">
+                        <a href="{{ link }}" target="_blank" class="special">
                             Découvrir mes créations
                         </a>
                     {% when None %}
@@ -79,10 +79,10 @@
             </div>
         </section>
         <section class="images-left">
-            <img src="/img/Peinture_1.jpg">
-            <img src="/img/Peinture_2.jpg">
-            <img src="/img/Peinture_3.jpg">
-            <img src="/img/OISEAU_1.jpg" class="col_span_3">
+            <img class="lazy" data-src="/img/Peinture_1.jpg" />
+            <img class="lazy" data-src="/img/Peinture_2.jpg" />
+            <img class="lazy" data-src="/img/Peinture_3.jpg" />
+            <img class="lazy col_span_3" data-src="/img/OISEAU_1.jpg" />
         </section>
         <section class="photo">
             <h2>La photographie au cœur de vos design</h2>
@@ -106,7 +106,7 @@
             <div class="links">
                 {% match shootings_link %}
                     {% when Some with (link) %}
-                        <a href="{{ link }}" class="special">
+                        <a href="{{ link }}" target="_blank" class="special">
                             Découvrir mes shooting
                         </a>
                     {% when None %}
@@ -114,9 +114,9 @@
             </div>
         </section>
         <section class="images-right">
-            <img src="/img/PHOTO_01.jpg" class="col_span_3">
-            <img src="/img/PHOTO_3.jpg">
-            <img src="/img/PHOTO_02.jpg" class="col_span_2">
+            <img class="lazy col_span_3" data-src="/img/PHOTO_01.jpg" />
+            <img class="lazy" data-src="/img/PHOTO_3.jpg" />
+            <img class="lazy col_span_2" data-src="/img/PHOTO_02.jpg" />
         </section>    
     </div>
 {% endblock %}

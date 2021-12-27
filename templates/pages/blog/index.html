@@ -33,16 +33,16 @@
         <h3>Catégories</h3>
     </header>
 
-    <a href="/blog">Tout</a>
+    <a o-follow href="/blog">Tout</a>
     {% for category in categories %}
-        <a href="blog/categories/{{ category.uri }}">{{ category.name }}</a>
+        <a o-follow href="blog/categories/{{ category.uri }}">{{ category.name }}</a>
     {% endfor %}
 </nav>
 #}
 
-<section class="grid grid_cols_1 md_grid_cols_2 gap_6">
+<section class="grid grid_cols_1 md_grid_cols_2 gap_6 items_start">
     {% for article in articles %}
-        <a href="blog/articles/{{ article.uri }}" class="post">
+        <a href="blog/articles/{{ article.uri }}" o-follow class="post">
             <article>
                 <div class="post__cover" style="--cover-path: url(/uploads/{{ article.cover }})"></div>
 

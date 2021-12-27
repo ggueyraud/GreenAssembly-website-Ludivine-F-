@@ -25,7 +25,7 @@
 <section>
     {% match asset_0 %}
         {% when Some with (asset) %}
-            <img class="order_2 md_order_1 md_row_span_3" src="/uploads/{{ asset.path }}" />
+            <img class="lazy order_2 md_order_1 md_row_span_3" data-src="/uploads/{{ asset.path }}" />
         {% when None %}
     {% endmatch %}
 
@@ -40,7 +40,7 @@
 
     {% match asset_1 %}
         {% when Some with (asset) %}
-            <img class="order_4 md_row_span_1" src="/uploads/{{ asset.path }}" />
+            <img class="lazy order_4 md_row_span_1" data-src="/uploads/{{ asset.path }}" />
         {% when None %}
     {% endmatch %}
 
@@ -51,7 +51,7 @@
                     <div class="carousel__wrapper">
                         {% for asset in assets %}
                             <div class="carousel__wrapper__item">
-                                <img src="/uploads/{{ asset.path }}" />
+                                <img class="lazy" data-src="/uploads/{{ asset.path }}" />
                             </div>
                         {% endfor %}
                     </div>

@@ -323,6 +323,7 @@ pub async fn insert_project(
                 }
             }
 
+            transaction.commit().await.unwrap();
             uploader.clear();
             HttpResponse::Created().json(id)
         }

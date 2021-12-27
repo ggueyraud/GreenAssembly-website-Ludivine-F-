@@ -1,14 +1,15 @@
 import 'router';
+import LazyLoader from '@js/components/lazy_loader';
 
 document.addEventListener('readystatechange', e => {
     if (e.target.readyState === 'complete') {
+        LazyLoader();
         const navbar = document.querySelector('#topbar nav');
         const open_menu_btn = document.querySelector('#open_mobile_menu');
         const close_mobile_menu = () => {
             open_menu_btn.querySelector('svg').innerHTML = '<use xlink:href="/icons.svg#burger"></use>';
             navbar.classList.remove('show');
             document.documentElement.style.overflow = null;
-            
         }
 
         navbar?.querySelectorAll('nav a:not(.socials a)')

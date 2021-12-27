@@ -238,12 +238,12 @@ async fn show_article(
                 article.content = article.content.replacen(
                     &format!("[[{}]]", image.id),
                     &format!(
-                        r#"<picture>
-                            <source srcset="/uploads/mobile/{}.webp" media="(max-width: 768px)" type="image/webp" />
-                            <source srcset="/uploads/mobile/{}" media="(max-width: 768px)" />
-                            <source srcset="/uploads/{}.webp" media="(min-width: 768px)" type="image/webp" />
+                        r#"<picture class="lazy">
+                            <source data-srcset="/uploads/mobile/{}.webp" media="(max-width: 768px)" type="image/webp" />
+                            <source data-srcset="/uploads/mobile/{}" media="(max-width: 768px)" />
+                            <source data-srcset="/uploads/{}.webp" media="(min-width: 768px)" type="image/webp" />
 
-                            <img src="/uploads/{}" />
+                            <img data-src="/uploads/{}" />
                         </picture>"#,
                         filename,
                         image.path,
