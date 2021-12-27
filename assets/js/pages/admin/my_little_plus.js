@@ -31,11 +31,11 @@ router.on('mount', () => {
 
         // Compare with previous value
         if(e.detail.creations !== creations) {
-            body.creations = e.detail.creations;
+            body.creations = e.detail.creations === '' ? null : e.detail.creations;
         }
 
         if(e.detail.shootings !== shootings) {
-            body.shootings = e.detail.shootings;
+            body.shootings = e.detail.shootings === '' ? null : e.detail.shootings;
         }
 
         if (Object.entries(body).length) {

@@ -80,6 +80,7 @@ pub struct FormUpdateLittlePlus {
     pub shootings: Option<String>,
 }
 
+// TODO : à optimiser
 #[patch("/links")]
 async fn update_little_plus_informations(
     pool: web::Data<PgPool>,
@@ -107,7 +108,17 @@ async fn update_little_plus_informations(
         } else {
             return HttpResponse::BadRequest().finish();
         }
+    } else {
+        fut.push(
+            sqlx::query!(
+                r#"UPDATE page_chunks
+                SET content['value'] = null
+                WHERE identifier = 'link_creations' AND page_id = 4"#
+            )
+            .execute(pool.as_ref()),
+        );
     }
+
     if let Some(url) = &links.shootings {
         if http_regex.is_match(url) {
             fut.push(
@@ -122,17 +133,21 @@ async fn update_little_plus_informations(
         } else {
             return HttpResponse::BadRequest().finish();
         }
+    } else {
+        fut.push(
+            sqlx::query!(
+                r#"UPDATE page_chunks
+                SET content['value'] = null
+                WHERE identifier = 'link_shootings' AND page_id = 4"#
+            )
+            .execute(pool.as_ref()),
+        );
     }
 
     match futures::future::try_join_all(fut).await {
         Ok(_) => HttpResponse::Ok().finish(),
         Err(_) => HttpResponse::InternalServerError().finish(),
     }
-
-    // match crate::services::my_little_plus::edit_links(&pool, &links).await {
-    //     Ok(_) => HttpResponse::Ok().finish(),
-    //     Err(_) => HttpResponse::InternalServerError().finish()
-    // }
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Debug)]
@@ -160,8 +175,6 @@ pub async fn update_settings(
     if session.identity().is_none() {
         return HttpResponse::Unauthorized().finish();
     }
-
-    let mut uploader = Uploader::new();
 
     match &form.logo {
         Patch::Value(logo) => {
