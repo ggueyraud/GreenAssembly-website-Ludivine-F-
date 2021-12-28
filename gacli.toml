@@ -1,10 +1,17 @@
 [[purgecss]]
 css = "global.css"
-content = ["templates/front_office.html", "templates/blog.html"]
+content = [
+    "templates/front_office.html",
+    "templates/blog.html",
+    "templates/navbar.html",
+    "templates/footer.html"
+]
+safelist = ["nav.show"]
 
 [[purgecss]]
 css = "pages/article.css"
 content = ["templates/pages/blog/article.html"]
+safelist = ["hidden", "lightbox", "lightbox--active"]
 
 [[purgecss]]
 css = "pages/blog.css"
@@ -13,6 +20,7 @@ content = ["templates/pages/blog/category.html", "templates/pages/blog/index.htm
 [[purgecss]]
 css = "pages/contact.css"
 content = ["templates/pages/contact.html"]
+safelist = ["hidden", "valid", "fv_border_error"]
 
 [[purgecss]]
 css = "pages/index.css"
@@ -29,10 +37,12 @@ content = ["templates/pages/motion_design.html"]
 [[purgecss]]
 css = "pages/my_little_plus.css"
 content = ["templates/pages/my_little_plus.html"]
+safelist = ["lightbox", "lightbox--active"]
 
 [[purgecss]]
 css = "pages/portfolio.css"
 content = ["templates/pages/portfolio.html", "templates/pages/portfolio_project.html"]
+safelist = ["lightbox", "lightbox--active"]
 
 [[purgecss]]
 css = "pages/project.css"
