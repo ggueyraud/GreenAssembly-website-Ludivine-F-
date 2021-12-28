@@ -25,9 +25,6 @@ INSERT INTO project_categories (name, "order") VALUES
 ('Ipsum', 2),
 ('Dolor', 3);
 
-INSERT INTO files (name, path) VALUES
-('first file', 'path');
-
 INSERT INTO blog_articles (category_id, cover_id, title, uri, is_published, is_seo) VALUES
 (1, 1, 'Les aventures de lulu', 'les-aventures-de-lulu', false, true),
 (1, 1, 'Les aventures de lulu partie 2', 'les-aventures-de-lulu-partie-2', true, true),
