@@ -3,10 +3,10 @@ css = "global.css"
 content = [
     "templates/front_office.html",
     "templates/blog.html",
-    "templates/navbar.html",
-    "templates/footer.html"
+    "templates/includes/navbar.html",
+    "templates/includes/footer.html"
 ]
-safelist = ["nav.show"]
+safelist = ["show"]
 
 [[purgecss]]
 css = "pages/article.css"
