@@ -11,7 +11,6 @@ pub fn config(cfg: &mut web::ServiceConfig) {
         .service(controllers::motion_design)
         .service(controllers::legals)
         .service(controllers::contact)
-        .service(controllers::metrics::log)
         .service(
             web::scope("/portfolio")
                 .service(controllers::portfolio::index)
@@ -22,5 +21,8 @@ pub fn config(cfg: &mut web::ServiceConfig) {
                 .service(controllers::blog::index)
                 .service(controllers::blog::show_category)
                 .service(controllers::blog::show_article),
-        );
+        )
+        .service(controllers::metrics::log)
+        .service(controllers::metrics::create)
+        .service(controllers::metrics::create_session);
 }

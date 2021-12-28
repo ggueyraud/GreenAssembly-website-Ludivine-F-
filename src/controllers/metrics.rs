@@ -71,7 +71,10 @@ pub async fn create(pool: web::Data<PgPool>, req: HttpRequest, infos: web::Query
 
             match services::pages::get::<Page>(&pool, "id", &infos.path).await {
                 Ok(page) => id = Some(page.id),
-                _ => return HttpResponse::InternalServerError().finish()
+                Err(e) => {
+                    println!("{:?}", e);
+                    return HttpResponse::InternalServerError().finish()
+                }
             }
         },
         BelongsTo::BlogPost | BelongsTo::Project => {
@@ -172,9 +175,10 @@ pub async fn log(
         return HttpResponse::NotFound().finish()
     }
 
-    services::metrics::update_end_date(&pool, session_id, token).await;
-
-    return HttpResponse::Ok().finish()
+    match services::metrics::update_end_date(&pool, session_id, token).await {
+        Ok(_) => HttpResponse::Ok().finish(),
+        Err(_) => HttpResponse::InternalServerError().finish()
+    }
 }
 
 // ------------------------------------------------------------------------------ //

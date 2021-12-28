@@ -1,11 +1,11 @@
 INSERT INTO pages (title, identifier, description) VALUES 
-('Accueil', 'accueil', NULL),
-('Portfolio', 'portfolio', NULL),
-('Motion design', 'motion-design', NULL),
-('Mes petits plus', 'mes-petits-plus', NULL),
-('Contact', 'contact', NULL),
-('Blog', 'blog', NULL),
-('Mentions légales', 'mentions-legales', NULL);
+('Accueil', '/', NULL),
+('Portfolio', '/portfolio', NULL),
+('Motion design', '/motion-design', NULL),
+('Mes petits plus', '/mes-petits-plus', NULL),
+('Contact', '/contact', NULL),
+('Blog', '/blog', NULL),
+('Mentions légales', '/mentions-legales', NULL);
 
 INSERT INTO page_chunks (page_id, identifier, content) VALUES
 (1, 'profile_picture', '{"path": ""}'),

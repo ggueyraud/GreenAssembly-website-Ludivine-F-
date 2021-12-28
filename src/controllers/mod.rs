@@ -21,7 +21,7 @@ struct Page {
 
 #[get("/")]
 async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
-    if let Ok(page) = services::pages::get::<Page>(&pool, "id, title, description", "accueil").await {
+    if let Ok(page) = services::pages::get::<Page>(&pool, "id, title, description", "/").await {
         match futures::join!(
             metrics::add(&pool, &req, services::metrics::BelongsTo::Page(page.id)),
             services::settings::get(&pool)
@@ -60,7 +60,7 @@ async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse
 
 #[get("/mes-petits-plus")]
 async fn my_little_plus(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
-    if let Ok(page) = services::pages::get::<Page>(&pool, "id, title, description", "mes-petits-plus").await {
+    if let Ok(page) = services::pages::get::<Page>(&pool, "id, title, description", "/mes-petits-plus").await {
         #[derive(sqlx::FromRow)]
         struct Chunk {
             content: serde_json::Value,
@@ -124,7 +124,7 @@ async fn my_little_plus(req: HttpRequest, pool: web::Data<PgPool>) -> Result<Htt
 
 #[get("/motion-design")]
 async fn motion_design(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
-    if let Ok(page) = services::pages::get::<Page>(&pool, "id, title, description", "motion-design").await {
+    if let Ok(page) = services::pages::get::<Page>(&pool, "id, title, description", "/motion-design").await {
         #[derive(sqlx::FromRow)]
         struct Chunk {
             content: serde_json::Value,
@@ -179,7 +179,7 @@ async fn motion_design(req: HttpRequest, pool: web::Data<PgPool>) -> Result<Http
 
 #[get("/contact")]
 async fn contact(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
-    if let Ok(page) = services::pages::get::<Page>(&pool, "id, title, description", "contact").await {
+    if let Ok(page) = services::pages::get::<Page>(&pool, "id, title, description", "/contact").await {
         if let (Ok(metric_id), Ok(settings)) = futures::join!(
             metrics::add(&pool, &req, services::metrics::BelongsTo::Page(page.id)),
             services::settings::get(&pool)
@@ -215,7 +215,7 @@ async fn contact(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpRespon
 
 #[get("/mentions-legales")]
 async fn legals(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
-    if let Ok(page) = services::pages::get::<Page>(&pool, "id, title, description", "mentions-legales").await {
+    if let Ok(page) = services::pages::get::<Page>(&pool, "id, title, description", "/mentions-legales").await {
         if let (Ok(metric_id), Ok(settings)) = futures::join!(
             metrics::add(&pool, &req, services::metrics::BelongsTo::Page(page.id)),
             services::settings::get(&pool)

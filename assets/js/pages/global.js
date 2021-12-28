@@ -15,14 +15,6 @@ const send_metrics = () => {
     const sid = read_cookie('sid');
 
     if (vid !== null) {
-        const { pathname } = location;
-        const belongs_to = pathname.includes('/articles/')
-            ? 'BlogPost'
-            : pathname.includes('/portfolio/')
-                ? 'Project'
-                : 'Page';
-
-        console.log(belongs_to)
         navigator.sendBeacon('/metrics/log', new URLSearchParams({
             sid: sid ?? null,
             token: vid
@@ -77,7 +69,13 @@ router.on('change', async () => {
         document.cookie = 'sid=' + sid + '; expires=' + new Date(data.vud).toUTCString() + '; SameSite=Strict; Secure';
     }
 
-    const res = await get(`/metrics/token?path=${location.pathname}&sid=${sid}`);
+    const { pathname } = location;
+    const belongs_to = pathname.includes('/articles/')
+        ? 'BlogPost'
+        : pathname.includes('/portfolio/')
+            ? 'Project'
+            : 'Page';
+    const res = await get(`/metrics/token?path=${location.pathname}&sid=${sid}&belongs_to=${belongs_to}`);
     localStorage.setItem('VID', await res.text());
 });
 

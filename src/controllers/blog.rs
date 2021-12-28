@@ -30,7 +30,7 @@ struct Page {
 
 #[get("")]
 async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
-    if let Ok(page) = services::pages::get::<Page>(&pool, "id, title, description", "blog").await {
+    if let Ok(page) = services::pages::get::<Page>(&pool, "id, title, description", "/blog").await {
         let (metric_id, categories, articles) = futures::join!(
             metrics::add(&pool, &req, services::metrics::BelongsTo::Page(page.id)),
             services::blog::categories::get_all::<Category>(&pool, "name, uri", Some(true), None),

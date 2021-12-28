@@ -14,7 +14,7 @@ struct Page {
 
 #[get("")]
 async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
-    if let Ok(page) = services::pages::get::<Page>(&pool, "id, title, description", "portfolio").await {
+    if let Ok(page) = services::pages::get::<Page>(&pool, "id, title, description", "/portfolio").await {
         use slugmin::slugify;
 
         if let (Ok(metric_id), Ok(settings)) = futures::join!(
