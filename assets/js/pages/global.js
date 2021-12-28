@@ -66,6 +66,7 @@ document.addEventListener('readystatechange', e => {
 });
 
 router.on('change', async () => {
+    LazyLoader();
     send_metrics();
 
     let sid = read_cookie('sid');
