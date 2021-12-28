@@ -39,6 +39,24 @@ pub async fn get<
     Ok(article)
 }
 
+// pub async fn get_id_by_uri(
+//     pool: &PgPool,
+//     uri: &str
+// ) -> Result<i16, Error> {
+//     let article = sqlx::query!(
+//         "SELECT
+//             id
+//         FROM blog_articles
+//         WHERE uri = $1
+//         LIMIT 1",
+//         uri
+//     )
+//     .fetch_one(pool)
+//     .await?;
+
+//     Ok(article.id)
+// }
+
 pub async fn get_all<
     T: std::marker::Unpin + std::marker::Send + for<'c> sqlx::FromRow<'c, sqlx::postgres::PgRow>,
 >(

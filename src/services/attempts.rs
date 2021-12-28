@@ -1,6 +1,5 @@
 use sqlx::{Error, PgPool};
 
-// TODO : count under ten minutes or one hour?
 pub async fn count(pool: &PgPool, ip: &str, is_login: bool) -> i64 {
     sqlx::query!(
         "SELECT

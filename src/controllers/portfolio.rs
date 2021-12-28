@@ -5,9 +5,16 @@ use askama_actix::{Template, TemplateIntoResponse};
 use chrono::Datelike;
 use sqlx::PgPool;
 
+#[derive(sqlx::FromRow)]
+struct Page {
+    id: i16,
+    title: String,
+    description: Option<String>,
+}
+
 #[get("")]
 async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
-    if let Ok(page) = services::pages::get(&pool, "portfolio").await {
+    if let Ok(page) = services::pages::get::<Page>(&pool, "id, title, description", "portfolio").await {
         use slugmin::slugify;
 
         if let (Ok(metric_id), Ok(settings)) = futures::join!(
@@ -16,9 +23,7 @@ async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse
         ) {
             let mut token: Option<String> = None;
             if let Some(id) = metric_id {
-                if let Ok(metric_token) = services::metrics::tokens::add(&pool, id).await {
-                    token = Some(metric_token.to_string());
-                }
+                token = Some(id.to_string());
             }
             
             #[derive(Debug)]
@@ -144,9 +149,7 @@ async fn view_project(
     ) {
         let mut token: Option<String> = None;
         if let Some(id) = metric_id {
-            if let Ok(metric_token) = services::metrics::tokens::add(&pool, id).await {
-                token = Some(metric_token.to_string());
-            }
+            token = Some(id.to_string());
         }
 
         #[derive(Template)]

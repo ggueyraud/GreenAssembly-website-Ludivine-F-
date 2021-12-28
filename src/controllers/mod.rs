@@ -12,22 +12,24 @@ pub mod metrics;
 pub mod portfolio;
 pub mod user;
 
+#[derive(sqlx::FromRow)]
+struct Page {
+    id: i16,
+    title: String,
+    description: Option<String>,
+}
+
 #[get("/")]
 async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
-    if let Ok(page) = services::pages::get(&pool, "accueil").await {
-        let mut token: Option<String> = None;
-
+    if let Ok(page) = services::pages::get::<Page>(&pool, "id, title, description", "accueil").await {
         match futures::join!(
             metrics::add(&pool, &req, services::metrics::BelongsTo::Page(page.id)),
             services::settings::get(&pool)
         ) {
             (Ok(metric_id), Ok(settings)) => {
-                if let Ok(Some(id)) =
-                    metrics::add(&pool, &req, services::metrics::BelongsTo::Page(page.id)).await
-                {
-                    if let Ok(metric_token) = services::metrics::tokens::add(&pool, id).await {
-                        token = Some(metric_token.to_string());
-                    }
+                let mut token: Option<String> = None;
+                if let Some(id) = metric_id {
+                    token = Some(id.to_string());
                 }
         
                 #[derive(Template)]
@@ -58,7 +60,7 @@ async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse
 
 #[get("/mes-petits-plus")]
 async fn my_little_plus(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
-    if let Ok(page) = services::pages::get(&pool, "mes-petits-plus").await {
+    if let Ok(page) = services::pages::get::<Page>(&pool, "id, title, description", "mes-petits-plus").await {
         #[derive(sqlx::FromRow)]
         struct Chunk {
             content: serde_json::Value,
@@ -87,9 +89,7 @@ async fn my_little_plus(req: HttpRequest, pool: web::Data<PgPool>) -> Result<Htt
 
                 let mut token: Option<String> = None;
                 if let Some(id) = metric_id {
-                    if let Ok(metric_token) = services::metrics::tokens::add(&pool, id).await {
-                        token = Some(metric_token.to_string());
-                    }
+                    token = Some(id.to_string());
                 }
 
                 #[derive(Template)]
@@ -124,7 +124,7 @@ async fn my_little_plus(req: HttpRequest, pool: web::Data<PgPool>) -> Result<Htt
 
 #[get("/motion-design")]
 async fn motion_design(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
-    if let Ok(page) = services::pages::get(&pool, "motion-design").await {
+    if let Ok(page) = services::pages::get::<Page>(&pool, "id, title, description", "motion-design").await {
         #[derive(sqlx::FromRow)]
         struct Chunk {
             content: serde_json::Value,
@@ -143,11 +143,8 @@ async fn motion_design(req: HttpRequest, pool: web::Data<PgPool>) -> Result<Http
             (Ok(metric_id), Ok(chunk), Ok(settings)) => {
                 if let Ok(data) = serde_json::from_value::<ChunkData>(chunk.content) {
                     let mut token: Option<String> = None;
-
                     if let Some(id) = metric_id {
-                        if let Ok(metric_token) = services::metrics::tokens::add(&pool, id).await {
-                            token = Some(metric_token.to_string());
-                        }
+                        token = Some(id.to_string());
                     }
 
                     #[derive(Template)]
@@ -182,16 +179,14 @@ async fn motion_design(req: HttpRequest, pool: web::Data<PgPool>) -> Result<Http
 
 #[get("/contact")]
 async fn contact(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
-    if let Ok(page) = services::pages::get(&pool, "contact").await {
+    if let Ok(page) = services::pages::get::<Page>(&pool, "id, title, description", "contact").await {
         if let (Ok(metric_id), Ok(settings)) = futures::join!(
             metrics::add(&pool, &req, services::metrics::BelongsTo::Page(page.id)),
             services::settings::get(&pool)
         ) {
             let mut token: Option<String> = None;
             if let Some(id) = metric_id {
-                if let Ok(metric_token) = services::metrics::tokens::add(&pool, id).await {
-                    token = Some(metric_token.to_string());
-                }
+                token = Some(id.to_string());
             }
 
             #[derive(Template)]
@@ -220,16 +215,14 @@ async fn contact(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpRespon
 
 #[get("/mentions-legales")]
 async fn legals(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
-    if let Ok(page) = services::pages::get(&pool, "mentions-legales").await {
+    if let Ok(page) = services::pages::get::<Page>(&pool, "id, title, description", "mentions-legales").await {
         if let (Ok(metric_id), Ok(settings)) = futures::join!(
             metrics::add(&pool, &req, services::metrics::BelongsTo::Page(page.id)),
             services::settings::get(&pool)
         ) {
             let mut token: Option<String> = None;
             if let Some(id) = metric_id {
-                if let Ok(metric_token) = services::metrics::tokens::add(&pool, id).await {
-                    token = Some(metric_token.to_string());
-                }
+                token = Some(id.to_string());
             }
 
             #[derive(Template)]

@@ -1,5 +1,36 @@
 import 'router';
 import LazyLoader from '@js/components/lazy_loader';
+import { get } from '@js/utils/http';
+
+const { router } = window;
+
+const read_cookie = (cookie_name) => {
+    return document.cookie.split('; ').find(row => row.startsWith(cookie_name))?.split('=')?.[1]
+}
+
+const send_metrics = () => {
+    if (!navigator.sendBeacon) return;
+    
+    const vid = localStorage.getItem('VID');
+    const sid = read_cookie('sid');
+
+    if (vid !== null) {
+        const { pathname } = location;
+        const belongs_to = pathname.includes('/articles/')
+            ? 'BlogPost'
+            : pathname.includes('/portfolio/')
+                ? 'Project'
+                : 'Page';
+
+        console.log(belongs_to)
+        navigator.sendBeacon('/metrics/log', new URLSearchParams({
+            sid: sid ?? null,
+            token: vid
+        }));
+
+        localStorage.setItem('VID', '');
+    }
+}
 
 document.addEventListener('readystatechange', e => {
     if (e.target.readyState === 'complete') {
@@ -34,19 +65,22 @@ document.addEventListener('readystatechange', e => {
     }
 });
 
-window.addEventListener('unload', () => {
-    if (!navigator.sendBeacon) return;
-    
-    if (document.visibilityState === 'hidden') {
-        const METRIC_TOKEN = localStorage.getItem("METRIC_TOKEN");
-    
-        if (METRIC_TOKEN !==  null) {
-            navigator.sendBeacon('/metrics/log', new URLSearchParams({
-                token: METRIC_TOKEN
-            }));
-        }
+router.on('change', async () => {
+    send_metrics();
+
+    let sid = read_cookie('sid');
+    if(!sid) {
+        const res = await get('/metrics/session');
+        const data = await res.json();
+        sid = data.sid;
+        document.cookie = 'sid=' + sid + '; expires=' + new Date(data.vud).toUTCString() + '; SameSite=Strict; Secure';
     }
-}, false);
+
+    const res = await get(`/metrics/token?path=${location.pathname}&sid=${sid}`);
+    localStorage.setItem('VID', await res.text());
+});
+
+window.addEventListener('unload', send_metrics, false);
 
 // Check webp support
 (() => {

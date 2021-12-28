@@ -12,13 +12,7 @@
     <link rel="stylesheet" href="/css/pages/contact.css" />
     <script src="/js/contact.js" async></script>
 
-    {% match metric_token %}
-        {% when Some with (token) %}
-            <script>
-                localStorage.setItem("METRIC_TOKEN", "{{ token }}");
-            </script>
-        {% when None %}
-    {% endmatch %}
+    {% include "includes/metrics.html" %}
 {% endblock %}
 
 {% block content %}

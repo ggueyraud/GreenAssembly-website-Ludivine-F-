@@ -21,9 +21,16 @@ struct Category {
     uri: String,
 }
 
+#[derive(sqlx::FromRow)]
+struct Page {
+    id: i16,
+    title: String,
+    description: Option<String>,
+}
+
 #[get("")]
 async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
-    if let Ok(page) = services::pages::get(&pool, "blog").await {
+    if let Ok(page) = services::pages::get::<Page>(&pool, "id, title, description", "blog").await {
         let (metric_id, categories, articles) = futures::join!(
             metrics::add(&pool, &req, services::metrics::BelongsTo::Page(page.id)),
             services::blog::categories::get_all::<Category>(&pool, "name, uri", Some(true), None),
@@ -43,9 +50,7 @@ async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse
 
         let mut token: Option<String> = None;
         if let Ok(Some(id)) = metric_id {
-            if let Ok(metric_token) = services::metrics::tokens::add(&pool, id).await {
-                token = Some(metric_token.to_string());
-            }
+            token = Some(id.to_string());
         }
 
         #[derive(Template)]
@@ -113,9 +118,7 @@ async fn show_category(
 
     let mut token: Option<String> = None;
     if let Ok(Some(id)) = metric_id {
-        if let Ok(metric_token) = services::metrics::tokens::add(&pool, id).await {
-            token = Some(metric_token.to_string());
-        }
+        token = Some(id.to_string());
     }
 
     #[derive(Template)]
@@ -256,9 +259,7 @@ async fn show_article(
 
             let mut token: Option<String> = None;
             if let Ok(Some(id)) = metric_id {
-                if let Ok(metric_token) = services::metrics::tokens::add(&pool, id).await {
-                    token = Some(metric_token.to_string());
-                }
+                token = Some(id.to_string());
             }
 
             BlogArticle {

@@ -9,13 +9,7 @@
         {% when None %}
     {% endmatch %}
 
-    {% match metric_token %}
-        {% when Some with (token) %}
-            <script>
-                localStorage.setItem("METRIC_TOKEN", "{{ token }}");
-            </script>
-        {% when None %}
-    {% endmatch %}
+    {% include "includes/metrics.html" %}
 
     <link rel="stylesheet" href="/css/pages/blog.css" />
     <script src="/js/blog.js" async></script>

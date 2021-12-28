@@ -1,6 +1,6 @@
-use sqlx::{Error, PgPool};
+use sqlx::{Error, PgPool, types::Uuid};
 
-pub mod tokens;
+pub mod sessions;
 
 pub enum BelongsTo {
     Page(i16),
@@ -8,21 +8,32 @@ pub enum BelongsTo {
     BlogPost(i16),
 }
 
+pub async fn exists(pool: &PgPool, id: Uuid) -> bool {
+    sqlx::query!(
+        "SELECT 1 AS one FROM metrics WHERE id = $1", id
+    )
+        .fetch_one(pool)
+        .await
+        .is_ok()
+}
+
 pub async fn add(
     pool: &PgPool,
     belongs_to: BelongsTo,
+    session_id: Option<Uuid>,
     ip: &str,
     browser: Option<String>,
     os: Option<String>,
     device_type: Option<String>,
     referer: Option<String>,
-) -> Result<i32, Error> {
+) -> Result<Uuid, Error> {
     use sqlx::Row;
 
     let mut id: Option<i16> = None;
+
     let query = &format!(
-        "INSERT INTO metrics ({}, ip, browser, os, device_type, referer)
-            VALUES ($1, $2, $3, $4, $5, $6)
+        "INSERT INTO metrics ({}, session_id, ip, browser, os, device_type, referer)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
             RETURNING id",
         match belongs_to {
             BelongsTo::Page(page_id) => {
@@ -42,6 +53,7 @@ pub async fn add(
 
     let res = sqlx::query(query)
         .bind(id.unwrap())
+        .bind(session_id)
         .bind(ip)
         .bind(browser)
         .bind(os)
@@ -54,8 +66,15 @@ pub async fn add(
     Ok(id)
 }
 
-pub async fn close(pool: &PgPool, id: i32) -> Result<bool, Error> {
-    let res = sqlx::query!("UPDATE metrics SET end_date = NOW() WHERE id = $1", id)
+pub async fn update_end_date(pool: &PgPool, session_id: Option<Uuid>, id: Uuid) -> Result<bool, Error> {
+    let res = sqlx::query!(
+            "UPDATE metrics
+            SET end_date = NOW(),
+                session_id = $1
+            WHERE id = $2",
+            session_id,
+            id
+        )
         .execute(pool)
         .await?;
 
