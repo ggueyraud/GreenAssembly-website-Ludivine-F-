@@ -3,12 +3,15 @@
 @use 'style-box/abstracts/mixins/breakpoints';
 
 @import 'style-box/base/grid';
+@import 'style-box/base/display';
+@import 'style-box/base/text';
 @import 'style-box/base/margin';
 @import 'style-box/base/space';
 @import 'cropperjs/dist/cropper';
 @import '../../components/drop_zone';
 @import '../../components/modal';
 @import '../../themes/admin';
+@import 'quill/dist/quill.snow';
 
 .ql-editor {
     min-height: 200px

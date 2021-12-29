@@ -6,6 +6,7 @@
 @import 'style-box/base/space';
 @import '../../components/drop_zone';
 @import '../../themes/admin';
+@import 'quill/dist/quill.snow';
 
 #article_modal .drop_zone {
     height: 100px;

@@ -10,7 +10,10 @@
 @import 'style-box/base/text';
 @import 'style-box/base/margin';
 @import 'style-box/components/icon';
-@import 'quill/dist/quill.snow';
+
+*, *::after, *::before {
+    box-sizing: border-box
+}
 
 body {
     background-color: utilities.color('white');
