@@ -59,7 +59,7 @@ content = [
     "templates/pages/admin/blog.html",
     ".build/production/js/admin/blog.js",
     "templates/includes/modal_blog_article.html",
-    "templates/includes/modal_blog_category.html
+    "templates/includes/modal_blog_category.html"
 ]
 
 [[purgecss]]
