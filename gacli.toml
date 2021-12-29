@@ -87,7 +87,7 @@ content = [
     "templates/includes/modal_project.html",
     "templates/includes/asset_edit_modal.html"
 ]
-safelist = ["ql-snow", "cropper-hidden"]
+safelist = ["ql-snow", "cropper-hidden", "cropper-container", "cropper-bg"]
 
 [[purgecss]]
 css = "pages/admin/settings.css"
