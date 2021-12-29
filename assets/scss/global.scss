@@ -1,110 +1,20 @@
-@import url('https://fonts.googleapis.com/css2?family=Urbanist&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Urbanist:wght@400;800&display=swap');
-@import 'custom.scss';
+
+@use 'abstracts/variables';
 @import 'base/base';
-@import 'style-box/abstracts/functions/utilities';
-@import 'style-box/abstracts/mixins/breakpoints';
 @import 'style-box/base/margin';
 @import 'style-box/base/typography';
-@import 'style-box/base/text';
-@import 'style-box/base/grid';
 @import 'style-box/base/container';
-@import 'style-box/base/space';
 @import 'style-box/base/order';
 @import 'style-box/components/icon';
 
-@import 'layout/_footer.scss';
-@import 'layout/_menu.scss';
+@import 'layouts/_footer.scss';
+@import 'layouts/_menu.scss';
 
-@font-face {
-    font-family: "Quakiez";
-    src: url("/fonts/Quakiez.ttf");
+*, *::after, *::before {
+    box-sizing: border-box
 }
 
-html {
-    body {
-        color: var(--text_color);
-        font-family: 'Urbanist', sans-serif;
-        background-color: var(--background_color);
-        font-size: 18px;
-    }
-}
-
-h1 {
-    font-family: "Quakiez";
-    color: var(--title_color);
-    font-size: 4rem;
-    line-height: 1;
-    font-weight: 100;
-    text-transform: inherit;
-    
-    @include sm {
-        font-size: 4.5rem
-    }
-    
-    @include lg {
-        font-size: 6rem;
-
-    }
-}
-
-a {
-    color: inherit;
-
-    &.special {
-        position: relative;
-
-        &::before, &::after {
-            content: '';
-            position: absolute;
-        }
-
-        &::before {
-            bottom: -.5rem;
-            height: 2px;
-            width: calc(100% - 10px);
-            background-color: color(blue)
-        }
-
-        &::after {
-            right: 0; 
-            bottom: calc(-.5rem - 5px);
-            height : 0;
-            width : 0;
-            border-top : 4px solid transparent;
-            border-bottom : 6px solid transparent;
-            border-left : 10px solid color(blue);
-        }
-    }
-}
-
-.know_more {
-    margin-top: space(6);
-
-    .card__body {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        row-gap: space(4);
-        flex-direction: column;
-
-        @include md {
-            justify-content: space-between;
-            flex-direction: row;
-    
-            a.btn {
-                margin-top: 0
-            }
-        }
-    }
-    
-    @include md {
-        margin-top: space(14);
-    }
-
-    a.btn {
-        text-transform: uppercase;
-        margin-top: space(2);
-        white-space: nowrap
-    }
+body {
+    color: var(--text_color);
+    background-color: var(--background_color);   
 }

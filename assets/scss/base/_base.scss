@@ -1,13 +1,42 @@
-body {
-    margin: 0
-}
+@use 'style-box/abstracts/functions/utilities';
+@import url('https://fonts.googleapis.com/css2?family=Urbanist&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Urbanist:wght@400;800&display=swap');
 
-*, *::after, *::before {
-    box-sizing: border-box
+body {
+    margin: 0;
+    font-size: 18px;
+    font-family: 'Urbanist', sans-serif;
 }
 
 a {
     text-decoration: none;
+    color: inherit;
+
+    &.special {
+        position: relative;
+
+        &::before, &::after {
+            content: '';
+            position: absolute;
+        }
+
+        &::before {
+            bottom: -.5rem;
+            height: 2px;
+            width: calc(100% - 10px);
+            background-color: utilities.color(blue)
+        }
+
+        &::after {
+            right: 0; 
+            bottom: calc(-.5rem - 5px);
+            height : 0;
+            width : 0;
+            border-top : 4px solid transparent;
+            border-bottom : 6px solid transparent;
+            border-left : 10px solid utilities.color(blue);
+        }
+    }
 }
 
 img {

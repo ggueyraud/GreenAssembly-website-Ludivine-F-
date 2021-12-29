@@ -1,8 +1,8 @@
-@use '../custom';
-@use 'style-box/base/grid';
-@use '../components/button';
+@use '../abstracts/variables';
 @use 'style-box/abstracts/functions/utilities';
-@import 'style-box/abstracts/mixins/breakpoints';
+@use 'style-box/abstracts/mixins/breakpoints' as bp;
+@import '../themes/default';
+@import '../components/button';
 @import '../components/lightbox.scss';
 
 .page-container {
@@ -35,19 +35,21 @@
         text-align: center;
         margin-bottom: 2rem;
     }
+
+    h2 {
+        color: var(--title_color)
+    }
     h2, .description {
         font-size: 3rem;
         font-family: "Urbanist";
         font-weight: 600;
         line-height: 3rem;
         margin-bottom: 2rem;
-
         text-align: center;
         text-transform: uppercase;
-        color: var(--title_color)
     }
     .description {
-        margin-bottom: 0;
+        margin-bottom: 0
     }
 
     .links {
@@ -81,8 +83,8 @@
             grid-column: span 3;
         }
     }
-    // md, lg, xl
-    @include lg {
+
+    @include bp.lg {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         grid-template-areas: "title intro"

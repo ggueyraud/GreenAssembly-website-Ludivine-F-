@@ -1,5 +1,5 @@
-@import '../custom.scss';
-@import 'style-box/abstracts/functions/utilities';
+@use '../abstracts/variables';
+@import '../themes/default';
 @import 'style-box/base/text';
 @import 'style-box/base/margin';
 

@@ -1,0 +1,7 @@
+@use 'style-box/abstracts/variables' with (
+    $colors: (
+        'green': #20d489,
+        'error': #f1416c,
+        'blue': #00b2ff
+    )
+);

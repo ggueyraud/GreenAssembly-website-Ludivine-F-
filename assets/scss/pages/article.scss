@@ -1,12 +1,13 @@
-@import '../custom.scss';
-@import 'style-box/abstracts/mixins/breakpoints';
+@use '../abstracts/variables';
+@use 'style-box/abstracts/mixins/breakpoints' as bp;
+@import '../themes/default';
 @import 'style-box/abstracts/functions/utilities';
 @import 'style-box/base/display';
 @import 'style-box/base/grid';
 @import 'style-box/base/space';
 @import '../components/card';
 @import '../components/button';
-@import '../layout/blog_nav';
+@import '../layouts/blog_nav';
 @import '../components/lightbox.scss';
 
 main {
@@ -25,7 +26,7 @@ main {
         margin-bottom: space(4);
         text-align: center;
     
-        @include md {
+        @include bp.md {
             margin-bottom: space(12);
             text-align: left;
     
@@ -74,7 +75,7 @@ main {
         grid-area: article;
     }
     
-    @include md {
+    @include bp.md {
         img {
             display: block;
             width: 70%;
@@ -89,7 +90,7 @@ main {
         }
     }
 
-    @include lg {
+    @include bp.lg {
         nav {
             display: block;
         }
@@ -100,7 +101,7 @@ main {
                                 //grid-template-columns: 1fr auto;
                             }
                             
-    @include xl {
+    @include bp.xl {
         grid-template-areas:    "header header header header"
                                 "article article article nav"
                                 "know_more know_more know_more know_more";

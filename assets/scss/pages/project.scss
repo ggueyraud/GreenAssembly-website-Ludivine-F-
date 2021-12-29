@@ -1,6 +1,7 @@
-@import '../custom.scss';
-@import 'style-box/abstracts/mixins/breakpoints';
-@import 'style-box/abstracts/functions/utilities';
+@use '../abstracts/variables';
+@use 'style-box/abstracts/mixins/breakpoints' as bp;
+@use 'style-box/abstracts/functions/utilities';
+@import '../themes/default';
 @import 'style-box/base/grid';
 @import 'style-box/base/text';
 @import 'style-box/base/typography';
@@ -13,11 +14,11 @@ p {
 }
 
 .carousel__pagination__item {
-    border-color: color(blue);
+    border-color: utilities.color(blue);
 
     &--current {
         background: transparent;
-        background-color: color(blue);
+        background-color: utilities.color(blue);
     }
 }
 
@@ -25,9 +26,8 @@ section {
     display: grid;
     grid-template-rows: repeat(1, auto);
     grid-template-columns: 1fr;
-    gap: space(8);
+    gap: utilities.space(8);
 
-    // https://www.freecodecamp.org/news/how-to-create-an-image-gallery-with-css-grid-e0f0fd666a5c/
     img {
         width: 100%;
         height: 100%;
@@ -36,21 +36,21 @@ section {
     }
 
     h1 {
-        margin-bottom: space(4);
-        color: color(blue);
+        margin-bottom: utilities.space(4);
+        color: utilities.color(blue);
         text-transform: uppercase
     }
     
-    @include md {
+    @include bp.md {
         grid-template-rows: repeat(4, auto);
         grid-template-columns: 1fr 1fr;
 
         p {
-            margin-top: space(6)
+            margin-top: utilities.space(6)
         }
 
         h1 {
-            margin-bottom: space(2);
+            margin-bottom: utilities.space(2);
         }
     }
 }

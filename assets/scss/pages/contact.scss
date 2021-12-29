@@ -1,7 +1,8 @@
+@use '../abstracts/variables';
 @use 'style-box/abstracts/mixins/grid';
+@use 'style-box/abstracts/mixins/breakpoints' as bp;
+@import '../themes/default';
 @import 'formvalidation/dist/main';
-@import '../custom.scss';
-@import 'style-box/abstracts/mixins/breakpoints';
 @import 'style-box/base/display';
 @import 'style-box/base/margin';
 @import '../components/input';
@@ -16,7 +17,7 @@ section {
         text-align: center
     }
 
-    @include md {
+    @include bp.md {
         h1, h2 {
             text-align: initial;
         }

@@ -1,7 +1,8 @@
-@import '../custom';
-@import 'style-box/abstracts/functions/utilities';
-@import 'style-box/abstracts/mixins/text';
-@import 'style-box/abstracts/mixins/breakpoints';
+@use '../abstracts/variables';
+@use 'style-box/abstracts/functions/utilities';
+@use 'style-box/abstracts/mixins/breakpoints' as bp;
+@use 'style-box/abstracts/mixins/text';
+@import '../themes/default';
 @import 'style-box/base/grid';
 @import 'style-box/base/display';
 @import '../components/card';
@@ -10,7 +11,7 @@
 h1, h2 {
     text-align: center;
 
-    @include md {
+    @include bp.md {
         text-align: left;
     }
 }
@@ -18,6 +19,6 @@ h1, h2 {
 h2 {
     text-transform: uppercase;
     color: var(--title_color);
-    margin-bottom: space(5);
-    @include text(3xl)
+    margin-bottom: utilities.space(5);
+    @include text.text(3xl)
 }

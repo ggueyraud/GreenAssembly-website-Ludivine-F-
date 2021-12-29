@@ -1,0 +1,8 @@
+@forward 'style-box/abstracts/variables' with (
+    $colors: (
+        'black': #040404,
+        'white': #F7F7F7,
+        blue: #1C04FC,
+        gray: #7d7d7d
+    )
+);
