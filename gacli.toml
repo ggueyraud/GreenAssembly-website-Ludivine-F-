@@ -55,7 +55,12 @@ content = ["templates/back_office.html"]
 
 [[purgecss]]
 css = "pages/admin/blog.css"
-content = ["templates/pages/admin/blog.html", ".build/production/js/admin/blog.js"]
+content = [
+    "templates/pages/admin/blog.html",
+    ".build/production/js/admin/blog.js",
+    "templates/includes/modal_blog_article.html",
+    "templates/includes/modal_blog_category.html
+]
 
 [[purgecss]]
 css = "pages/admin/home.css"
@@ -78,7 +83,7 @@ css = "pages/admin/portfolio.css"
 content = [
     "templates/pages/admin/portfolio.html",
     ".build/production/js/admin/portfolio.js",
-    "tempates/includes/modal_project.html"
+    "templates/includes/modal_project.html"
 ]
 
 [[purgecss]]

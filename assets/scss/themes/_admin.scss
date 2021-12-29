@@ -47,12 +47,12 @@
     align-items: center;
 
     &__green {
-        color: #fff;
+        color: utilities.color('white');
         background-color: utilities.color('green');
     }
 
     &__error {
-        color: #fff;
+        color: utilities.color('white');
         background-color: utilities.color('error');
     }
 
@@ -61,7 +61,7 @@
     }
 
     &__blue {
-        color: #fff;
+        color: utilities.color('white');
         background-color: utilities.color('blue');
     }
 

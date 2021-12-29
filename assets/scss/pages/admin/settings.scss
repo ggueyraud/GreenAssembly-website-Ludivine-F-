@@ -1,6 +1,7 @@
+@use '../../abstracts/variables_admin';
 @import 'style-box/base/grid';
-@import '../../components/card';
 @import '../../components/drop_zone';
+@import '../../themes/admin';
 
 [name="main"] {
     grid-template-columns: 1fr;
