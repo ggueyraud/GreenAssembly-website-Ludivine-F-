@@ -9,9 +9,17 @@
 
 @import 'layouts/_footer.scss';
 @import 'layouts/_menu.scss';
+@import url('https://fonts.googleapis.com/css2?family=Urbanist&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Urbanist:wght@400;800&display=swap');
 
 *, *::after, *::before {
     box-sizing: border-box
+}
+
+body {
+    margin: 0;
+    font-size: 18px;
+    font-family: 'Urbanist', sans-serif;
 }
 
 body {

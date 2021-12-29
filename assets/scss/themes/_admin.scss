@@ -4,15 +4,6 @@
 // TODO : import style-box base
 @import '../base/base';
 
-body {
-    background-color: #fff;
-    color: #2C2C2C;
-    font-size: 15px;
-    letter-spacing: -.01em;
-    margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-}
-
 .card {
     max-height: 100%;
     overflow-y: hidden;

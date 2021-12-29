@@ -55,7 +55,7 @@ content = ["templates/back_office.html"]
 
 [[purgecss]]
 css = "pages/admin/blog.css"
-content = ["templates/pages/admin/blog.html"]
+content = ["templates/pages/admin/blog.html", ".build/production/js/admin/blog.js"]
 
 [[purgecss]]
 css = "pages/admin/home.css"
@@ -75,7 +75,11 @@ content = ["templates/pages/admin/my_little_plus.html"]
 
 [[purgecss]]
 css = "pages/admin/portfolio.css"
-content = ["templates/pages/admin/portfolio.html"]
+content = [
+    "templates/pages/admin/portfolio.html",
+    ".build/production/js/admin/portfolio.js",
+    "tempates/includes/modal_project.html"
+]
 
 [[purgecss]]
 css = "pages/admin/settings.css"

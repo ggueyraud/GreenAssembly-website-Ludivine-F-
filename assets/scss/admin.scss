@@ -12,6 +12,15 @@
 @import 'style-box/components/icon';
 @import 'quill/dist/quill.snow';
 
+body {
+    background-color: utilities.color('white');
+    color: utilities.color('black');
+    font-size: 15px;
+    letter-spacing: -.01em;
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+}
+
 main {
     display: grid;
     grid-template-columns: 1fr;

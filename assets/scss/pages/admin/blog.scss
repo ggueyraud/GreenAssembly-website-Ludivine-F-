@@ -1,6 +1,7 @@
 @use '../../abstracts/variables_admin';
 @use 'style-box/abstracts/functions/utilities';
 
+@import '../../components/modal';
 @import 'style-box/base/grid';
 @import 'style-box/base/space';
 @import '../../components/drop_zone';
