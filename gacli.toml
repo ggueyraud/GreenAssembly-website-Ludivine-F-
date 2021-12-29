@@ -86,7 +86,7 @@ content = [
     ".build/production/js/admin/portfolio.js",
     "templates/includes/modal_project.html"
 ]
-safelist = ["ql-snow"]
+safelist = ["ql-snow", "cropper-hidden"]
 
 [[purgecss]]
 css = "pages/admin/settings.css"
