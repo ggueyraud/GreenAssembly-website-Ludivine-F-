@@ -84,7 +84,8 @@ css = "pages/admin/portfolio.css"
 content = [
     "templates/pages/admin/portfolio.html",
     ".build/production/js/admin/portfolio.js",
-    "templates/includes/modal_project.html"
+    "templates/includes/modal_project.html",
+    "templates/includes/asset_edit_modal.html"
 ]
 safelist = ["ql-snow", "cropper-hidden"]
 

@@ -2,6 +2,7 @@
 @use 'style-box/abstracts/functions/utilities';
 @use 'style-box/abstracts/mixins/breakpoints';
 
+@import 'style-box/components/icon';
 @import 'style-box/base/grid';
 @import 'style-box/base/display';
 @import 'style-box/base/text';
@@ -12,6 +13,7 @@
 @import '../../components/modal';
 @import '../../themes/admin';
 @import 'quill/dist/quill.snow';
+@import 'formvalidation/dist/main';
 
 .ql-editor {
     min-height: 200px
