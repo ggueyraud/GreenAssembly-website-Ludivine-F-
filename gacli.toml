@@ -65,7 +65,7 @@ safelist = ["ql-snow"]
 
 [[purgecss]]
 css = "pages/admin/home.css"
-content = ["templates/pages/admin/home.html"]
+content = ["templates/pages/admin/home.html", ".build/production/js/admin/home.js"]
 
 [[purgecss]]
 css = "pages/admin/login.css"

@@ -1,3 +1,7 @@
+@use '../../abstracts/variables_admin';
+@import '../../themes/admin';
+@import 'style-box/base/display';
+
 .home_form {
     width: 300px;
 
