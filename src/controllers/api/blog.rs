@@ -185,7 +185,7 @@ async fn delete_category(
         return HttpResponse::Unauthorized().finish();
     }
 
-    if services::blog::categories::exists(&pool, id).await {
+    if !services::blog::categories::exists(&pool, id).await {
         return HttpResponse::NotFound().finish();
     }
 
