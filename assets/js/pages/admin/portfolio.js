@@ -165,7 +165,6 @@ router.on('mount', () => {
             <use xlink:href="/dashboard_icons.svg#delete"></use>
         </svg>`;
         delete_btn.classList.add('text_error');
-
         
         category.appendChild(category_name);
         category.appendChild(input);
@@ -294,7 +293,6 @@ router.on('mount', () => {
                         checkbox.type = 'checkbox';
                         checkbox.value = id;
                         checkbox.name = 'categories';
-                        // checkbox_container.prep
                         checkbox_container.prepend(checkbox);
                         document
                             .querySelector('[for="categories"]')
@@ -306,6 +304,7 @@ router.on('mount', () => {
     
                         // Add category in categories column
                         add_category(id, value);
+                        categories.push({ id, name: value });
 
                         new_category_input.value = '';
                     })
