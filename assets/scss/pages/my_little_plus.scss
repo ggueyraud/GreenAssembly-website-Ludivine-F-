@@ -4,6 +4,9 @@
 @import '../themes/default';
 @import '../components/button';
 @import '../components/lightbox.scss';
+@import 'style-box/base/margin';
+@import 'style-box/base/grid';
+@import 'style-box/base/display';
 
 .page-container {
     display: flex;
@@ -28,18 +31,21 @@
         grid-area: intro;
     }
 
-    h1 {
-        font-size: 3.5rem;
-        font-weight: 300;
+    header {
+        h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
 
-        text-align: center;
-        margin-bottom: 2rem;
+        p {
+            margin: 0 !important;
+        }
     }
 
     h2 {
         color: var(--title_color)
     }
-    h2, .description {
+    h2, header p {
         font-size: 3rem;
         font-family: "Urbanist";
         font-weight: 600;
@@ -47,9 +53,6 @@
         margin-bottom: 2rem;
         text-align: center;
         text-transform: uppercase;
-    }
-    .description {
-        margin-bottom: 0
     }
 
     .links {
@@ -63,25 +66,12 @@
         }
     }
     
-    .images-left {
-        grid-area: images_left;
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        grid-row: repeat(2, 1fr);
-        gap: 1rem;
-
+    #paints {
+        grid-area: images_left
     }
 
-    .images-right {
-        grid-area: images_right;
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        grid-row: repeat(2, 1fr);
-        gap: 1rem;
-
-        .col-3 {
-            grid-column: span 3;
-        }
+    #photos {
+        grid-area: images_right
     }
 
     @include bp.lg {

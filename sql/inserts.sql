@@ -32,4 +32,4 @@ INSERT INTO blog_articles (category_id, cover_id, title, uri, is_published, is_s
 (2, 1, 'Les aventures de lulu partie 3', 'les-aventures-de-lulu-partie-4', true, false);
 
 INSERT INTO settings (background_color, title_color, text_color) VALUES
-('#ffffff', '#000000', '#000000');
+('#ffffff', '#1C04FC', '#040404');

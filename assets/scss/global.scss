@@ -1,5 +1,7 @@
 
 @use 'abstracts/variables';
+@use 'style-box/abstracts/mixins/breakpoints' as bp;
+@use 'style-box/abstracts/functions/utilities';
 @import 'base/base';
 @import 'style-box/base/margin';
 @import 'style-box/base/typography';
@@ -20,7 +22,13 @@ body {
     margin: 0;
     font-size: 18px;
     font-family: 'Urbanist', sans-serif;
+    padding: 0 utilities.space(2);
+
+    @include bp.md {
+        padding: 0
+    }
 }
+
 
 body {
     color: var(--text_color);

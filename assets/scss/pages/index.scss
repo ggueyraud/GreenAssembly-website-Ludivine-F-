@@ -61,6 +61,7 @@
         grid-column: 1;
         grid-row: 2;
         text-align: right;
+        z-index: 1;
 
         .arrow {
             display: none;
@@ -80,7 +81,7 @@
             margin-top: 3rem;
             margin-right: 2rem;
             box-shadow: 0 0 15px utilities.color(blue);
-            background-color: var(--background_title);
+            background-color: var(--background_color);
             border-radius: 50px;
 
             .icon-wrapper {

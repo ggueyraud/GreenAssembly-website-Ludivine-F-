@@ -41,7 +41,11 @@ safelist = ["lightbox", "lightbox--active"]
 
 [[purgecss]]
 css = "pages/portfolio.css"
-content = ["templates/pages/portfolio.html", "templates/pages/portfolio_project.html"]
+content = [
+    "templates/pages/portfolio.html",
+    "templates/pages/portfolio_project.html",
+    ".build/production/js/portfolio.js"
+]
 safelist = ["lightbox", "lightbox--active"]
 
 [[purgecss]]
@@ -70,6 +74,7 @@ content = ["templates/pages/admin/home.html", ".build/production/js/admin/home.j
 [[purgecss]]
 css = "pages/admin/login.css"
 content = ["templates/pages/admin/login.html"]
+safelist = ["name", "main"]
 
 [[purgecss]]
 css = "pages/admin/motion_design.css"
