@@ -63,7 +63,7 @@ pub async fn update_home_informations(
             .handle(&image, "index", Some((500, 500)), Some((1000, 1000)), true)
             .is_err()
         {
-            return HttpResponse::BadRequest().finish();
+            return HttpResponse::InternalServerError().finish();
         }
 
         uploader.clear();
@@ -184,15 +184,11 @@ pub async fn update_settings(
                 .truncate(true)
                 .open(if cfg!(debug_assertions) { "./public/logo.svg" } else { "logo.svg" }) {
                     Ok(mut file) => {
-                        if let Err(e) = file.write_all(&logo.data()) {
-                            println!("{:?}", e);
+                        if let Err(_) = file.write_all(&logo.data()) {
                             return HttpResponse::InternalServerError().finish()
                         }
                     },
-                    Err(e) => {
-                        eprintln!("{:?}", e);
-                        return HttpResponse::InternalServerError().finish()
-                    }
+                    Err(_) => return HttpResponse::InternalServerError().finish()
                 }
         },
         _ => ()
