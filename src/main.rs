@@ -106,14 +106,14 @@ async fn main() -> std::io::Result<()> {
             &std::env::var("CERTIFICATE_CHAIN_FILE")
                 .expect("CERTIFICATE_CHAIN_FILE not found in variables environment"),
         )
-        .unwrap(),
+        .expect("Can't open certicate chain file"),
     );
     let key_file = &mut BufReader::new(
         File::open(
             &std::env::var("PRIVATE_KEY_FILE")
                 .expect("PRIVATE_KEY_FILE not found in variables environment"),
         )
-        .unwrap(),
+        .expect("Can't open private key file"),
     );
     let cert_chain = certs(cert_file).unwrap();
     let mut keys = pkcs8_private_keys(key_file).unwrap();

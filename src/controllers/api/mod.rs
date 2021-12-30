@@ -1,4 +1,7 @@
-use crate::{services, utils::{image::Uploader, patch::Patch}};
+use crate::{
+    services,
+    utils::{image::Uploader, patch::Patch},
+};
 use actix_extract_multipart::{File, Multipart};
 use actix_identity::Identity;
 use actix_web::{patch, post, put, web, HttpResponse};
@@ -161,7 +164,7 @@ pub struct UpdateParametersForm {
     #[serde(default)]
     title_color: Patch<String>,
     #[serde(default)]
-    text_color: Option<String>
+    text_color: Option<String>,
 }
 
 #[patch("")]
@@ -182,16 +185,20 @@ pub async fn update_settings(
                 .write(true)
                 .create(true)
                 .truncate(true)
-                .open(if cfg!(debug_assertions) { "./public/logo.svg" } else { "logo.svg" }) {
-                    Ok(mut file) => {
-                        if let Err(_) = file.write_all(&logo.data()) {
-                            return HttpResponse::InternalServerError().finish()
-                        }
-                    },
-                    Err(_) => return HttpResponse::InternalServerError().finish()
+                .open(if cfg!(debug_assertions) {
+                    "./public/logo.svg"
+                } else {
+                    "logo.svg"
+                }) {
+                Ok(mut file) => {
+                    if let Err(_) = file.write_all(&logo.data()) {
+                        return HttpResponse::InternalServerError().finish();
+                    }
                 }
-        },
-        _ => ()
+                Err(_) => return HttpResponse::InternalServerError().finish(),
+            }
+        }
+        _ => (),
     }
 
     match &form.favicon {
@@ -200,20 +207,29 @@ pub async fn update_settings(
                 .write(true)
                 .create(true)
                 .truncate(true)
-                .open(if cfg!(debug_assertions) { "./public/favicon.svg" } else { "favicon.svg" }) {
-                    Ok(mut file) => {
-                        if let Err(e) = file.write_all(&favicon.data()) {
-                            println!("{:?}", e);
-                            return HttpResponse::InternalServerError().finish()
-                        }
-                    },
-                    _ => return HttpResponse::InternalServerError().finish()
+                .open(if cfg!(debug_assertions) {
+                    "./public/favicon.svg"
+                } else {
+                    "favicon.svg"
+                }) {
+                Ok(mut file) => {
+                    if let Err(e) = file.write_all(&favicon.data()) {
+                        println!("{:?}", e);
+                        return HttpResponse::InternalServerError().finish();
+                    }
                 }
-        },
-        _ => ()
+                _ => return HttpResponse::InternalServerError().finish(),
+            }
+        }
+        _ => (),
     }
 
-    match services::settings::partial_update(pool.as_ref(), crate::utils::patch::extract_fields(&*form)).await {
+    match services::settings::partial_update(
+        pool.as_ref(),
+        crate::utils::patch::extract_fields(&*form),
+    )
+    .await
+    {
         Ok(_) => HttpResponse::Ok().finish(),
         Err(e) => {
             eprintln!("{}", e);

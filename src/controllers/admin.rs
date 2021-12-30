@@ -240,7 +240,7 @@ pub async fn settings(session: Identity, pool: web::Data<PgPool>) -> Result<Http
                 text_color: settings.text_color
             }
             .into_response();
-        },
+        }
         Err(e) => {
             eprintln!("{:?}", e);
             Ok(HttpResponse::InternalServerError().finish())

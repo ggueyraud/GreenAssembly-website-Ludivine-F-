@@ -376,7 +376,10 @@ async fn insert_article(
                     Ok(image) => {
                         let name = format!("{}_{}_{}", id, i, chrono::Utc::now().timestamp());
 
-                        if uploader.handle(&image, &name, Some((500, 500)), Some((700, 700)), true).is_err() {
+                        if uploader
+                            .handle(&image, &name, Some((500, 500)), Some((700, 700)), true)
+                            .is_err()
+                        {
                             return HttpResponse::InternalServerError().finish();
                         }
 
@@ -590,7 +593,10 @@ async fn update_article(
                 Ok(image) => {
                     let name = format!("{}_{}_{}", id, i, chrono::Utc::now().timestamp());
 
-                    if uploader.handle(&image, &name, Some((500, 500)), Some((700, 700)), true).is_err() {
+                    if uploader
+                        .handle(&image, &name, Some((500, 500)), Some((700, 700)), true)
+                        .is_err()
+                    {
                         return HttpResponse::InternalServerError().finish();
                     }
 

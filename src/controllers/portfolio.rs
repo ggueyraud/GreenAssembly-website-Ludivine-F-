@@ -14,7 +14,9 @@ struct Page {
 
 #[get("")]
 async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
-    if let Ok(page) = services::pages::get::<Page>(&pool, "id, title, description", "/portfolio").await {
+    if let Ok(page) =
+        services::pages::get::<Page>(&pool, "id, title, description", "/portfolio").await
+    {
         use slugmin::slugify;
 
         if let (Ok(metric_id), Ok(settings)) = futures::join!(
@@ -25,7 +27,7 @@ async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse
             if let Some(id) = metric_id {
                 token = Some(id.to_string());
             }
-            
+
             #[derive(Debug)]
             struct Illustration {
                 path: String,
@@ -50,7 +52,7 @@ async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse
                 description: Option<String>,
                 year: i32,
                 metric_token: Option<String>,
-                settings: services::settings::Settings
+                settings: services::settings::Settings,
             }
             let (_, projects, categories) = futures::join!(
                 metrics::add(&pool, &req, services::metrics::BelongsTo::Page(page.id)),
@@ -58,7 +60,7 @@ async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse
                 services::projects::categories::get_all(&pool, None)
             );
             let mut formatted_projects = vec![];
-    
+
             for project in &projects {
                 let project_categories = sqlx::query!(
                     "SELECT category_id FROM projects_categories WHERE project_id = $1",
@@ -68,7 +70,7 @@ async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse
                 .await
                 .unwrap();
                 let mut c = vec![];
-    
+
                 for project_category in project_categories {
                     if let Some(category) = categories
                         .iter()
@@ -77,7 +79,7 @@ async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse
                         c.push(category.clone());
                     }
                 }
-    
+
                 let illustration = match sqlx::query_as!(
                     Illustration,
                     r#"SELECT
@@ -93,7 +95,7 @@ async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse
                     Ok(illustration) => illustration,
                     Err(_) => return Ok(HttpResponse::InternalServerError().finish()),
                 };
-    
+
                 formatted_projects.push(ProjectTile {
                     name: project.name.clone(),
                     uri: slugify(&format!("{}-{}", project.name, project.id)),
@@ -114,7 +116,7 @@ async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse
                     categories: c,
                 });
             }
-    
+
             return Portfolio {
                 categories,
                 projects: formatted_projects,
@@ -122,7 +124,7 @@ async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse
                 description: page.description,
                 year: chrono::Utc::now().year(),
                 metric_token: token,
-                settings
+                settings,
             }
             .into_response();
         }
@@ -138,7 +140,7 @@ async fn view_project(
     web::Path((_, id)): web::Path<(String, i16)>,
 ) -> Result<HttpResponse, Error> {
     if !services::projects::exists(&pool, id).await {
-        return Ok(HttpResponse::NotFound().finish())
+        return Ok(HttpResponse::NotFound().finish());
     }
 
     if let (Ok(metric_id), Ok(project), assets, Ok(settings)) = futures::join!(
@@ -165,9 +167,9 @@ async fn view_project(
             assets: Option<Vec<services::projects::Asset>>,
             year: i32,
             metric_token: Option<String>,
-            settings: services::settings::Settings
+            settings: services::settings::Settings,
         }
-    
+
         return PortfolioProject {
             title: project.name,
             description: project.description,
@@ -183,7 +185,7 @@ async fn view_project(
             },
             year: chrono::Utc::now().year(),
             metric_token: token,
-            settings
+            settings,
         }
         .into_response();
     }

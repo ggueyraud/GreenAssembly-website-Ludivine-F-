@@ -11,7 +11,11 @@ pub struct Page {
 
 pub async fn get<
     T: std::marker::Unpin + std::marker::Send + for<'c> sqlx::FromRow<'c, sqlx::postgres::PgRow>,
->(pool: &PgPool, fields: &str, identifier: &str) -> Result<T, Error> {
+>(
+    pool: &PgPool,
+    fields: &str,
+    identifier: &str,
+) -> Result<T, Error> {
     let res = sqlx::query_as::<_, T>(&format!(
         "SELECT
             {}

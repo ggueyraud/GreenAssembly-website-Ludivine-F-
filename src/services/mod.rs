@@ -4,5 +4,5 @@ pub mod files;
 pub mod metrics;
 pub mod pages;
 pub mod projects;
-pub mod user;
 pub mod settings;
+pub mod user;

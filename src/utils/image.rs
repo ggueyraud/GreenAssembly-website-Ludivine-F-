@@ -60,7 +60,7 @@ impl Uploader {
         name: &str,
         max_mobile: Option<(u32, u32)>,
         max_desktop: Option<(u32, u32)>,
-        with_webp: bool
+        with_webp: bool,
     ) -> Result<(), ImageError> {
         // let max_mobile = max_mobile.unwrap_or((500, 500));
         // let max_desktop = max_desktop.unwrap_or((700, 700));
@@ -85,7 +85,7 @@ impl Uploader {
                 },
             ) {
                 remove_files(&paths);
-    
+
                 return Err(e);
             }
             paths.push(new_name);
@@ -95,7 +95,7 @@ impl Uploader {
                 new_name = format!("./uploads/mobile/{}.webp", name);
                 if let Err(e) = webp_thumbnail(&image, max_mobile, &new_name) {
                     remove_files(&paths);
-    
+
                     return Err(e);
                 }
                 paths.push(new_name);
@@ -119,7 +119,7 @@ impl Uploader {
                 },
             ) {
                 remove_files(&paths);
-    
+
                 return Err(e);
             }
             paths.push(new_name);
@@ -129,7 +129,7 @@ impl Uploader {
                 new_name = format!("./uploads/{}.webp", name);
                 if let Err(e) = webp_thumbnail(&image, max_desktop, &new_name) {
                     remove_files(&paths);
-    
+
                     return Err(e);
                 }
                 paths.push(new_name);

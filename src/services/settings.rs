@@ -1,26 +1,23 @@
+use serde_json::Value;
 use sqlx::{Error, PgPool};
 use std::collections::HashMap;
-use serde_json::Value;
 
 #[derive(sqlx::FromRow, Debug)]
 pub struct Settings {
     pub background_color: String,
     pub title_color: String,
-    pub text_color: String
+    pub text_color: String,
 }
 
 pub async fn get(pool: &PgPool) -> Result<Settings, Error> {
-    sqlx::query_as!(
-        Settings,
-        "SELECT * FROM settings"
-    )
+    sqlx::query_as!(Settings, "SELECT * FROM settings")
         .fetch_one(pool)
         .await
 }
 
 pub async fn partial_update(
     pool: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
-    fields: HashMap<String, Value>
+    fields: HashMap<String, Value>,
 ) -> Result<bool, Error> {
     if !fields.is_empty() {
         let mut query = String::from("UPDATE settings SET ");
@@ -31,7 +28,7 @@ pub async fn partial_update(
             if index > 1 {
                 query += ",";
             }
-    
+
             query += &format!(r#""{}" = ${}"#, key, index);
 
             if i == fields.len() {

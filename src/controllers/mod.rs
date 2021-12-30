@@ -31,7 +31,7 @@ async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse
                 if let Some(id) = metric_id {
                     token = Some(id.to_string());
                 }
-        
+
                 #[derive(Template)]
                 #[template(path = "pages/index.html")]
                 struct Index {
@@ -39,19 +39,19 @@ async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse
                     description: Option<String>,
                     year: i32,
                     metric_token: Option<String>,
-                    settings: services::settings::Settings
+                    settings: services::settings::Settings,
                 }
-        
+
                 return Index {
                     title: page.title,
                     description: page.description,
                     year: chrono::Utc::now().year(),
                     metric_token: token,
-                    settings
+                    settings,
                 }
                 .into_response();
-            },
-            _ => ()
+            }
+            _ => (),
         }
     }
 
@@ -60,7 +60,9 @@ async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse
 
 #[get("/mes-petits-plus")]
 async fn my_little_plus(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
-    if let Ok(page) = services::pages::get::<Page>(&pool, "id, title, description", "/mes-petits-plus").await {
+    if let Ok(page) =
+        services::pages::get::<Page>(&pool, "id, title, description", "/mes-petits-plus").await
+    {
         #[derive(sqlx::FromRow)]
         struct Chunk {
             content: serde_json::Value,
@@ -101,7 +103,7 @@ async fn my_little_plus(req: HttpRequest, pool: web::Data<PgPool>) -> Result<Htt
                     metric_token: Option<String>,
                     creations_link: Option<String>,
                     shootings_link: Option<String>,
-                    settings: services::settings::Settings
+                    settings: services::settings::Settings,
                 }
 
                 return MyLittlePlus {
@@ -111,7 +113,7 @@ async fn my_little_plus(req: HttpRequest, pool: web::Data<PgPool>) -> Result<Htt
                     metric_token: token,
                     creations_link: creations,
                     shootings_link: shootings,
-                    settings
+                    settings,
                 }
                 .into_response();
             }
@@ -124,7 +126,9 @@ async fn my_little_plus(req: HttpRequest, pool: web::Data<PgPool>) -> Result<Htt
 
 #[get("/motion-design")]
 async fn motion_design(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
-    if let Ok(page) = services::pages::get::<Page>(&pool, "id, title, description", "/motion-design").await {
+    if let Ok(page) =
+        services::pages::get::<Page>(&pool, "id, title, description", "/motion-design").await
+    {
         #[derive(sqlx::FromRow)]
         struct Chunk {
             content: serde_json::Value,
@@ -155,22 +159,21 @@ async fn motion_design(req: HttpRequest, pool: web::Data<PgPool>) -> Result<Http
                         year: i32,
                         metric_token: Option<String>,
                         link: String,
-                        settings: services::settings::Settings
+                        settings: services::settings::Settings,
                     }
-            
+
                     return MotionDesign {
                         title: page.title,
                         description: page.description,
                         year: chrono::Utc::now().year(),
                         metric_token: token,
                         link: data.link,
-                        settings
+                        settings,
                     }
                     .into_response();
                 }
-
-            },
-            _ => ()
+            }
+            _ => (),
         }
     }
 
@@ -179,7 +182,9 @@ async fn motion_design(req: HttpRequest, pool: web::Data<PgPool>) -> Result<Http
 
 #[get("/contact")]
 async fn contact(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
-    if let Ok(page) = services::pages::get::<Page>(&pool, "id, title, description", "/contact").await {
+    if let Ok(page) =
+        services::pages::get::<Page>(&pool, "id, title, description", "/contact").await
+    {
         if let (Ok(metric_id), Ok(settings)) = futures::join!(
             metrics::add(&pool, &req, services::metrics::BelongsTo::Page(page.id)),
             services::settings::get(&pool)
@@ -196,15 +201,15 @@ async fn contact(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpRespon
                 description: Option<String>,
                 year: i32,
                 metric_token: Option<String>,
-                settings: services::settings::Settings
+                settings: services::settings::Settings,
             }
-    
+
             return Contact {
                 title: page.title,
                 description: page.description,
                 year: chrono::Utc::now().year(),
                 metric_token: token,
-                settings
+                settings,
             }
             .into_response();
         }
@@ -215,7 +220,9 @@ async fn contact(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpRespon
 
 #[get("/mentions-legales")]
 async fn legals(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
-    if let Ok(page) = services::pages::get::<Page>(&pool, "id, title, description", "/mentions-legales").await {
+    if let Ok(page) =
+        services::pages::get::<Page>(&pool, "id, title, description", "/mentions-legales").await
+    {
         if let (Ok(metric_id), Ok(settings)) = futures::join!(
             metrics::add(&pool, &req, services::metrics::BelongsTo::Page(page.id)),
             services::settings::get(&pool)
@@ -232,15 +239,15 @@ async fn legals(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpRespons
                 description: Option<String>,
                 year: i32,
                 metric_token: Option<String>,
-                settings: services::settings::Settings
+                settings: services::settings::Settings,
             }
-    
+
             return Legals {
                 title: page.title,
                 description: page.description,
                 year: chrono::Utc::now().year(),
                 metric_token: token,
-                settings
+                settings,
             }
             .into_response();
         }
