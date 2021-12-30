@@ -4,7 +4,7 @@
 @import '../../themes/admin';
 
 [name="main"] {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
 
     .card {
         height: 100%
@@ -40,8 +40,4 @@ input[type=color] {
     input[type=file] {
         z-index: 1
     }
-}
-
-[name="main"] {
-    grid-template-columns: 1fr !important;
 }

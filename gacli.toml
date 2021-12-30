@@ -92,3 +92,4 @@ safelist = ["ql-snow", "cropper-hidden", "cropper-container", "cropper-bg"]
 [[purgecss]]
 css = "pages/admin/settings.css"
 content = ["templates/pages/admin/settings.html"]
+safelist = ["name", "main"]
