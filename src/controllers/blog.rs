@@ -31,7 +31,7 @@ struct Page {
 #[get("")]
 async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
     if let Ok(page) = services::pages::get::<Page>(&pool, "id, title, description", "/blog").await {
-        let (metric_id, categories, articles) = futures::join!(
+        let (metric_id, categories, articles, settings) = futures::join!(
             metrics::add(&pool, &req, services::metrics::BelongsTo::Page(page.id)),
             services::blog::categories::get_all::<Category>(&pool, "name, uri", Some(true), None),
             services::blog::articles::get_all::<Article>(
@@ -45,7 +45,8 @@ async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse
                 Some(true),
                 None,
                 None
-            )
+            ),
+            services::settings::get(&pool)
         );
 
         let mut token: Option<String> = None;
@@ -62,6 +63,7 @@ async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse
             metric_token: Option<String>,
             categories: Vec<Category>,
             articles: Vec<Article>,
+            settings: services::settings::Settings
         }
 
         return Blog {
@@ -71,6 +73,7 @@ async fn index(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse
             metric_token: token,
             categories,
             articles,
+            settings: settings.unwrap()
         }
         .into_response();
     }
@@ -95,7 +98,7 @@ async fn show_category(
         is_seo: Option<bool>,
     }
 
-    let (metric_id, category, categories, articles) = futures::join!(
+    let (metric_id, category, categories, articles, settings) = futures::join!(
         metrics::add(&pool, &req, services::metrics::BelongsTo::BlogPost(id)),
         services::blog::categories::get::<CategoryDetails>(&pool, "name, description, is_seo", id),
         services::blog::categories::get_all::<Category>(&pool, "name, uri", Some(true), None),
@@ -110,7 +113,8 @@ async fn show_category(
             Some(true),
             None,
             Some(id)
-        )
+        ),
+        services::settings::get(&pool)
     );
 
     // TODO : see with Vincent to refactor this behavior
@@ -131,6 +135,7 @@ async fn show_category(
         metric_token: Option<String>,
         categories: Vec<Category>,
         articles: Vec<Article>,
+        settings: services::settings::Settings
     }
 
     BlogCategory {
@@ -141,6 +146,7 @@ async fn show_category(
         metric_token: token,
         categories,
         articles,
+        settings: settings.unwrap()
     }
     .into_response()
 }
@@ -205,6 +211,7 @@ async fn show_article(
                 categories: Vec<Category>,
                 year: i32,
                 metric_token: Option<String>,
+                settings: services::settings::Settings
             }
 
             #[derive(FromRow)]
@@ -223,7 +230,7 @@ async fn show_article(
                 );
             }
 
-            let (metric_id, images, categories) = futures::join!(
+            let (metric_id, images, categories, settings) = futures::join!(
                 metrics::add(&pool, &req, services::metrics::BelongsTo::BlogPost(id)),
                 services::blog::articles::images::get_all(&pool, id),
                 services::blog::categories::get_all::<Category>(
@@ -232,6 +239,7 @@ async fn show_article(
                     Some(true),
                     None
                 ),
+                services::settings::get(&pool)
             );
 
             for image in &images {
@@ -268,6 +276,7 @@ async fn show_article(
                 categories,
                 year: chrono::Utc::now().year(),
                 metric_token: token,
+                settings: settings.unwrap()
             }
             .into_response()
         }
