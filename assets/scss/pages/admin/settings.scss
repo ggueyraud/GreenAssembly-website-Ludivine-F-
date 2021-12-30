@@ -41,3 +41,7 @@ input[type=color] {
         z-index: 1
     }
 }
+
+[name="main"] {
+    grid-template-columns: 1fr !important;
+}

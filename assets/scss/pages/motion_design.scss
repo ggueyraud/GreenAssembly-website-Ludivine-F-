@@ -22,3 +22,7 @@ h2 {
     margin-bottom: utilities.space(5);
     @include text.text(3xl)
 }
+
+[name="main"] {
+    grid-template-columns: 1fr !important;
+}
