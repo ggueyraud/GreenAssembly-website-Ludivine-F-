@@ -189,7 +189,10 @@ pub async fn update_settings(
                             return HttpResponse::InternalServerError().finish()
                         }
                     },
-                    _ => return HttpResponse::InternalServerError().finish()
+                    Err(e) => {
+                        eprintln!("{:?}", e);
+                        return HttpResponse::InternalServerError().finish()
+                    }
                 }
         },
         _ => ()
