@@ -72,6 +72,11 @@ css = "pages/admin/login.css"
 content = ["templates/pages/admin/login.html"]
 
 [[purgecss]]
+css = "pages/admin/motion_design.css"
+content = ["templates/pages/admin/motion_design.html"]
+safelist = ["name", "main"]
+
+[[purgecss]]
 css = "pages/admin/my_little_plus.css"
 content = ["templates/pages/admin/my_little_plus.html"]
 

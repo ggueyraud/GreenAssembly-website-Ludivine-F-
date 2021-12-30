@@ -1,0 +1,13 @@
+@use '../../abstracts/variables_admin';
+@import 'style-box/base/grid';
+@import 'style-box/base/display';
+@import 'style-box/base/margin';
+@import '../../themes/admin';
+
+[name="main"] {
+    grid-template-columns: 1fr !important;
+
+    .card {
+        height: 100%
+    }
+}
