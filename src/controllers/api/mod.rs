@@ -182,7 +182,7 @@ pub async fn update_settings(
                 .write(true)
                 .create(true)
                 .truncate(true)
-                .open(if cfg!(debug_assertions) { "./public/logo.svg" } else { "./logo.svg" }) {
+                .open(if cfg!(debug_assertions) { "./public/logo.svg" } else { "logo.svg" }) {
                     Ok(mut file) => {
                         if let Err(e) = file.write_all(&logo.data()) {
                             println!("{:?}", e);
@@ -201,7 +201,7 @@ pub async fn update_settings(
                 .write(true)
                 .create(true)
                 .truncate(true)
-                .open(if cfg!(debug_assertions) { "./public/favicon.svg" } else { "./favicon.svg" }) {
+                .open(if cfg!(debug_assertions) { "./public/favicon.svg" } else { "favicon.svg" }) {
                     Ok(mut file) => {
                         if let Err(e) = file.write_all(&favicon.data()) {
                             println!("{:?}", e);
