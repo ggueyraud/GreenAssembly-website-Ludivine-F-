@@ -18,9 +18,9 @@
 {% block content %}
     <div class="index-frame-header">
         <div class="description">
-            <div>
-                <b class="text_7xl">Hello</b><br>
-                Moi c’est Ludivine<br>
+            <div class="mr_8">
+                <b class="text_7xl block">Hello</b>
+                <span class="block">Moi c’est Ludivine</span>
                 <b>Je suis <span class="text_blue">designer graphique.</span></b>
             </div>
         </div>
@@ -40,33 +40,25 @@
             </a>
         </div>
     </div>
+
     <div class="index-sections">
-        <div class="text_blue">
-            <p>Osez le style avec une identité visuelle <span class="text_5xl md_text_8xl">audacieuse</span> et originale.</p>
-        </div>
-        <section class="a-propos">
-            <h2>À propos</h2>
+        <p class="font_bold text_3xl sm_text_4xl text_blue text_center uppercase my_16 lg_my_0">
+            Osez le style avec une identité visuelle <span class="text_5xl sm_text_6xl block">audacieuse</span> et originale.
+        </p>
+
+        <section>
+            <h2 class="text_center lg_text_left mb_12">À propos</h2>
+
             <p>
-                Faire de votre marque celle qui marquera les esprits, tel est le défi que je relève pour vous.
-            </p>
-            <p>
-                Création charte graphique, design site web, conception de logos, animation vidéo, réalisation motion design,
-                illustrations animées ou statiques pour vos réseaux sociaux…
-            </p>
-            <p>
-                Confiez-moi votre envie de sortir du lot. Je me charge de mettre votre singularité en image en jouant sur les
-                codes couleurs et style typographique. Le mélange des genres tout en cohérence. Le sur-mesure esprit tendance
-                créative. La technicité du design graphique mêlée à ma créativité artistique.
-            </p>
-            <p>
-                Explorer, tester, créer, innover. Si telle est votre vision de l’originalité, alors imaginons ensemble votre
-                plus belle identité visuelle.
+                Faire de votre marque celle qui marquera les esprits, tel est le défi que je relève pour vous.<br /><br />
+                Création charte graphique, design site web, conception de logos, animation vidéo, réalisation motion design, illustrations animées ou statiques pour vos réseaux sociaux…<br /><br />
+                Confiez-moi votre envie de sortir du lot. Je me charge de mettre votre singularité en image en jouant sur les codes couleurs et style typographique. Le mélange des genres tout en cohérence. Le sur-mesure esprit tendance créative. La technicité du design graphique mêlée à ma créativité artistique.<br /><br />
+                Explorer, tester, créer, innover. Si telle est votre vision de l’originalité, alors imaginons ensemble votre plus belle identité visuelle.
             </p>
         </section>
     </div>
-    <nav class="links">
-        <a href="/portfolio" o-follow="preload" class="special">Mon travail en images</a>
-    </nav>
-{% endblock %}
 
-{% block year %}{{ year }}{% endblock %}
+    <div class="links">
+        <a href="/portfolio" o-follow="preload" class="special">Mon travail en images</a>
+    </div>
+{% endblock %}
