@@ -6,12 +6,12 @@ main nav {
     grid-area: nav;
 
     h3 {
-        margin-bottom: space(4)
+        margin-bottom: utilities.space(4)
     }
 
     a {
         position: relative;
-        padding: space(2) space(3);
+        padding: utilities.space(2) utilities.space(3);
 
         &::after {
             position: absolute;
@@ -21,7 +21,7 @@ main nav {
             content: '';
             height: 100%;
             width: 1px;
-            background-color: color(blue);
+            background-color: utilities.color(blue);
             z-index: -1;
             transition: width 250ms linear;
         }
@@ -36,11 +36,18 @@ main nav {
 
     @include bp.md {
         order: 2;
-        margin-bottom: space(4);
+        margin-bottom: utilities.space(4);
 
         h3 {
-            margin-bottom: space(8);
+            margin-bottom: utilities.space(8);
             text-align: initial;
+        }
+
+        a {
+            display: block;
+            & + a {
+                margin-top: utilities.space(2)
+            }
         }
     }
 

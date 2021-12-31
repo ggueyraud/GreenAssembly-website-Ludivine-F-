@@ -82,12 +82,20 @@ main {
                                 "section nav";
         grid-template-columns: 1fr auto;
 
-        header:first-child {
-            background-color: red;
+        header.grid {
+            grid-template-columns: auto 1fr;
+            gap: 1rem;
+            align-items: center;
         }
 
         h1 {
             text-align: left
+        }
+    }
+
+    @include bp.xl {
+        header.grid {
+            gap: 1.5rem
         }
     }
 }

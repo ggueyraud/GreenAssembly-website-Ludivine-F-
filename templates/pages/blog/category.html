@@ -22,8 +22,9 @@
 {% endblock %}
 
 {% block content %}
-<header>
+<header class="grid grid_cols_1">
     <h1>{{ title }}</h1>
+
     {% match description %}
         {% when Some with (description) %}
             <p>{{ description }}</p>

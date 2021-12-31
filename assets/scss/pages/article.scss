@@ -81,13 +81,6 @@ main {
             width: 70%;
             margin: space(2) auto;
         }
-
-        nav a {
-            display: block;
-            & + a {
-                margin-top: space(2)
-            }
-        }
     }
 
     @include bp.lg {
