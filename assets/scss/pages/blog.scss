@@ -81,5 +81,13 @@ main {
         grid-template-areas:    "header nav"
                                 "section nav";
         grid-template-columns: 1fr auto;
+
+        header:first-child {
+            background-color: red;
+        }
+
+        h1 {
+            text-align: left
+        }
     }
 }

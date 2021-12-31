@@ -186,6 +186,23 @@
 }
 
 @include bp.sm {
+    @media (orientation: landscape) {
+        // .ludivine-bg {
+        //     display: none
+        // }
+
+        // .index-frame-header {
+        //     display: grid;
+        //     position: relative;
+        //     width: 100vw;
+        //     height: calc(100vh - 110px - 1rem);
+        //     grid-template-columns: 1fr;
+        //     grid-template-rows: auto 1fr;
+        //     left: calc(-1 * (100vw - 100%) / 2);
+        //     margin-top: 1rem;
+        // }
+    }
+
     .index-sections {
         p:first-child {
             line-height: 3.5rem

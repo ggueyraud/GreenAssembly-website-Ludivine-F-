@@ -16,23 +16,10 @@
 {% endblock %}
 
 {% block content %}
-<header>
+<header class="grid grid_cols_1 lg_grid_cols_2">
     <h1>Blog</h1>
     <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
 </header>
-
-{#
-<nav class="md_order_2">
-    <header>
-        <h3>Catégories</h3>
-    </header>
-
-    <a o-follow href="/blog">Tout</a>
-    {% for category in categories %}
-        <a o-follow href="blog/categories/{{ category.uri }}">{{ category.name }}</a>
-    {% endfor %}
-</nav>
-#}
 
 <section class="grid grid_cols_1 md_grid_cols_2 gap_6 items_start">
     {% for article in articles %}
