@@ -4,6 +4,12 @@
 @import 'style-box/base/text';
 @import 'style-box/base/margin';
 
-section a {
-    color: utilities.color(blue)
+section {
+    a {
+        color: utilities.color(blue)
+    }
+
+    h2 {
+        text-transform: uppercase;
+    }
 }
