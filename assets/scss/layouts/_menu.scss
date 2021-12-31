@@ -56,6 +56,7 @@ header#topbar {
             z-index: 2;
             background-color: rgba(247, 247, 247, 0.8);
             gap: utilities.space(12);
+            overflow-y: scroll;
             
             a {
                 text-align: center;
