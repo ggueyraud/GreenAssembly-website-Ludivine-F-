@@ -11,7 +11,7 @@ safelist = ["show"]
 [[purgecss]]
 css = "pages/article.css"
 content = ["templates/pages/blog/article.html"]
-safelist = ["hidden", "lightbox", "lightbox--active"]
+safelist = ["hidden", "lightbox", "lightbox--active", "cover"]
 
 [[purgecss]]
 css = "pages/blog.css"
@@ -19,7 +19,7 @@ content = ["templates/pages/blog/category.html", "templates/pages/blog/index.htm
 
 [[purgecss]]
 css = "pages/contact.css"
-content = ["templates/pages/contact.html"]
+content = ["templates/pages/contact.html", ".build/production/js/contact.js"]
 safelist = ["hidden", "valid", "fv_border_error"]
 
 [[purgecss]]
