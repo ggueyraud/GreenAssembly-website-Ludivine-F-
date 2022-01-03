@@ -2,7 +2,7 @@
 @use 'style-box/abstracts/functions/utilities';
 
 .card {
-    border: 1px solid utilities.color(blue);
+    // border: 1px solid utilities.color(blue);
     box-shadow: 0px 0px 20px rgba(28, 4, 252, 0.3);
     
     &__body {
