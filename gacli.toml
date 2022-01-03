@@ -11,7 +11,7 @@ safelist = ["show"]
 [[purgecss]]
 css = "pages/article.css"
 content = ["templates/pages/blog/article.html"]
-safelist = ["hidden", "lightbox", "lightbox--active", "cover"]
+safelist = ["hidden", "lightbox", "lightbox--active", "main"]
 
 [[purgecss]]
 css = "pages/blog.css"
