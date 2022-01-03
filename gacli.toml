@@ -43,7 +43,7 @@ safelist = ["lightbox", "lightbox--active"]
 css = "pages/portfolio.css"
 content = [
     "templates/pages/portfolio.html",
-    "templates/pages/portfolio_project.html",
+    "templates/components/project_tile.html",
     ".build/production/js/portfolio.js"
 ]
 safelist = ["lightbox", "lightbox--active"]
