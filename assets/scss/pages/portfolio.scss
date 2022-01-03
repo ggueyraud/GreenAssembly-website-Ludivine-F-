@@ -97,7 +97,7 @@ a.special svg {
             position: absolute;
             width: 100%;
             bottom: 0;
-            background-color: color('white');
+            background-color: var(--background_color);
             padding: .5rem 1rem;
             display: flex;
             justify-content: space-between;
