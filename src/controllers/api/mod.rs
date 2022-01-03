@@ -247,7 +247,7 @@ pub struct ContactForm {
     content: String,
 }
 
-#[post("/contact")]
+#[post("")]
 pub async fn contact(mut form: web::Form<ContactForm>) -> HttpResponse {
     use lettre::{SmtpClient, Transport};
     use lettre_email::EmailBuilder;
