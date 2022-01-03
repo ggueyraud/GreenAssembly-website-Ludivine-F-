@@ -227,7 +227,7 @@ router.on('mount', () => {
         delete_btn.innerHTML = `<svg class="icon icon--sm">
             <use xlink:href="/dashboard_icons.svg#delete"></use>
         </svg>`;
-        delete_btn.addEventListener('click', () => delete_project());
+        delete_btn.addEventListener('click', () => delete_project(project_container, project.id));
 
         project_actions.appendChild(update_btn);
         project_actions.appendChild(delete_btn);
