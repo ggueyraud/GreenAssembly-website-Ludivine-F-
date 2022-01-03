@@ -293,7 +293,7 @@ pub async fn contact(mut form: web::Form<ContactForm>) -> HttpResponse {
 
     // TODO : see to pass as Secure (SSL or equivalent)
     let email = EmailBuilder::new()
-        .to("contact@ludivinefarat.fr")
+        .to("contact@guillaume-gueyraud.fr")
         .from(form.email.as_str())
         .subject("")
         .html(content.as_str())
