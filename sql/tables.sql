@@ -47,16 +47,6 @@ CREATE TABLE project_assets (
     -- UNIQUE (project_id, "order")
 );
 
-DROP TABLE IF EXISTS videos CASCADE;
-CREATE TABLE videos (
-    id SMALLINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    title VARCHAR(120) NOT NULL,
-    description VARCHAR(320),
-    path VARCHAR(255) NOT NULL,
-    "order" SMALLINT NOT NULL,
-    UNIQUE ("order")
-);
-     
 DROP TABLE IF EXISTS pages CASCADE;
 CREATE TABLE pages (
     id SMALLINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
