@@ -1,6 +1,5 @@
 import 'router';
 
-
 window.router.on('mount', () => {
     if(document.documentElement.classList.contains('no_webp')) {
         document.documentElement.style.setProperty('--header_img_mobile', 'url(/uploads/mobile/index.png)');

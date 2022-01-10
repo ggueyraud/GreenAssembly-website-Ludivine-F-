@@ -2,12 +2,11 @@ const path = require('path');
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
 let plugins = [];
+const entry_path = './assets/js/pages';
 
 if (process.env.NODE_ENV === 'production') {
     plugins.push(new BundleAnalyzerPlugin());
 }
-
-const entry_path = './assets/js/pages';
 
 module.exports = {
     resolve: {
