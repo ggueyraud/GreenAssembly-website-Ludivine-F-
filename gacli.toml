@@ -1,0 +1,105 @@
+[[purgecss]]
+css = "global.css"
+content = [
+    "templates/front_office.html",
+    "templates/blog.html",
+    "templates/includes/navbar.html",
+    "templates/includes/footer.html"
+]
+safelist = ["show"]
+
+[[purgecss]]
+css = "pages/article.css"
+content = ["templates/pages/blog/article.html"]
+safelist = ["hidden", "lightbox", "lightbox--active", "main"]
+
+[[purgecss]]
+css = "pages/blog.css"
+content = ["templates/pages/blog/category.html", "templates/pages/blog/index.html", "templates/blog.html"]
+
+[[purgecss]]
+css = "pages/contact.css"
+content = ["templates/pages/contact.html", ".build/production/js/contact.js"]
+safelist = ["hidden", "valid", "fv_border_error"]
+
+[[purgecss]]
+css = "pages/index.css"
+content = ["templates/pages/index.html"]
+
+[[purgecss]]
+css = "pages/legals.css"
+content = ["templates/pages/legals.html"]
+
+[[purgecss]]
+css = "pages/motion_design.css"
+content = ["templates/pages/motion_design.html"]
+
+[[purgecss]]
+css = "pages/my_little_plus.css"
+content = ["templates/pages/my_little_plus.html"]
+safelist = ["lightbox", "lightbox--active"]
+
+[[purgecss]]
+css = "pages/portfolio.css"
+content = [
+    "templates/pages/portfolio.html",
+    "templates/components/project_tile.html",
+    ".build/production/js/portfolio.js"
+]
+safelist = ["lightbox", "lightbox--active"]
+
+[[purgecss]]
+css = "pages/project.css"
+content = ["templates/pages/portfolio_project.html"]
+
+# BackOffice
+[[purgecss]]
+css = "admin.css"
+content = ["templates/back_office.html"]
+
+[[purgecss]]
+css = "pages/admin/blog.css"
+content = [
+    "templates/pages/admin/blog.html",
+    ".build/production/js/admin/blog.js",
+    "templates/includes/modal_blog_article.html",
+    "templates/includes/modal_blog_category.html"
+]
+safelist = ["ql-snow"]
+
+[[purgecss]]
+css = "pages/admin/home.css"
+content = ["templates/pages/admin/home.html", ".build/production/js/admin/home.js"]
+
+[[purgecss]]
+css = "pages/admin/login.css"
+content = ["templates/pages/admin/login.html"]
+safelist = ["name", "main"]
+
+[[purgecss]]
+css = "pages/admin/motion_design.css"
+content = ["templates/pages/admin/motion_design.html"]
+safelist = ["name", "main"]
+
+[[purgecss]]
+css = "pages/admin/my_little_plus.css"
+content = ["templates/pages/admin/my_little_plus.html"]
+
+[[purgecss]]
+css = "pages/admin/my_little_plus.css"
+content = ["templates/pages/admin/my_little_plus.html"]
+
+[[purgecss]]
+css = "pages/admin/portfolio.css"
+content = [
+    "templates/pages/admin/portfolio.html",
+    ".build/production/js/admin/portfolio.js",
+    "templates/includes/modal_project.html",
+    "templates/includes/asset_edit_modal.html"
+]
+safelist = ["ql-snow", "cropper-hidden", "cropper-container", "cropper-bg"]
+
+[[purgecss]]
+css = "pages/admin/settings.css"
+content = ["templates/pages/admin/settings.html", ".build/production/js/admin/settings.js"]
+safelist = ["name", "main"]

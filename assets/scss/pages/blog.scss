@@ -1,0 +1,101 @@
+@use '../abstracts/variables';
+@use 'style-box/abstracts/mixins/breakpoints' as bp;
+@use 'style-box/abstracts/functions/utilities';
+@use 'style-box/abstracts/mixins/text';
+@import '../themes/default';
+@import 'style-box/base/display';
+@import 'style-box/base/grid';
+@import '../layouts/blog_nav';
+
+main {
+    display: grid;
+    gap: utilities.space(6);
+    grid-template-areas:    "header header"
+                            "nav nav"
+                            "section section";
+    
+    h1 {
+        text-align: center;
+        margin-bottom: utilities.space(6)
+    }
+
+    nav {
+        text-align: center
+    }
+
+    section {
+        order: 3;
+        grid-area: section;
+
+        .post {
+            box-shadow: 0px 0px 20px rgba(28, 4, 252, 0.3);
+        
+            &__cover {
+                height: 130px;
+                width: 100%;
+                background-image: var(--cover-path);
+                background-repeat: no-repeat;
+                background-size: cover;
+            }
+            
+            &__body {
+                padding: utilities.space(4) utilities.space(6);
+        
+                header {
+                    margin-bottom: utilities.space(4);
+        
+                    h2 {
+                        color: utilities.color(blue);
+                        text-transform: uppercase;
+                        margin-bottom: utilities.space(1)
+                    }
+        
+                    time {
+                        @include text.text(sm)
+                    }
+                }
+            }
+        }
+    }
+
+    @include bp.md {
+        & > header:first-child {
+            display: grid;
+            gap: utilities.space(6);
+            align-items: center;
+            grid-template-columns: 1fr 1fr;
+            margin-bottom: utilities.space(4);
+
+            h1 {
+                text-align: initial;
+                margin-bottom: 0;
+            }
+        }
+    }
+
+    header {
+        grid-area: header;
+    }
+
+    @include bp.lg {
+        grid-template-areas:    "header nav"
+                                "section nav";
+        grid-template-columns: 1fr auto;
+
+        header.grid {
+            grid-template-columns: auto 1fr;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        h1 {
+            text-align: left
+        }
+    }
+
+    @include bp.xl {
+        header.grid {
+            gap: 1.5rem
+        }
+    }
+}

@@ -1,0 +1,89 @@
+{% extends "back_office.html" %}
+
+{% block title %}Portfolio{% endblock %}
+
+{% block head %}
+    <script src="/js/admin/portfolio.js" async></script>
+    <link rel="stylesheet" href="/css/pages/admin/portfolio.css" />
+{% endblock %}
+
+{% block content %}
+    <script>
+        const categories = {{ categories|json }};
+        const projects = {{ projects|json }};
+    </script>
+
+    {% include "includes/modal_project.html" %}
+    {% include "includes/asset_edit_modal.html" %}
+
+    <div class="card" id="categories">
+        <div class="card__header">
+            Catégories
+        </div>
+
+        <ul class="card__body">
+            {% for category in categories %}
+                <li data-id="{{ category.id }}" class="categories__item">
+                    <span>{{ category.name }}</span>
+
+                    <input type="text" maxlength="30" value="{{ category.name }}" />
+
+                    <button type="button" class="text_error">
+                        <svg class="icon icon--sm">
+                            <use xlink:href="/dashboard_icons.svg#delete"></use>
+                        </svg>
+                    </button>
+                </li>
+            {% endfor %}
+        </ul>
+
+        <div class="card__footer">
+            <input
+                type="text"
+                placeholder="Saisir un nom de catégorie"
+                name="new_category_name"
+                maxlength="30"
+            />
+        </div>
+    </div>
+
+    <div class="card" id="projects">
+        <div class="card__header flex justify_between">
+            Projets
+
+            <button type="button" class="btn btn__green btn--sm">Créer un projet</button>
+        </div>
+
+        <ul class="card__body space_y_2">
+            {% for project in projects %}
+                <li class="projects__item" data-id="{{ project.id }}">
+                    <span>{{ project.name }}</span>
+
+                    {% match project.description %}
+                        {% when Some with (description) %}
+                            <p>{{ description }}</p>
+                        {% when None %}
+                    {% endmatch %}
+                    {#<div class="projects__item__content">{{ project.content|safe }}</div>#}
+
+                    <div class="projects__item__actions">
+                        <button type="button" class="text_blue">
+                            <svg class="icon">
+                                <use xlink:href="/dashboard_icons.svg#edit"></use>
+                            </svg>
+                        </button>
+
+                        <button type="button" class="text_error">
+                            <svg class="icon">
+                                <use xlink:href="/dashboard_icons.svg#delete"></use>
+                            </svg>
+                        </button>
+                    </div>
+
+                    {# The javascript will fill this tag #}
+                    <time datetime="{{ project.date|rfc3339 }}"></time>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endblock %}

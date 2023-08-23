@@ -1,0 +1,104 @@
+@use 'style-box/abstracts/mixins/text';
+@use 'style-box/abstracts/mixins/breakpoints' as bp;
+@use 'style-box/abstracts/functions/utilities';
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    visibility: hidden;
+    padding: 100px 1rem 1rem;
+    background-color: rgba(0, 0, 0, 0.3);
+
+    &--full {
+        padding-top: 1rem;
+
+        .modal__dialog {
+            width: 100%;
+            min-height: 100%
+        }
+    }
+
+    &__dialog {
+        margin: 0 auto;
+        width: 100%;
+        background-color: #fff;
+        border: 0 solid rgba(0,0,0,.2);
+        border-radius: .65rem;
+        
+        @include bp.md {
+            width: 80%;
+        }
+
+        @include bp.lg {
+            width: 60%
+        }
+
+        @include bp.xxl {
+            width: 40%
+        }
+
+        &__header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eff2f5;
+            padding: 1.75rem 1.75rem;
+            
+            &__title {
+                font-weight: bold;
+                margin: 0;
+                @include text.text(2xl);
+            }
+
+            &__close {
+                border: none;
+                outline: none;
+                background-color: transparent;
+                cursor: pointer;
+                font-size: 0;
+                padding: 0;
+                color: #a1a5b7
+            }
+        }
+
+        &__body {
+            padding-top: 2.5rem;
+            padding-bottom: 2.5rem;
+            padding-right: 2.5rem;
+            padding-left: 2.5rem;
+        }
+
+        &__footer {
+            display: flex;
+            padding: 1.75rem 1.75rem;
+            justify-content: flex-end;
+            column-gap: utilities.space(3);
+        }
+    }
+
+    &--show {
+        visibility: visible;
+    }
+}
+
+// .modal_fade {
+//     position: fixed;
+//     top: 0;
+//     left: 0;
+//     width: 100vw;
+//     height: 100vh;
+//     background-color: #000;
+//     opacity: .3;
+//     visibility: hidden;
+//     z-index: 1;
+
+//     &--show {
+//         visibility: visible;
+//     }
+// }

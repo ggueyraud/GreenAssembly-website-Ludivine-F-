@@ -1,0 +1,52 @@
+{% extends "back_office.html" %}
+
+{% block title %}Mes petits +{% endblock %}
+
+{% block head %}
+    <script src="/js/admin/my_little_plus.js" async></script>
+    <link rel="stylesheet" href="/css/pages/admin/my_little_plus.css" />
+{% endblock %}
+
+{% block content %}
+    <form class="card" id="links_form" name="links_form">
+        <div class="card__header">
+            Modification des liens:
+        </div>
+
+        <div class="card__body">
+            <label for="creations_input">Découvrir mes créations</label>
+            <input
+                type="text"
+                id="creations_input"
+                name="creations"
+                {% match creations %}
+                    {% when Some with (creations) %}
+                        value="{{ creations }}"
+                    {% when None %}
+                {% endmatch %}
+            />
+            <label for="shootings_input">Découvrir mes shooting</label>
+            <input
+                type="text"
+                id="shootings_input"
+                name="shootings"
+                {% match shootings %}
+                    {% when Some with (shootings) %}
+                        value="{{ shootings }}"
+                    {% when None %}
+                {% endmatch %}
+            />
+        </div>
+
+        <div id="success_message" class="success_message">
+            Modifications effectuées avec succès
+        </div>
+        <div id="error_message" class="error_message">
+            Une erreur est survenue
+        </div>
+
+        <div class="card__footer flex justify_end">
+            <button type="submit" class="btn btn__blue">Modifier</button>
+        </div>
+    </form>
+{% endblock %}

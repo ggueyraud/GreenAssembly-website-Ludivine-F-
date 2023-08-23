@@ -1,0 +1,37 @@
+
+@use 'abstracts/variables';
+@use 'style-box/abstracts/mixins/breakpoints' as bp;
+@use 'style-box/abstracts/functions/utilities';
+@import 'base/base';
+@import 'style-box/base/margin';
+@import 'style-box/base/typography';
+@import 'style-box/base/container';
+@import 'style-box/base/order';
+@import 'style-box/base/grid';
+@import 'style-box/components/icon';
+
+@import 'layouts/_footer.scss';
+@import 'layouts/_menu.scss';
+@import url('https://fonts.googleapis.com/css2?family=Urbanist&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Urbanist:wght@400;800&display=swap');
+
+*, *::after, *::before {
+    box-sizing: border-box
+}
+
+body {
+    margin: 0;
+    font-size: 18px;
+    font-family: 'Urbanist', sans-serif;
+    padding: 0 utilities.space(2);
+
+    @include bp.md {
+        padding: 0
+    }
+}
+
+
+body {
+    color: var(--text_color);
+    background-color: var(--background_color);   
+}

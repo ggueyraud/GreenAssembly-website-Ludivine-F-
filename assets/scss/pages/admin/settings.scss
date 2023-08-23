@@ -1,0 +1,45 @@
+@use '../../abstracts/variables_admin';
+@import 'style-box/base/grid';
+@import 'style-box/base/display';
+@import 'style-box/base/margin';
+@import '../../components/drop_zone';
+@import '../../themes/admin';
+
+[name="main"] {
+    grid-template-columns: 1fr !important;
+
+    .card {
+        height: 100%
+    }
+}
+
+#favicon {
+    display: flex;
+    flex-direction: column;
+
+    div:not(.drop_zone) {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex: 1
+    }
+
+    .drop_zone {
+        width: 64px;
+        height: 64px;
+        min-height: 64px;
+    }
+}
+
+input[type=color] {
+    padding: 0
+}
+
+.drop_zone {
+    display: flex;
+    align-items: center;
+
+    input[type=file] {
+        z-index: 1
+    }
+}

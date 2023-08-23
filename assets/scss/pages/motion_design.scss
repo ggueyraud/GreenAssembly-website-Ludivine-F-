@@ -1,0 +1,31 @@
+@use '../abstracts/variables';
+@use 'style-box/abstracts/functions/utilities';
+@use 'style-box/abstracts/mixins/breakpoints' as bp;
+@use 'style-box/abstracts/mixins/text';
+@import '../themes/default';
+@import 'style-box/base/grid';
+@import 'style-box/base/display';
+@import 'style-box/base/space';
+@import 'style-box/base/text';
+@import 'style-box/base/margin';
+@import '../components/card';
+@import '../components/button';
+
+h1, h2 {
+    text-align: center;
+
+    @include bp.md {
+        text-align: left;
+    }
+}
+
+h2 {
+    text-transform: uppercase;
+    color: var(--title_color);
+    margin-bottom: utilities.space(5);
+    @include text.text(3xl)
+}
+
+[name="main"] {
+    grid-template-columns: 1fr !important;
+}

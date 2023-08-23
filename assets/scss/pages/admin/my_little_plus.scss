@@ -1,0 +1,43 @@
+@use '../../abstracts/variables_admin';
+@import '../../themes/admin';
+@import 'style-box/base/display';
+
+.card {
+    width: 350px;
+}
+.card__footer {
+    margin-top: 1rem;
+}
+
+label {
+    margin-top: 0.5rem;
+}
+
+.error,
+.success_message,
+.error_message
+{
+    height: 1.5rem;
+    line-height: 1.5rem;
+}
+.error {
+    color: crimson;
+}
+
+.success_message,
+.error_message {
+    display: none;
+    padding: 2rem;
+    padding-bottom: 1rem;
+}
+
+.success_message {
+    color: forestgreen;
+}
+.error_message {
+    color: crimson;
+}
+
+.show_message {
+    display: block;
+}

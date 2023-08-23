@@ -1,0 +1,187 @@
+@use 'style-box/abstracts/mixins/text';
+@use 'style-box/abstracts/functions/utilities';
+
+// TODO : import style-box base
+@import '../base/base';
+
+.card {
+    max-height: 100%;
+    overflow-y: hidden;
+    display: flex;
+    flex-direction: column;
+    background-color: #fff;
+    border-radius: .65rem;
+    box-shadow: 0 0 20px 0 rgba(76,87,125,.02) !important;
+    border: 0 !important;
+
+    &__header {
+        @include text.text(2xl);
+        font-weight: bold;
+        padding: utilities.space(6) utilities.space(5);
+    }
+
+    &__body {
+        scrollbar-width: thin;
+        scrollbar-color: #eff2f5 transparent;
+        overflow: auto;
+        padding-left: utilities.space(6);
+        padding-right: utilities.space(6);
+    }
+
+    &__footer {
+        padding: utilities.space(3) utilities.space(3);
+    }
+}
+
+.btn {
+    border-radius: .65rem;
+    text-transform: none;
+    font-weight: bold;
+    border: none;
+    cursor: pointer;
+    outline: none;
+    padding: utilities.space(4) utilities.space(8);
+    font-size: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    &__green {
+        color: utilities.color('white');
+        background-color: utilities.color('green');
+    }
+
+    &__error {
+        color: utilities.color('white');
+        background-color: utilities.color('error');
+    }
+
+    &--sm {
+        padding: utilities.space(3) utilities.space(4)
+    }
+
+    &__blue {
+        color: utilities.color('white');
+        background-color: utilities.color('blue');
+    }
+
+    &[disabled] {
+        cursor: not-allowed
+    }
+
+}
+@keyframes rotation {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(359deg);
+    }
+}
+
+.icon {
+    &--rotate {
+        animation: rotation 1s;
+        animation-iteration-count: infinite;
+    }
+}
+
+textarea {
+    resize: none;
+    min-height: 80px
+}
+
+.checkbox {
+    cursor: pointer;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+
+    input[type=checkbox] {
+        display: none;
+    
+        &:hover + span {
+            background-color: #eef3f7;
+        }
+    
+        &:checked + span::before {
+            content: '\2714';
+            position: absolute;
+            top: -4px;
+            left: 2px;
+        }
+    }
+
+    span {
+        position: relative;
+        width: 16px;
+        height: 16px;
+        border-radius: .25rem;
+        display: inline-block;
+        border: 2px solid #eef3f7;
+        background-color: #f5f8fa;
+        transition: color .2s ease,background-color .2s ease;
+        margin-right: .5rem;
+    }
+}
+
+
+input:not([type=checkbox]), textarea, select {
+    background-color: #f5f8fa;
+    color: #5e6278;
+    border-radius: .65rem;
+    outline: none;
+    width: 100%;
+    font-size: inherit;
+    font-family: inherit;
+    border: 1px solid #f5f8fa;
+    padding: utilities.space(3) utilities.space(6);
+    transition: color .2s ease,background-color .2s ease;
+
+    &:focus {
+        background-color: #eef3f7;
+        border-color: #eef3f7;
+        transition: color .2s ease,background-color .2s ease;
+    }
+}
+
+label {
+    @include text.text(sm);
+    font-weight: 600;
+    color: #181c32;
+    margin-bottom: utilities.space(2);
+    display: inline-block;
+
+    &.required::after {
+        content: '*';
+        margin-left: utilities.space(1);
+        color: utilities.color('error');
+    }
+}
+
+.ql-toolbar {
+    border: none !important;
+    background-color: #f5f8fa;
+    color: #5e6278;
+    border-top-left-radius: .65rem;
+    border-top-right-radius: .65rem;
+}
+.ql-container {
+    border: none !important;
+    
+    .ql-editor {
+        background-color: #f5f8fa;
+        border-bottom-left-radius: .65rem;
+        border-bottom-right-radius: .65rem;
+        color: #5e6278;
+        transition: color .2s ease,background-color .2s ease;
+        font-size: initial;
+        padding: utilities.space(3) utilities.space(6);
+
+        &:focus {
+            background-color: #eef3f7;
+            border-color: #eef3f7;
+            transition: color .2s ease,background-color .2s ease;
+        }
+    }
+}

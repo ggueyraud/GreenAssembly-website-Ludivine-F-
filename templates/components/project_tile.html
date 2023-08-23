@@ -1,0 +1,27 @@
+<a
+    data-categories="{% for category in categories %}{{ category.id }}{% if !loop.last %};{% endif %}{% endfor %}"
+    href="/portfolio/{{ uri }}"
+    class="project"
+>
+    <picture class="lazy">
+        <source data-srcset="/uploads/{{ fallback_illustration.path }}" type="image/webp" />
+
+        <img
+            data-src="/uploads/{{ illustration.path }}"
+            {% match illustration.name %}
+                {% when Some with (name) %}
+                    alt="{{ name }}"
+                {% when None %}
+            {% endmatch %}
+        />
+    </picture>
+
+    <div class="details">
+        <h3 title="{{ name }}">{{ name }}</h3>
+        <div>
+            {% for category in categories %}
+                <span>{{ category.name }}</span>
+            {% endfor %}
+        </div>
+    </div>
+</a>

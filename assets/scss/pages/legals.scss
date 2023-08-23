@@ -1,0 +1,15 @@
+@use '../abstracts/variables';
+@use 'style-box/abstracts/functions/utilities';
+@import '../themes/default';
+@import 'style-box/base/text';
+@import 'style-box/base/margin';
+
+section {
+    a {
+        color: utilities.color(blue)
+    }
+
+    h2 {
+        text-transform: uppercase;
+    }
+}

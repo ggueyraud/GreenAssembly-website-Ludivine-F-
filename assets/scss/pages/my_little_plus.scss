@@ -1,0 +1,93 @@
+@use '../abstracts/variables';
+@use 'style-box/abstracts/functions/utilities';
+@use 'style-box/abstracts/mixins/breakpoints' as bp;
+@import '../themes/default';
+@import '../components/button';
+@import '../components/lightbox.scss';
+@import 'style-box/base/margin';
+@import 'style-box/base/grid';
+@import 'style-box/base/display';
+
+.page-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    row-gap: 2rem;
+    margin: 0 1rem;
+
+    .title {
+        grid-area: title;
+    }
+    .intro {
+        grid-area: intro;
+    }
+    .paint-and-brand {
+        grid-area: paint;
+    }
+    .photo {
+        grid-area: photo;
+    }
+    .intro {
+        grid-area: intro;
+    }
+
+    header {
+        h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        p {
+            margin: 0 !important;
+        }
+    }
+
+    h2 {
+        color: var(--title_color)
+    }
+    h2, header p {
+        font-size: 3rem;
+        font-family: "Urbanist";
+        font-weight: 600;
+        line-height: 3rem;
+        margin-bottom: 2rem;
+        text-align: center;
+        text-transform: uppercase;
+    }
+
+    .links {
+        margin-top: 2rem;
+        text-align: center;
+
+        .special {
+            padding-bottom: 0.5rem;
+            font-size: 1.2em;
+            text-transform: uppercase;
+        }
+    }
+    
+    #paints {
+        grid-area: images_left
+    }
+
+    #photos {
+        grid-area: images_right
+    }
+
+    @include bp.lg {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-areas: "title intro"
+                             "paint photo"
+                             "images_left images_right";
+        row-gap: 5rem;
+        margin-top: 3rem;
+
+        h1 {
+            font-size: 6rem;
+        }
+        .links {
+            text-align: right;
+        }
+    }
+}

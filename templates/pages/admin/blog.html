@@ -1,0 +1,102 @@
+{% extends "back_office.html" %}
+
+{% block title %}Blog{% endblock %}
+
+{% block head %}
+    <script src="/js/admin/blog.js" async></script>
+    <link rel="stylesheet" href="/css/pages/admin/blog.css" />
+
+    <script>
+        const categories = {{ categories|json }};
+        const articles = {{ articles|json }};
+    </script>
+{% endblock %}
+
+{% block content %}
+    {% include "includes/modal_blog_category.html" %}
+
+    {% include "includes/modal_blog_article.html" %}
+
+    <div class="categories">
+        <div class="card__header">
+            Catégories
+
+            <button
+                type="button"
+                class="btn btn__green btn--sm"
+            >
+                <svg class="icon icon--sm">
+                    <use xlink:href="/dashboard_icons.svg#plus"></use>
+                </svg>
+            </button>
+        </div>
+
+        <ul class="card__body">
+            {% for category in categories %}
+                <li data-id="{{ category.id }}">
+                    <span>{{ category.name }}</span>
+
+                    <div>
+                        <button type="button" class="text_blue">
+                            <svg class="icon icon--sm">
+                                <use xlink:href="/dashboard_icons.svg#edit"></use>
+                            </svg>
+                        </button>
+                        <button type="button" class="text_error">
+                            <svg class="icon icon--sm">
+                                <use xlink:href="/dashboard_icons.svg#delete"></use>
+                            </svg>
+                        </button>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="articles">
+        <div class="card__header flex justify_between">
+            Articles
+
+            <button type="button" class="btn btn__green btn--sm">Créer un article</button>
+        </div>
+
+        <ul class="card__body space_y_2">
+            {% for article in articles %}
+                <li data-id="{{ article.id }}">
+                    <header>
+                        <h3>{{ article.title }}</h3>
+
+                        {% match article.category_id %}
+                            {% when Some with (category_id) %}
+                                <span data-id="{{ category_id }}" class="category"></span>
+                            {% when None %}
+                        {% endmatch %}
+                    </header>
+
+                    {% match article.description %}
+                        {% when Some with (description) %}
+                            <p>{{ description }}</p>
+                        {% when None %}
+                    {% endmatch %}
+
+                    <div>
+                        <button type="button" class="text_blue">
+                            <svg class="icon">
+                                <use xlink:href="/dashboard_icons.svg#edit"></use>
+                            </svg>
+                        </button>
+
+                        <button type="button" class="text_error">
+                            <svg class="icon">
+                                <use xlink:href="/dashboard_icons.svg#delete"></use>
+                            </svg>
+                        </button>
+                    </div>
+
+                    {# The javascript will fill this tag #}
+                    <time datetime="{{ article.date|rfc3339 }}"></time>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endblock %}

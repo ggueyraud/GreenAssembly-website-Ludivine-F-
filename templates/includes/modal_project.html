@@ -1,0 +1,107 @@
+<div class="modal modal--full" id="add_project_modal">
+    <div class="modal__dialog">
+        <div class="modal__dialog__header">
+            <h5 class="modal__dialog__header__title"></h5>
+        </div>
+
+        <form name="create_project" class="modal__dialog__body">
+            <label for="name" class="required">Nom</label>
+            <input type="text" id="name" name="name" />
+
+            <label for="description" class="mt_2">Description</label>
+            <textarea name="description" id="description" maxlength="320"></textarea>
+
+            <label for="content" class="mt_2 required">Contenu</label>
+            <div id="content_editor2"></div>
+
+            <div id="content_editor"></div>
+            <input type="hidden" name="content" />
+
+            <div>
+                <label for="categories" class="mt_2">Catégories</label>
+
+                <div class="grid sm_grid_cols_2 lg_grid_cols_3 col_gap_2 row_gap_2">
+                    {% for category in categories %}
+                        <label class="checkbox mb_0">
+                            <input type="checkbox" value="{{ category.id }}" name="categories" />
+                            <span></span>
+                            {{ category.name }}
+                        </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <label class="mt_2 mb_0">Photos</label>
+            <small class="text_error block mb_2">Seules les images de moins de 2mo sont acceptées</small>
+            <div class="assets">
+                <div class="drop_zone col_span_3 row_span_2">
+                    <input type="file" accept="image/png, image/jpeg" />
+
+                    <img src="" />
+
+                    <button type="button">
+                        <svg class="icon icon--sm">
+                            <use xlink:href="/icons.svg#close"></use>
+                        </svg>
+                    </button>
+                </div>
+                <div class="col_span_3"></div>
+                <div class="drop_zone col_span_3">
+                    <input type="file" accept="image/png, image/jpeg" disabled />
+
+                    <img src="" />
+
+                    <button type="button">
+                        <svg class="icon icon--sm">
+                            <use xlink:href="/icons.svg#close"></use>
+                        </svg>
+                    </button>
+                </div>
+                <div class="drop_zone col_span_2">
+                    <input type="file" accept="image/png, image/jpeg" disabled />
+
+                    <img src="" />
+
+                    <button type="button">
+                        <svg class="icon icon--sm">
+                            <use xlink:href="/icons.svg#close"></use>
+                        </svg>
+                    </button>
+                </div>
+                <div class="drop_zone col_span_2">
+                    <input type="file" accept="image/png, image/jpeg" disabled />
+
+                    <img src="" />
+
+                    <button type="button">
+                        <svg class="icon icon--sm">
+                            <use xlink:href="/icons.svg#close"></use>
+                        </svg>
+                    </button>
+                </div>
+                <div class="drop_zone col_span_2">
+                    <input type="file" accept="image/png, image/jpeg" disabled />
+
+                    <img src="" />
+
+                    <button type="button">
+                        <svg class="icon icon--sm">
+                            <use xlink:href="/icons.svg#close"></use>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="modal__dialog__footer mt_2">
+                <button type="button" class="btn btn__error btn--sm hidden">
+                    Supprimer
+                    <svg class="icon icon--sm ml_1">
+                        <use xlink:href="/dashboard_icons.svg#delete"></use>
+                    </svg>
+                </button>
+
+                <button type="submit" class="btn btn__green btn--sm">Créer</button>
+            </div>
+        </form>
+    </div>
+</div>

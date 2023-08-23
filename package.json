@@ -1,0 +1,39 @@
+{
+  "name": "ludivinefarat",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GreenAssembly/LudivineFarat.git"
+  },
+  "dependencies": {
+    "carousel": "github:GreenAssembly/Carousel",
+    "cropperjs": "^1.5.12",
+    "date-fns": "^2.25.0",
+    "dompurify": "^2.3.3",
+    "formvalidation": "github:GreenAssembly/FormValidation",
+    "quill": "^1.3.7",
+    "router": "github:GreenAssembly/Router#v2",
+    "sanitize-html": "^2.5.1",
+    "sortablejs": "^1.14.0",
+    "style-box": "github:GreenAssembly/style-box",
+    "sweetalert2": "^11.1.7"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions"
+  ],
+  "author": "GreenAssembly",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/GreenAssembly/LudivineFarat/issues"
+  },
+  "homepage": "https://github.com/GreenAssembly/LudivineFarat#readme",
+  "devDependencies": {
+    "webpack-bundle-analyzer": "^4.5.0"
+  }
+}

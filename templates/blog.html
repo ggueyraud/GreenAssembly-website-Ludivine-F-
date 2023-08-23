@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="fr">
+    <head>
+        <base href="https://ludivinefarat.fr" />
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0" />
+
+        <title>{% block title %}{{ title }}{% endblock %} | Ludivine Farat - Designer Graphique Freelance</title>
+
+        <link rel="icon" type="image/png" href="/favicon.png" />
+        <link rel="stylesheet" href="/css/global.css" o-no-load />
+
+        <script src="/js/global.js" o-no-load async></script>
+
+        {% block head %}{% endblock %}
+    </head>
+
+    <body style="--background_color: {{ settings.background_color }}; --title_color: {{ settings.title_color }}; --text_color: {{ settings.text_color }}">
+        <div class="container mx_auto">
+            {% include "includes/navbar.html" %}
+
+            <ga-frame name="main">
+                <main>
+                    <nav>
+                        <header>
+                            <h3>Catégories</h3>
+                        </header>
+                    
+                        <a o-follow href="/blog">Tout</a>
+                        {% for category in categories %}
+                            <a o-follow href="/blog/categories/{{ category.uri }}">{{ category.name }}</a>
+                        {% endfor %}
+                    </nav>
+
+                    {% block content %}{% endblock %}
+                </main>
+            </ga-frame>
+            
+            {% include "includes/footer.html" %}
+        </div>
+    </body>
+</html>

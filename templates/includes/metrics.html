@@ -1,0 +1,7 @@
+{% match metric_token %}
+    {% when Some with (token) %}
+        <script>
+            localStorage.setItem("VID", "{{ token }}");
+        </script>
+    {% when None %}
+{% endmatch %}

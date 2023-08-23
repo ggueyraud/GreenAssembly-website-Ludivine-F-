@@ -1,0 +1,57 @@
+@use 'style-box/abstracts/mixins/breakpoints' as bp;
+@use 'style-box/abstracts/functions/utilities';
+@import '../base/base';
+
+@font-face {
+    font-family: 'Quakiez';
+    src: url('/fonts/Quakiez.ttf');
+}
+
+h1 {
+    font-family: 'Quakiez';
+    color: var(--title_color);
+    font-size: 4rem;
+    line-height: 1;
+    font-weight: 100;
+    text-transform: inherit;
+    
+    @include bp.sm {
+        font-size: 4.5rem
+    }
+    
+    @include bp.lg {
+        font-size: 6rem;
+    }
+}
+
+.know_more {
+    margin-top: utilities.space(6);
+
+    .card__body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        row-gap: utilities.space(4);
+        column-gap: utilities.space(6);
+        flex-direction: column;
+
+        @include bp.md {
+            justify-content: space-between;
+            flex-direction: row;
+    
+            a.btn {
+                margin-top: 0
+            }
+        }
+    }
+    
+    @include bp.md {
+        margin-top: utilities.space(14);
+    }
+
+    a.btn {
+        text-transform: uppercase;
+        margin-top: utilities.space(2);
+        white-space: nowrap
+    }
+}

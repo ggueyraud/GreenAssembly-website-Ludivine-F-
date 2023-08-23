@@ -1,0 +1,122 @@
+@use '../abstracts/variables';
+@import '../themes/default';
+@import '../components/card';
+@import '../components/button';
+@import 'style-box/abstracts/functions/utilities';
+@import 'style-box/abstracts/mixins/breakpoints';
+@import 'style-box/abstracts/mixins/text';
+@import 'style-box/base/grid';
+@import 'style-box/components/icon';
+@import 'style-box/base/display';
+@import 'style-box/base/margin';
+@import 'style-box/base/text';
+
+.card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+h2 {
+    color: var(--title_color);
+    margin-bottom: space(4);
+    
+    @include md {
+        margin-bottom: space(8) !important;
+    }
+}
+
+a.special svg {
+    vertical-align: middle;
+}
+
+#projects {
+    nav button, .project .details span {
+        cursor: pointer;
+        position: relative;
+        padding: space(1) space(2);
+        border: none;
+        background-color: transparent;
+        font-size: inherit;
+    }
+    
+    nav {
+        font-size: 0;
+
+        button {
+            font-size: initial;
+            font-family: inherit;
+            padding: space(2) space(3);
+            width: 50%;
+
+            @include md {
+                width: auto;
+            }
+
+            &::after {
+                position: absolute;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                content: '';
+                height: 100%;
+                width: 1px;
+                background-color: color(blue);
+                z-index: -1;
+                transition: width 250ms linear;
+            }
+
+            &.active {
+                color: color('white');
+                &::after {
+                    width: 100%
+                }
+            }
+        }
+    }
+    
+    .project {
+        position: relative;
+        position: relative;
+        height: 100%;
+        width: 100%;
+        display: inline-block;
+
+        picture {
+            width: 100%;
+            height: 100%;
+            display: flex;
+
+            img {
+                object-fit: cover; 
+                height: auto;
+                width:100%;
+            }
+        }
+
+        .details {
+            position: absolute;
+            width: 100%;
+            bottom: 0;
+            background-color: var(--background_color);
+            padding: .5rem 1rem;
+            display: flex;
+            justify-content: space-between;
+
+            h3 {
+                color: color(blue);
+                @include text(lg);
+                text-overflow: ellipsis;
+                overflow: hidden;
+                white-space: nowrap;
+            }
+
+            span {
+                color: color('white');
+                background-color: color(blue);
+                border-radius: 10px;
+                font-size: .9rem;
+            }
+        }
+    }
+}

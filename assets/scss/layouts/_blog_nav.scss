@@ -1,0 +1,59 @@
+@use 'style-box/abstracts/functions/utilities';
+@use 'style-box/abstracts/mixins/breakpoints' as bp;
+
+main nav {
+    order: 2;
+    grid-area: nav;
+
+    h3 {
+        margin-bottom: utilities.space(4)
+    }
+
+    a {
+        position: relative;
+        padding: utilities.space(2) utilities.space(3);
+
+        &::after {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            content: '';
+            height: 100%;
+            width: 1px;
+            background-color: utilities.color(blue);
+            z-index: -1;
+            transition: width 250ms linear;
+        }
+
+        &.active {
+            color: color('white');
+            &::after {
+                width: 100%
+            }
+        }
+    }
+
+    @include bp.md {
+        order: 2;
+        margin-bottom: utilities.space(4);
+
+        h3 {
+            margin-bottom: utilities.space(8);
+            text-align: initial;
+        }
+
+        a {
+            display: block;
+            & + a {
+                margin-top: utilities.space(2)
+            }
+        }
+    }
+
+    @include bp.lg {
+        h3 {
+            text-align: center
+        }
+    }
+}

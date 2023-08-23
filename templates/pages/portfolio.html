@@ -1,0 +1,135 @@
+{% extends "front_office.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block head %}
+    {% match description %}
+        {% when Some with (description) %}
+            <meta name="description" content="{{ description }}" />
+        {% when None %}
+    {% endmatch %}
+
+    {% include "includes/metrics.html" %}
+
+    <link rel="stylesheet" href="/css/pages/portfolio.css" />
+    <script src="/js/portfolio.js" async></script>
+{% endblock %}
+
+{% block content %}
+<section>
+    <div class="grid grid_cols_1 md_grid_cols_2 items_center col_gap_4">
+        <h1 class="mb_6 md_mb_0 text_center md_text_left">Portfolio</h1>
+
+        <div>
+            <h2 class="text_center md_text_left">Faites pétiller les yeux de vos clients avec un design original.</h2>
+            <p>Une touche d’originalité, une bonne dose de curiosité, une goutte de créativité, un brin de savoir-faire… telle est ma composition de graphiste freelance un peu décalée et fière de l’être.</p>
+        </div>
+    </div>
+    
+    <div class="grid grid_cols_1 md_grid_cols_2 items_center col_gap_4 mt_8 md_mt_20">
+        <div>
+            <h2 class="text_center md_text_left">Design site web.</h2>
+            <p>
+                Accrocher le regard, attirer l’œil en jouant sur les codes, en s’appuyant sur l’utilisation des TYPOGRAPHIES, des couleurs qui viennent appuyer vos textes, votre message, votre vision, vos valeurs…<br /><br />
+                Parce que vous méritez de sortir du lot, faites le choix du design fait-main.<br /><br />
+                Vos visuels, je les travaille pour qu’ils soient l’atout séduction de votre site web. Ils sont uniques et sortent tout droit de ce que votre marque, votre personnalité, votre histoire m’inspirent.<br /><br />
+                Laissez-moi m’approprier votre message. J’aurai plaisir à le mettre en image de façon REMARQUABLE et originale.
+            </p>
+        </div>
+        <div>
+            <h2 class="text_center md_text_left mt_8 md_mt_0">Le graphisme et moi.</h2>
+            <p>
+                <span class="text_blue">Mon objectif</span> : trouver le petit + qui fait que vous êtes VOUS et le retranscrire dans l’ensemble de votre communication visuelle.<br /><br />
+                <span class="text_blue">Mon approche</span> : authentique. L’idée étant de construire l’identité visuelle qui vous ressemble.<br /><br />
+                <span class="text_blue">Ma méthode</span> : benchmark, mood board, recherches graphiques, accompagnement et suivi tout au long de votre projet. Je travaille avec vous, et pour vous, à la création graphique de votre message.<br /><br />
+
+                Identité visuelle, charte graphique, <strong class="text_blue">création de logos</strong>, carte de visite, mais aussi <strong class="text_blue">vidéo motion design</strong>, contenu réseaux sociaux, supports imprimés, catalogue, photo, dessin… Ensemble, déclinons votre image de la meilleure des manières : <span class="uppercase font_bold">La vôtre</span>.
+            </p>
+        </div>
+    </div>
+
+    <div class="md_mt_20">
+        <h2 class="text_center md_text_left mt_8 md_mt_0 mb_6">Mes services</h2>
+
+        <div class="grid grid_cols_1 md_grid_cols_3 gap_6">
+            <div class="card text_center">
+                <div class="card__body">
+                    <h3 class="uppercase">Identité visuelle</h3>
+                    <p class="my_5">Création charte graphique, conception de logos, palette de couleurs…</p>
+                    <a href="/contact" o-follow="preload-once" class="special">
+                        J'ai un projet
+                        <svg class="icon icon--sm ml_2">
+                            <use xlink:href="/icons.svg#paper_plane"></use>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+
+            <div class="card text_center">
+                <div class="card__body">
+                    <h3 class="uppercase">Motion design</h3>
+                    <p class="my_5">Animation vidéo, animation logos, montage vidéo, vidéo corporate...</p>
+                    <a href="/contact" o-follow="preload-once" class="special">
+                        J'ai un projet
+                        <svg class="icon icon--sm ml_2">
+                            <use xlink:href="/icons.svg#paper_plane"></use>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+
+            <div class="card text_center">
+                <div class="card__body">
+                    <h3 class="uppercase">Web design</h3>
+                    <p class="my_5">Design site web (maquette), conception UX-UI de vos applications, UX design site web</p>
+                    <a href="/contact" o-follow="preload-once" class="special">
+                        J'ai un projet
+                        <svg class="icon icon--sm ml_2">
+                            <use xlink:href="/icons.svg#paper_plane"></use>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid_cols_1 md_grid_cols_3 gap_4 mt_10 items_center">
+            <p class="md_col_span_2">
+                Affiches, flyers, brochures, carte de visite, dépliant… soyez fier de vos SUPPORTS PRINT aux codes couleurs de votre identité visuelle. Et parce qu’ils sont partout, je crée aussi vos carrousels et visuels réseaux sociaux statiques ou animés (post/vidéo/story).
+            </p>
+            {#<a href="#" class="uppercase btn btn__blue mt_2 md_mt_0">
+                Télécharger ma grille tarifaire
+                <svg class="icon ml_2" height="24px">
+                    <use xlink:href="/icons.svg#download"></use>
+                </svg>
+            </a>#}
+        </div>
+
+        <div id="projects" class=" mt_8 md_mt_20">
+            <nav>
+                <button type="button" class="active">Tout</button>
+                {% for category in categories %}
+                    <button type="button" data-id="{{ category.id }}">{{ category.name }}</button>
+                {% endfor %}
+            </nav>
+
+            <div id="aaa" class="grid md_grid_rows_2 grid_cols_1 md_grid_cols_4 gap_4 mt_10">
+                {% for project in projects %}
+                    {% if loop.index0 == 0 %}
+                        <div class="md_col_span_2 md_row_span_2">
+                            {{ project|safe }}
+                        </div>
+                    {% else if loop.index0 == 1 %}
+                        <div>{{ project|safe }}</div>
+                    {% else if loop.index0 == 2 %}
+                        <div>{{ project|safe }}</div>
+                    {% else if loop.index0 == 3 %}
+                        <div class="md_col_span_2">{{ project|safe }}</div>
+                    {% else %}
+                        <div>{{ project|safe }}</div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

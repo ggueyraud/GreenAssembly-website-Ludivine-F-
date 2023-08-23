@@ -1,0 +1,46 @@
+{% extends "blog.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block head %}
+    {% match description %}
+        {% when Some with (description) %}
+            <meta name="description" content="{{ description }}" />
+        {% when None %}
+    {% endmatch %}
+
+    {% include "includes/metrics.html" %}
+
+    <link rel="stylesheet" href="/css/pages/blog.css" />
+    <script src="/js/blog.js" async></script>
+{% endblock %}
+
+{% block content %}
+<header class="grid grid_cols_1">
+    <h1>Blog</h1>
+    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+</header>
+
+<section class="grid grid_cols_1 md_grid_cols_2 gap_6 items_start">
+    {% for article in articles %}
+        <a href="/blog/articles/{{ article.uri }}" o-follow class="post">
+            <article>
+                <div class="post__cover" style="--cover-path: url(/uploads/{{ article.cover }})"></div>
+
+                <div class="post__body">
+                    <header>
+                        <h2>{{ article.title }}</h2>
+                        <time datetime="{{ article.international_date }}">{{ article.date }}</time>
+                    </header>
+
+                    {% match article.description %}
+                        {% when Some with (description) %}
+                            <p>{{ description }}</p>
+                        {% when None %}
+                    {% endmatch %}
+                </div>
+            </article>
+        </a>
+    {% endfor %}
+</section>
+{% endblock %}

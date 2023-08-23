@@ -1,0 +1,77 @@
+{% extends "front_office.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block head %}
+    {% match description %}
+        {% when Some with (description) %}
+            <meta name="description" content="{{ description }}" />
+        {% when None %}
+    {% endmatch %}
+
+    <link rel="stylesheet" href="/css/pages/legals.css" />
+
+    {% include "includes/metrics.html" %}
+{% endblock %}
+
+{% block content %}
+<section>
+    <h1 class="my_20">Mentions légales</h1>
+    <h2 class="text_blue mb_16">Informations générales</h2>
+    <p>
+        Le présent site-web est la propriété de Ludivine Farat<br />
+        Adresse : 13 avenue de vert bois 74 960 ANNECY FRANCE<br /><br />
+        Autoentrepreneuse dispensée d'immatriculation au registre du commerce et des sociétés<br /><br />
+        SIRET : 900 308 271 00015<br /><br />
+        Contact : +33 (0)6 75 60 51 85 ou par email <a href="/contact" o-follow="preload-once">ici</a><br /><br />
+        Hébergeur :<br />
+        OVH<br />
+        2 Rue Kellermann<br />
+        59100 Roubaix<br />
+        France<br /><br />
+        Directrice de la publication : Ludivine Farat<br />
+        Responsable de la rédaction : <a href="https://www.redaction-contenus-web.com/" target="_blank">Sandy PETIT – Rédactrice web</a><br />
+        Responsable du développement : <a href="https://greenassembly.fr/" target="_blank">GreenAssembly – Agence Digitale Verte</a>
+    </p>
+
+    <h2 class="text_blue my_16">Propriété intellectuelle</h2>
+    <p>
+        Ludivine Farat est propriétaire des droits de propriété intellectuelle ou détient les droits d'usage sur tous les éléments accessibles sur le site-web, notamment les textes, photos, images, logos, son ou vidéo.
+        Toute reproduction, représentation, modification, publication, adaptation de tout ou partie des éléments du site-web, quel que soit le moyen ou procédé utilisé, est interdite, sauf autorisation écrite préalable de Ludivine Farat.<br /><br />
+        Il est interdit de supprimer les mentions de copyrights, de marque ou de toute autre mention légale sur les contenus proposés par Ludivine Farat.<br /><br />
+        Toute exploitation non-autorisée du site-web ou de l'un quelconque des éléments qu'il contient sera considéré comme constitutive d'une contrefaçon et poursuivie conformément aux dispositions des articles L.335-2 et suivantes du Code de la Propriété Intellectuelle.
+    </p>
+
+    <h2 class="text_blue my_16">Conditions générales d'utilisation</h2>
+    <p>
+        Les utilisateurs du site ludivinefarat.fr acceptent pleinement et entièrement les conditions générales d’utilisation décrites ci-dessous. Celles-ci sont susceptibles d’être complétées ou modifiées à tout instant, aussi les utilisateurs sont invités à les consulter régulièrement.<br /><br />
+        Le site est ordinairement accessible aux utilisateurs à tout instant, et ce gratuitement. Des interruptions pour cause de maintenance technique pourront cependant être mises en œuvre par le site ludivinefarat.fr.
+    </p>
+
+    <h2 class="text_blue my_16">Liens hypertextes</h2>
+    <p>
+        Les liens hypertextes sur le présent site-web redirigeant l'utilisateur en direction de sites-web externes, sont proposés pour apporter des compléments d'informations ou pour présenter une réalisation. Leurs contenus ou les liens qu'ils contiennent ne sauraient engager la responsabilité de Ludivine Farat.<br /><br />
+        Ludivine Farat autorise tout site-web ou tout support à mettre en place un lien hypertexte en direction de son contenu. Néanmoins Ludivine Farat n'est en aucun cas tenue responsable du contenu ainsi que des produits ou services proposés sur les sites-web auxquels le site-web ludivinefarat.fr se trouverait lié par des liens hypertextes ou tout autre type de lien.
+    </p>
+
+    <h2 class="text_blue my_16">Protection des données personnelles</h2>
+    <p>
+        Lors de la navigation sur le site-web ludivinefarat.fr sont collectés l'URL de provenance de l'utilisateur, son adresse IP et l'agent utilisateur de son navigateur.<br />
+        Ludivine Farat collecte des informations relatives à l'utilisateur dans l'unique but d'effectuer une analyse de son trafic. L'utilisateur fournit ces informations en toute connaissance de cause, notamment lorsqu'il procède par lui-même à leur saisie. Il est alors précisé à l'utilisateur l'obligation ou non de fournir ces informations.<br /><br />
+        Conformément à la Loi "Informatique et Libertés", vous disposez d'un droit d'accès, de rectification, de modification et de suppression concernant les données qui vous concernent en effectuant une demande écrite et signée, accompagnée d'une copie du titre d'identité avec signature du titulaire de la pièce, en précisant l'adresse à laquelle la réponse doit être envoyée.<br /><br />
+        Aucune informations personnelles de l'utilisateur du site-web ludivinefarat.fr n'est publiée à l'insu de l'utilisateur, échangée, tranférée, cédée ou vendue sur un support quelconque à des tiers.<br /><br />
+        Ludivine Farat réunit des informations concernant ses utilisateurs lorsque ceux-ci remplissent les formulaires de contact sur ludivinefarat.fr.<br /><br />
+        En France, les données personnelles sont protégées par la loi n° 78-87 du 6 janvier 1978, la loi n° 2004-801 du 6 août 2004, l’article L. 226-13 du Code pénal et la Directive Européenne du 24 octobre 1995.<br /><br />
+        À l’occasion de l’utilisation du site ludivinefarat.fr, peuvent être recueillies l’URL des liens par l’intermédiaire desquels les utilisateurs ont accédé au site ludivinefarat.fr, le fournisseur d’accès desdits utilisateurs et l’adresse de protocole Internet (IP) des utilisateurs.<br /><br />
+        Ludivine Farat ne collecte des informations personnelles relatives aux utilisateurs que pour le besoin de certains services proposés par le site ludivinefarat.fr. Les utilisateurs fournissent lesdites informations en toute connaissance de cause, notamment lorsqu’ils procèdent par eux-mêmes à leur saisie. Il est alors précisé aux utilisateurs du site ludivinefarat.fr l’obligation ou non de fournir ces informations.<br /><br />
+        Conformément aux dispositions des articles 38 et suivants de la loi 78-17 du 6 janvier 1978 relative à l’informatique, aux fichiers et aux libertés, tout utilisateur dispose d’un droit d’accès, de rectification et d’opposition aux données personnelles le concernant en effectuant sa demande écrite et signée, accompagnée d’une copie du titre d’identité avec signature du titulaire de la pièce, en précisant l’adresse à laquelle la réponse doit être envoyée.<br /><br />
+        Les bases de données sont protégées par les dispositions de la loi du 1er juillet 1998 transposant la directive 96/9 du 11 mars 1996 relative à la protection juridique des bases de données.
+    </p>
+
+    <h2 class="text_blue my_16">Droit applicable</h2>
+    <p>
+        Le site-web ludivinefarat.fr et les présentes mentions légales sont soumises au droit français et sont rédigées en français.<br />
+        Ludivine Farat se réserve le droit de modifier les présentes mentions à tout moment. L'utilisateur s'engage à les consulter régulièrement.
+    </p>
+</section>
+{% endblock %}

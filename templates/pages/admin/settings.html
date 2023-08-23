@@ -1,0 +1,73 @@
+{% extends "back_office.html" %}
+
+{% block title %}Paramètres{% endblock %}
+
+{% block head %}
+    <script src="/js/admin/settings.js" async></script>
+    <link rel="stylesheet" href="/css/pages/admin/settings.css" />
+{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card__header">
+            <h1>Paramètres</h1>
+        </div>
+
+        <form name="settings" class="card__body">
+            <div class="grid grid_cols_1 md_grid_cols_3 gap_2">
+                <div class="md_col_span_2" id="logo">
+                    <label for="logo">Logo</label>
+
+                    <div class="drop_zone">
+                        <input type="file" accept="image/svg+xml" name="logo" />
+        
+                        <img src="/logo.svg" />
+                    </div>
+                </div>
+
+                <div id="favicon">
+                    <label for="favicon">Favicon</label>
+                    <small class="block mb_2">Icône du site-web qui s'affiche dans la barre d'adresse et les résultats des moteurs de recherche</small>
+
+                    <div>
+                        <div class="drop_zone">
+                            <input type="file" accept="image/svg+xml" name="favicon" />
+            
+                            <img src="/favicon.svg" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt_2">
+                <label for="background_color">Couleur du fond</label>
+                <input
+                    type="color"
+                    id="background_color"
+                    name="background_color"
+                    value="{{ background_color }}"
+                />
+
+                <label for="title_color">Couleur des titres</label>
+                <input
+                    type="color"
+                    id="title_color"
+                    name="title_color"
+                    value="{{ title_color }}"
+                />
+
+                <label for="text_color">Couleur du texte</label>
+                <input
+                    type="color"
+                    id="text_color"
+                    name="text_color"
+                    value="{{ text_color }}"
+                />
+            </div>
+
+            <div class="flex justify_end mt_2">
+                <button type="submit" class="btn btn__blue btn--sm">Modifier</button>
+            </div>
+        </form>
+    </div>
+{% endblock %}
